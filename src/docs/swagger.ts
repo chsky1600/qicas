@@ -13,6 +13,29 @@ const swaggerDefinition = {
       description: "Local development",
     },
   ],
+  // can add re-usable object schemas here so that we can use $ref to reference objects in our route definitions 
+  components: {
+    schemas: {
+      user: {
+        type : "object",
+        required: ["name", "id"],
+        properties: {
+          name: {
+            type: "string",
+            description: "The users name"
+          },
+          id: {
+            type: "integer",
+            description: "The users ID number"
+          }
+        },
+        example:{
+          name: "Michael Reyez",
+          id: 1
+        }
+      }
+    }
+  }
 };
 
 export const swaggerSpec = swaggerJsdoc({
