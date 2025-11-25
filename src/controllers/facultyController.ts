@@ -10,3 +10,7 @@ export const assignToFaculty = async (req : Request, res : Response) => {
 
 }
 
+// 
+export const migrateFacultyToNewYear = async (req : Request, res : Response) => {
+
+}
