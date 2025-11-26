@@ -6,13 +6,12 @@ import {
 
 const router = express.Router();
 
-
 /**
  * @openapi
  * /auth:
  *  post:
  *      tags:
- *          -Auth
+ *          - Auth
  *      summary: Login to receive an Auth Token
  *      description: Send your credentials to receive a token to be used in further requests
  *      requestBody:
@@ -29,5 +28,4 @@ const router = express.Router();
  *                  application/json:
  *                      
  */
-
 router.post("/auth", getToken)

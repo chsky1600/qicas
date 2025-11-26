@@ -4,8 +4,7 @@ export const getScheduleByID = async (req : Request, res : Response) => {
 
 }
 
-// mainly to look at all snapshots for selection
-export const getSchedulesByFacultyID = async (req : Request, res : Response) => {
+export const getSchedules = async (req : Request, res : Response) => {
 
 }
 
