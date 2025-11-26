@@ -1,10 +1,11 @@
 import express from "express";
 
 import {
-    readUser,
+    getUserByID,
     createUser,
-    updateUser,
-    deleteUser
+    updateUserByID,
+    deleteUserByID,
+    getAllUsers
 } from "../controllers/userController";
 
 const router = express.Router();
@@ -73,9 +74,9 @@ const router = express.Router();
  *      404:
  *        description: User does not exist
  */
-router.get("/users/{user_id}", readUser)
-router.put("/users/{user_id}", updateUser)
-router.delete("/users/{user_id}", deleteUser)
+router.get("/users/{user_id}", getUserByID)
+router.put("/users/{user_id}", updateUserByID)
+router.delete("/users/{user_id}", deleteUserByID)
 
 /**
  * @openapi
@@ -87,6 +88,12 @@ router.delete("/users/{user_id}", deleteUser)
  *    responses:
  *      200:
  *        description: OK
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: array
+ *              items:
+ *                $ref: '#/components/schemas/user'
  *  post:
  *    tags:
  *      - Users
@@ -103,5 +110,5 @@ router.delete("/users/{user_id}", deleteUser)
  *      500:
  *        description: Something went wrong on our end...
  */
-router.post("/users")
-router.get("/users")
+router.post("/users", createUser)
+router.get("/users", getAllUsers)

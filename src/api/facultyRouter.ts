@@ -2,7 +2,7 @@ import express from "express";
 
 import {
     createFaculty,
-    assignToFaculty,
+    assignUserToFacultyByID,
     migrateFacultyToNewYear
 } from "../controllers/facultyController";
 
