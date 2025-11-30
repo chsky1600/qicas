@@ -12,7 +12,7 @@ const router = express.Router();
  *  post:
  *      tags:
  *          - Auth
- *      summary: Login to receive an Auth Token
+ *      summary: Distributes tokens based on provided credentials
  *      description: Send your credentials to receive a token to be used in further requests
  *      requestBody:
  *          description: The credentials being used to login

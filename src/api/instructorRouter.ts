@@ -5,7 +5,6 @@ import {
   getAllInstructors,
   getInstructorAssignmentsByID,
   getInstructorByID,
-  snapshotInstructor,
   updateInstructor,
 } from "../controllers/instructorController";
 
@@ -13,7 +12,7 @@ const router = express.Router();
 
 /**
  * @openapi
- * /instructors:
+ * /instructors/:year:
  *  get:
  *    tags:
  *      - Instructors
@@ -35,6 +34,12 @@ const router = express.Router();
  *          type: string
  *          enum: [LECTURER, PROFESSOR, TA]
  *        description: Optional filter by academic role.
+ *      - in: path
+ *        name: year
+ *        required: true
+ *        schema:
+ *          type: string
+ *        description: The year the instructor relates to.
  *    responses:
  *      200:
  *        description: List of instructors.
@@ -74,7 +79,7 @@ const router = express.Router();
  *      403:
  *        description: Forbidden.
  *
- * /instructors/:instructor_id:
+ * /instructors/:year/:instructor_id:
  *  get:
  *    tags:
  *      - Instructors
@@ -89,6 +94,12 @@ const router = express.Router();
  *        schema:
  *          type: string
  *        description: The instructor ID.
+ *      - in: path
+ *        name: year
+ *        required: true
+ *        schema:
+ *          type: string
+ *        description: The year the instructor relates to.
  *    responses:
  *      200:
  *        description: Instructor details.
@@ -117,6 +128,12 @@ const router = express.Router();
  *        schema:
  *          type: string
  *        description: The instructor ID.
+ *      - in: path
+ *        name: year
+ *        required: true
+ *        schema:
+ *          type: string
+ *        description: The year the instructor relates to.
  *    requestBody:
  *      required: true
  *      content:
@@ -153,6 +170,12 @@ const router = express.Router();
  *        schema:
  *          type: string
  *        description: The instructor ID.
+ *      - in: path
+ *        name: year
+ *        required: true
+ *        schema:
+ *          type: string
+ *        description: The year the instructor relates to.
  *    responses:
  *      204:
  *        description: Instructor archived.
@@ -163,7 +186,7 @@ const router = express.Router();
  *      404:
  *        description: Instructor not found.
  *
- * /instructors/:instructor_id/assignments:
+ * /instructors/:year/:instructor_id/assignments:
  *  get:
  *    tags:
  *      - Instructors
@@ -184,6 +207,12 @@ const router = express.Router();
  *        schema:
  *          type: integer
  *        description: Optional filter by academic year.
+ *      - in: path
+ *        name: year
+ *        required: true
+ *        schema:
+ *          type: string
+ *        description: The year the instructor relates to.
  *    responses:
  *      200:
  *        description: List of assignments for this instructor.
@@ -199,58 +228,11 @@ const router = express.Router();
  *        description: Forbidden.
  *      404:
  *        description: Instructor not found.
- *
- * /instructors/:instructor_id/snapshot:
- *  post:
- *    tags:
- *      - Instructors
- *    summary: Snapshot an instructor profile
- *    description: >
- *      Duplicate an existing instructor into a new instructor record with a new ID.
- *      Intended for reusing instructor details when preparing a new assignment.
- *    security:
- *      - bearerAuth: []
- *    parameters:
- *      - in: path
- *        name: instructor_id
- *        required: true
- *        schema:
- *          type: string
- *        description: The ID of the instructor to snapshot.
- *    requestBody:
- *      required: false
- *      content:
- *        application/json:
- *          schema:
- *            type: object
- *            properties:
- *              faculty:
- *                type: string
- *                description: Optional faculty to associate with the new instructor.
- *              titleSuffix:
- *                type: string
- *                description: Optional suffix to append to the new instructor title.
- *    responses:
- *      201:
- *        description: Snapshot instructor created.
- *        content:
- *          application/json:
- *            schema:
- *              $ref: '#/components/schemas/Instructor'
- *      400:
- *        description: Invalid snapshot request.
- *      401:
- *        description: Unauthorized.
- *      403:
- *        description: Forbidden.
- *      404:
- *        description: Source instructor not found.
  */
 
 router.get("/instructors", getAllInstructors);
 router.get("/instructors/:instructor_id", getInstructorByID);
 router.get("/instructors/:instructor_id/assignments", getInstructorAssignmentsByID);
-router.post("/instructors/snapshot", snapshotInstructor);
 router.post("/instructors", createInstructor);
 router.patch("/instructors/:instructor_id", updateInstructor);
 

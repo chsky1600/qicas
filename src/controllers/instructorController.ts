@@ -25,8 +25,3 @@ export const updateInstructor = async (_req: Request, _res: Response) => {
 export const getInstructorAssignmentsByID = async (_req: Request, _res: Response) => {
   // TODO: implement instructor assignment lookup
 };
-
-// duplicates an instructor profile into a new record (placeholder copy behaviour)
-export const snapshotInstructor = async (_req: Request, _res: Response) => {
-  // TODO: implement instructor snapshot
-};

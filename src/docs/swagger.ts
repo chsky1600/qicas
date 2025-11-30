@@ -16,6 +16,8 @@ const swaggerDefinition = {
   // can add re-usable object schemas here so that we can use $ref to reference objects in our route definitions 
   components: {
     schemas: {
+      course_rule: {},
+      instructor_rule: {},
       login_credentials : {
         username : {
           type : "string"

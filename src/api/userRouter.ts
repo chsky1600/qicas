@@ -13,7 +13,7 @@ const router = express.Router();
 
 /**
  * @openapi
- * /users/{user_id}:
+ * /users/:user_id:
  *  get:
  *    tags:
  *      - Users
@@ -74,9 +74,9 @@ const router = express.Router();
  *      404:
  *        description: User does not exist
  */
-router.get("/users/{user_id}", getUserByID)
-router.put("/users/{user_id}", updateUserByID)
-router.delete("/users/{user_id}", deleteUserByID)
+router.get("/users/:user_id", getUserByID)
+router.put("/users/:user_id", updateUserByID)
+router.delete("/users/:user_id", deleteUserByID)
 
 /**
  * @openapi
