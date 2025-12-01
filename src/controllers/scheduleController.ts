@@ -23,3 +23,7 @@ export const setWorkingSchedule = async (req : Request, res : Response) => {
 export const createSnapshot = async (req : Request, res : Response) => {
 
 }
+
+export const validateSchedule = async (req : Request, res : Response) => {
+
+}

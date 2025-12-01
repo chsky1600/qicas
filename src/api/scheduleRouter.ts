@@ -5,7 +5,8 @@ import {
     saveSchedule,
     setWorkingSchedule,
     createSnapshot,
-    getSchedules
+    getSchedules,
+    validateSchedule
 } from "../controllers/scheduleController";
 
 const router = express.Router();
@@ -168,10 +169,48 @@ router.put("/schedule/:year/:schedule_id",setWorkingSchedule)
  *        description: Failed to create a snapshot of the given schedule
  * 
  */
-router.get("/schedule",getSchedules)
-router.put("/schedule",saveSchedule)
-router.post("/schedule", createSnapshot)
+router.get("/schedule/:year",getSchedules)
+router.put("/schedule/:year",saveSchedule)
+router.post("/schedule/:year", createSnapshot)
 
+/**
+ * @openapi
+ * /schedule/:year/:schedule_id/validate:
+ *  post:
+ *    tags:
+ *      - Schedule 
+ *    summary: Get the list of all existing schedules in the users faculty.
+ *    security:
+ *      - bearerAuth: []
+ *    description: Get the list of all schedules that exist within the faculty that the user requesting is a part of
+ *    parameters:
+ *      - in: cookie    
+ *        name: token
+ *        schema:
+ *          type: string
+ *      - in: path
+ *        name: year
+ *        required: true
+ *        schema:
+ *          type: string
+ *        description: The year the schedule relates to.
+ *      - in: path
+ *        name: schedule_id
+ *        required: true
+ *        schema:
+ *          type: string
+ *        description: The year the schedule relates to.
+ *    responses:
+ *      200:
+ *        description: OK
+ *        content:
+ *          application/json:
+ *            schema:
+ *              type: array
+ *              items:
+ *                $ref: '#/components/schemas/schedule'
+*/
+router.post("/schedule/:year/:schedule_id/validate",validateSchedule)
 
 export default router;
 
