@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 // optionally filtered by faculty or role
 export const getAllInstructors = async (_req: Request, _res: Response) => {
   // TODO: implement instructor listing logic
+  _res.send("instructors")
 };
 
 // gets an instructor by their ID

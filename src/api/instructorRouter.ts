@@ -7,6 +7,8 @@ import {
   getInstructorByID,
   updateInstructor,
 } from "../controllers/instructorController";
+import { verify } from "crypto";
+import { verifyToken } from "../controllers/authController";
 
 const router = express.Router();
 
@@ -229,6 +231,8 @@ const router = express.Router();
  *      404:
  *        description: Instructor not found.
  */
+
+router.use(verifyToken)
 
 router.get("/instructors", getAllInstructors);
 router.get("/instructors/:instructor_id", getInstructorByID);

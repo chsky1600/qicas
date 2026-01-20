@@ -29,3 +29,5 @@ const router = express.Router();
  *                      
  */
 router.post("/auth", getToken)
+
+export default router;
