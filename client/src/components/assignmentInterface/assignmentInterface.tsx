@@ -1,5 +1,7 @@
 import type { useAssignmentResult } from "@/features/assignment/useAssignment"
 import Course from "./course"
+import Toolbar from './toolbar';
+import './assignmentInterface.css';
 
 function AssignmentInterface({
   sectionState,
@@ -16,34 +18,30 @@ function AssignmentInterface({
   const sectionsList = sectionState?.allIds.map(id => sectionState.byId[id])  
  
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          vite
-        </a>
-        <a href="https://react.dev" target="_blank">
-          ract
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {0}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-      <ul>
-        {sectionsList?.map((section) => (
-          <Course {...section}/>
-        ))}
-      </ul>
-    </>
-  )
-}
+    <div className="assignment-interface">
+      {/* Use the Toolbar component */}
+      <Toolbar />
 
-export default AssignmentInterface
+      {/* Main content area - courses left, instructors right */}
+      <div className="main-content">
+        {/* Left panel - courses */}
+        <div className="courses-panel">
+          <h2>Courses</h2>
+          {/* Course list will go here 
+          <ul>
+            {sectionsList?.map((section) => (
+              <Course {...section}/>
+            ))}
+          </ul>
+          */}
+        </div>
+
+        {/* Right panel - instructors */}
+        <div className="instructors-panel">
+          <h2>Instructors</h2>
+          {/* Instructor grid will go here */}
+        </div>
+      </div>
+    </div>
+  );
+}
