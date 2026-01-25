@@ -1,10 +1,17 @@
-function AssignmentInterface() {
+import type { Section } from "@/features/assignment/assignment.types"
+
+function Course(section : Section)  {
 
   return (
     <>
-      component!
+      <p>
+        Course component!
+      </p>
+      <p>
+        {section.name}
+      </p>
     </>
   )
 }
 
-export default AssignmentInterface
+export default Course

@@ -3,20 +3,14 @@
 //import viteLogo from '/vite.svg'
 //import './App.css'
 import AssignmentInterface from "../components/assignmentInterface/assignmentInterface"
+import { useAssignment } from "@/features/assignment/useAssignment"
 
 
 function AssignmentPage() {
-  //const [count, setCount] = useState(0)
-  
+  const assignmentProperties = useAssignment()
+
   return (
-    <AssignmentInterface
-      //courses={assignment.courses}
-      //instructors={assignment.instructors}
-      //assignments={assignment.assignments}
-      //onAssign={assignment.assign}
-      //loading={assignment.loading}
-      //error={assignment.error}
-    />
+    <AssignmentInterface {...assignmentProperties}/>
   )
 }
 
