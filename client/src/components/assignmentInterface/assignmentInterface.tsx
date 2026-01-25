@@ -3,7 +3,7 @@ import Course from "./course"
 import Toolbar from './toolbar';
 import './assignmentInterface.css';
 
-function AssignmentInterface({
+export default function AssignmentInterface({
   sectionState,
   instructorState,
   loading,
