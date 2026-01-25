@@ -1,0 +1,60 @@
+import type { SectionState, InstructorState } from "./assignment.types";
+import { SectionAvailability } from "./assignment.types";
+
+export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
+  // TODO :
+  // API function to set instructors
+  // mapper function to mapp api: API needs a construction algorithm which converts the database into usable
+  // frontend structure
+
+  // TODO - remove and replace with API and mapper call
+  const sectionStateMock: SectionState = {
+    byId: {
+      "0": {
+        id: "0",
+        name: "intro to french",
+        code: "FREN101",
+        year_introduced: "xx",
+        section_num: 1,
+        availability: SectionAvailability.F,
+        capacity: 200,
+        
+      },
+      "1": {
+        id: "1",
+        name: "intro to french",
+        code: "FREN101",
+        year_introduced: "xx",
+        section_num: 2,
+        availability: SectionAvailability.F,
+        capacity: 200,
+      },
+    },
+    allIds: ["0", "1"],
+  };
+
+  const instructorStateMock: InstructorState = {
+    byId: {
+      "0": {
+        id: "0",
+        name: "John Robbin",
+        positon: {short: "Prof.", long: "Professor"},
+        workload_total: 4,
+        assigned_sections: ["1"],
+      },
+      "1": {
+        id: "0",
+        name: "Erin Erika",
+        positon: {short: "T.F.", long: "Teaching Fellow"},
+        workload_total: 2,
+        assigned_sections: [],
+      },
+    },
+    allIds: ["0", "1"],
+  };
+
+  return {
+    sectionState: sectionStateMock,
+    instructorState: instructorStateMock
+  }
+}

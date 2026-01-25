@@ -1,5 +1,19 @@
-function AssignmentInterface() {
-  
+import type { useAssignmentResult } from "@/features/assignment/useAssignment"
+import Course from "./course"
+
+function AssignmentInterface({
+  sectionState,
+  instructorState,
+  loading,
+  error,
+  refresh,
+  updateSection,
+  updateInstructor,
+  updateAssignment
+}: useAssignmentResult) {
+
+  //TODO functionality to sort sections
+  const sectionsList = sectionState?.allIds.map(id => sectionState.byId[id])  
  
   return (
     <>
@@ -23,6 +37,11 @@ function AssignmentInterface() {
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
+      <ul>
+        {sectionsList?.map((section) => (
+          <Course {...section}/>
+        ))}
+      </ul>
     </>
   )
 }
