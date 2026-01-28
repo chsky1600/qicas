@@ -1,5 +1,6 @@
 import type { useAssignmentResult } from "@/features/assignment/useAssignment"
 import CoursesPanel from "./coursesPanel";
+import InstructorsPanel from "./instructorsPanel";
 import Toolbar from './toolbar';
 import './assignmentInterface.css';
 
@@ -27,11 +28,8 @@ export default function AssignmentInterface({
         {/* Left panel - courses */}
         <CoursesPanel {...sectionState}/>
 
-        {/* Right panel - instructors */}
-        <div className="instructors-panel">
-          <h2>Instructors</h2>
-          {/* Instructor grid will go here */}
-        </div>
+        {/* Right panel - instructors */}        
+        <InstructorsPanel {...instructorState}/>
       </div>
     </div>
   );

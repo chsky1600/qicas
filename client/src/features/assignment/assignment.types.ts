@@ -21,10 +21,10 @@ export const sectionStateEmpty: SectionState = {
 };
 
 export enum SectionAvailability {
-    F,
-    W,
-    FandW,
-    ForW,
+    F = "Fall",
+    W = "Winter",
+    FandW = "Fall/Wint.",
+    ForW = "Full Year",
 }
 
 export type InstructorId = string;
