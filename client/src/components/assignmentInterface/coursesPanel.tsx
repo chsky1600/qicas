@@ -4,7 +4,7 @@ import type { Section, SectionState } from "@/features/assignment/assignment.typ
 import {
   Table,
   TableBody,
-  TableCaption,
+  //TableCaption,
   TableCell,
   TableHead,
   TableHeader,

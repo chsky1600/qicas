@@ -1,4 +1,4 @@
-import type { useAssignmentResult } from "@/features/assignment/useAssignment"
+import type { UseAssignmentResult } from "@/features/assignment/useAssignment"
 import CoursesPanel from "./coursesPanel";
 import InstructorsPanel from "./instructorsPanel";
 import Toolbar from './toolbar';
@@ -14,7 +14,7 @@ export default function AssignmentInterface({
   updateInstructor,
   makeAssignment,
   removeAssignment
-}: useAssignmentResult) {
+}: UseAssignmentResult) {
 
  
   return (
