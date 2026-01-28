@@ -34,7 +34,8 @@ export interface Instructor {
   name: string,
   positon: {short: string, long: string},
   workload_total: number,
-  assigned_sections: SectionId[],
+  fall_assigned: SectionId[],
+  wint_assigned: SectionId[],
   //TODO - warnings?
 }
 

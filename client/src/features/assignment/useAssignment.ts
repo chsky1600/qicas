@@ -4,7 +4,7 @@ import { fetchAssignment } from './assignment.api'
 import * as assignmentType from "./assignment.types";
 
 
-export interface useAssignmentResult {
+export interface UseAssignmentResult {
   sectionState: assignmentType.SectionState;
   instructorState: assignmentType.InstructorState;
   loading: boolean;
@@ -16,7 +16,7 @@ export interface useAssignmentResult {
   removeAssignment: () => void;
 }
 
-export function useAssignment(): useAssignmentResult {
+export function useAssignment(): UseAssignmentResult {
   const [sectionState, setSectionState] = useState<assignmentType.SectionState>(assignmentType.sectionStateEmpty);  
   const [instructorState, setInstructorState] = useState<assignmentType.InstructorState>(assignmentType.instructorStateEmpty);
   const [loading, setLoading] = useState(false);
