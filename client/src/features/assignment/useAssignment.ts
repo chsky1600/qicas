@@ -1,21 +1,24 @@
 import { useCallback, useEffect, useState } from 'react'
 import { fetchAssignment } from './assignment.api'
-import type { SectionState, InstructorState } from "./assignment.types";
+//import type { SectionId, Section, SectionState, InstructorId, Instructor, InstructorState } from "./assignment.types";
+import * as assignmentType from "./assignment.types";
+
 
 export interface useAssignmentResult {
-  sectionState: SectionState | null;
-  instructorState: InstructorState | null;
+  sectionState: assignmentType.SectionState;
+  instructorState: assignmentType.InstructorState;
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
-  updateSection: (updated: SectionState) => void;  
-  updateInstructor: (updated: InstructorState) => void;  
-  updateAssignment: () => void;
+  updateSection: (id: assignmentType.SectionId, updated: assignmentType.Section) => void;  
+  updateInstructor: (id: assignmentType.InstructorId, updated: assignmentType.Instructor) => void;  
+  makeAssignment: () => void;  
+  removeAssignment: () => void;
 }
 
 export function useAssignment(): useAssignmentResult {
-  const [sectionState, setSectionState] = useState<SectionState | null>(null);  
-  const [instructorState, setInstructorState] = useState<InstructorState | null>(null);
+  const [sectionState, setSectionState] = useState<assignmentType.SectionState>(assignmentType.sectionStateEmpty);  
+  const [instructorState, setInstructorState] = useState<assignmentType.InstructorState>(assignmentType.instructorStateEmpty);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -65,7 +68,7 @@ export function useAssignment(): useAssignmentResult {
 
   // User-triggered updates
   // TODO
-  const updateSection = (updated: SectionState) => {
+  const updateSection = (id: assignmentType.SectionId, updated: assignmentType.Section) => {
     console.log(updated)
     /*
     setSections(prev =>
@@ -75,7 +78,7 @@ export function useAssignment(): useAssignmentResult {
   };
 
   // TODO
-  const updateInstructor = (updated: InstructorState) => {
+  const updateInstructor = (id: assignmentType.InstructorId, updated: assignmentType.Instructor) => {
     console.log(updated)
     /*
     setSections(prev =>
@@ -85,7 +88,15 @@ export function useAssignment(): useAssignmentResult {
   };
 
   // TODO
-  const updateAssignment = () => {
+  const makeAssignment = () => {
+    /*
+    setSections(prev =>
+      prev.map(s => (s.id === updated.id ? updated : s))
+    );
+    */
+  };
+
+  const removeAssignment = () => {
     /*
     setSections(prev =>
       prev.map(s => (s.id === updated.id ? updated : s))
@@ -101,6 +112,7 @@ export function useAssignment(): useAssignmentResult {
     refresh: fetchData,
     updateSection,
     updateInstructor,
-    updateAssignment
+    makeAssignment,
+    removeAssignment
   }
 }
