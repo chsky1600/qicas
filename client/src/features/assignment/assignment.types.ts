@@ -1,4 +1,4 @@
-type SectionId = string;
+export type SectionId = string;
 
 export interface Section {
   id: SectionId,
@@ -15,14 +15,19 @@ export interface SectionState {
   allIds: SectionId[];
 }
 
+export const sectionStateEmpty: SectionState = {
+  byId: {},
+  allIds: [],
+};
+
 export enum SectionAvailability {
-    F,
-    W,
-    FandW,
-    ForW,
+    F = "Fall",
+    W = "Winter",
+    FandW = "Fall/Wint.",
+    ForW = "Full Year",
 }
 
-type InstructorId = string;
+export type InstructorId = string;
 
 export interface Instructor {
   id: InstructorId,
@@ -37,3 +42,8 @@ export interface InstructorState {
   byId: Record<SectionId, Instructor>;
   allIds: SectionId[];
 }
+
+export const instructorStateEmpty: InstructorState = {
+  byId: {},
+  allIds: [],
+};

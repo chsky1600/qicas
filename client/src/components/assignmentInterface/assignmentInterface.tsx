@@ -1,5 +1,6 @@
 import type { useAssignmentResult } from "@/features/assignment/useAssignment"
-import Course from "./course"
+import CoursesPanel from "./coursesPanel";
+import InstructorsPanel from "./instructorsPanel";
 import Toolbar from './toolbar';
 import './assignmentInterface.css';
 
@@ -11,11 +12,10 @@ export default function AssignmentInterface({
   refresh,
   updateSection,
   updateInstructor,
-  updateAssignment
+  makeAssignment,
+  removeAssignment
 }: useAssignmentResult) {
 
-  //TODO functionality to sort sections
-  const sectionsList = sectionState?.allIds.map(id => sectionState.byId[id])  
  
   return (
     <div className="assignment-interface">
@@ -24,23 +24,12 @@ export default function AssignmentInterface({
 
       {/* Main content area - courses left, instructors right */}
       <div className="main-content">
-        {/* Left panel - courses */}
-        <div className="courses-panel">
-          <h2>Courses</h2>
-          {/* Course list will go here 
-          <ul>
-            {sectionsList?.map((section) => (
-              <Course {...section}/>
-            ))}
-          </ul>
-          */}
-        </div>
 
-        {/* Right panel - instructors */}
-        <div className="instructors-panel">
-          <h2>Instructors</h2>
-          {/* Instructor grid will go here */}
-        </div>
+        {/* Left panel - courses */}
+        <CoursesPanel {...sectionState}/>
+
+        {/* Right panel - instructors */}        
+        <InstructorsPanel {...instructorState}/>
       </div>
     </div>
   );

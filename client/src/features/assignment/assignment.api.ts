@@ -12,7 +12,7 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
     byId: {
       "0": {
         id: "0",
-        name: "intro to french",
+        name: "intro to french (1)",
         code: "FREN101",
         year_introduced: "xx",
         section_num: 1,
@@ -22,7 +22,7 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       },
       "1": {
         id: "1",
-        name: "intro to french",
+        name: "intro to french (2)",
         code: "FREN101",
         year_introduced: "xx",
         section_num: 2,
