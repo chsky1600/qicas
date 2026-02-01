@@ -1,4 +1,7 @@
+import { Course } from "./course";
 import type { Term } from "./enums";
+import { Instructor } from "./instructor";
+import { Schedule } from "./schedule";
 
 export interface InstructorRule {
   /** Unique identifier for this rule */
@@ -34,11 +37,11 @@ export interface AcademicYear {
   /** Display name (e.g., "2024-2025") */
   name: string;
   /** Schedule IDs associated with this year */
-  schedules: string[];
+  schedules: Schedule[];
   /** Course IDs available this year */
-  courses: string[];
+  courses: Course[];
   /** Instructor IDs available this year */
-  instructors: string[];
+  instructors: Instructor[];
   /** Instructor-specific rules for this year */
   instructor_rules: InstructorRule[];
   /** Course-specific rules for this year */

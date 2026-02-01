@@ -8,6 +8,7 @@ import instructorRouter from "./api/instructorRouter"
 
 import { swaggerSpec } from "./docs/swagger";
 import mongoose from "mongoose";
+import { verifyToken } from "./controllers/authController";
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true 
 
 app.use(apiRouter);
 app.use(authRouter);
+instructorRouter.use(verifyToken)
 app.use(instructorRouter);
 
 // move this to seperate file
