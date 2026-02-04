@@ -18,7 +18,7 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
         section_num: 1,
         availability: SectionAvailability.F,
         capacity: 200,
-        
+        assigned_to: null
       },
       "1": {
         id: "1",
@@ -28,6 +28,7 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
         section_num: 2,
         availability: SectionAvailability.F,
         capacity: 200,
+        assigned_to: "1"
       },
       "2": {
       id: "2",
@@ -71,7 +72,7 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
         wint_assigned: ["0"],
       },
       "1": {
-        id: "0",
+        id: "1",
         name: "Erin Erika",
         positon: {short: "T.F.", long: "Teaching Fellow"},
         workload_total: 2,

@@ -1,11 +1,10 @@
 import type { Section, SectionState } from "@/features/assignment/assignment.types"
-//import Course from "./course"
+import Course from "./course"
 
 import {
   Table,
   TableBody,
   //TableCaption,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -33,13 +32,7 @@ function CoursesPanel(sectionState : SectionState)  {
         </TableHeader>
         <TableBody>
           {sectionsList.map((section) => (
-            <TableRow key={section.id}>
-              <TableCell className="text-center font-medium">{section.code}</TableCell>              
-              <TableCell className="text-center">{section.section_num}</TableCell>
-              <TableCell className="text-center">{section.availability}</TableCell>
-              <TableCell className="text-center">{section.capacity}</TableCell>
-              {/*TODO: dropdown menuing */}
-            </TableRow>
+            <Course {...section}/>
           ))}
         </TableBody>
       </Table>

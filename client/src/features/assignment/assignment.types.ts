@@ -8,6 +8,7 @@ export interface Section {
   section_num: number,
   availability: SectionAvailability,
   capacity: number,
+  assigned_to: InstructorId | null,
 }
 
 export interface SectionState {
