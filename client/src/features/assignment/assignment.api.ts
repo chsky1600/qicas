@@ -29,8 +29,35 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
         availability: SectionAvailability.F,
         capacity: 200,
       },
+      "2": {
+      id: "2",
+      name: "intro to french (3)",
+      code: "FREN101",
+      year_introduced: "xx",
+      section_num: 3,
+      availability: SectionAvailability.F,
+      capacity: 200,
+      },
+      "3": {
+      id: "3",
+      name: "intro to french (4)",
+      code: "FREN101",
+      year_introduced: "xx",
+      section_num: 4,
+      availability: SectionAvailability.F,
+      capacity: 200,
+      },
+      "4": {
+      id: "4",
+      name: "intro to french (5)",
+      code: "FREN101",
+      year_introduced: "xx",
+      section_num: 5,
+      availability: SectionAvailability.F,
+      capacity: 200,
+      },
     },
-    allIds: ["0", "1"],
+    allIds: ["0", "1", "2", "3", "4"],
   };
 
   const instructorStateMock: InstructorState = {
@@ -40,8 +67,8 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
         name: "John Robbin",
         positon: {short: "Prof.", long: "Professor"},
         workload_total: 4,
-        fall_assigned: ["1"],
-        wint_assigned: [],
+        fall_assigned: ["0", "1", "2", "3"],
+        wint_assigned: ["0"],
       },
       "1": {
         id: "0",

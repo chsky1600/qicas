@@ -29,7 +29,7 @@ export default function AssignmentInterface({
         <CoursesPanel {...sectionState}/>
 
         {/* Right panel - instructors */}        
-        <InstructorsPanel {...instructorState}/>
+        <InstructorsPanel instructorState={instructorState} sectionState={sectionState}/>
       </div>
     </div>
   );
