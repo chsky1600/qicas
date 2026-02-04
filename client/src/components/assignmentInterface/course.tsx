@@ -3,12 +3,21 @@ import {
   TableCell,
   TableRow,
 } from "@/components/ui/table"
+import { useDraggable } from "@dnd-kit/core"
 
 
 export default function Course(section : Section)  {
+  const {attributes, listeners, setNodeRef, isDragging} = useDraggable({
+    id: section.id,
+  });
+
+  const style = {
+    transform: undefined, //keeps table element in place
+    opacity: isDragging ? 0.3 : 1,
+  };
 
   return (
-    <TableRow key={section.id}>
+    <TableRow ref={setNodeRef} style={style} {...listeners} {...attributes} key={section.id}>
       <TableCell className="text-center font-medium">{section.code}</TableCell>              
       <TableCell className="text-center">{section.section_num}</TableCell>
       <TableCell className="text-center">{section.availability}</TableCell>
