@@ -112,7 +112,7 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
-
+/* ShadCN stuff */
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
