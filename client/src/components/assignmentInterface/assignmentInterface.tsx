@@ -8,7 +8,6 @@ import { snapCenterToCursor } from '@dnd-kit/modifiers';
 
 import {
   DndContext,
-  closestCenter,
   DragOverlay
 } from "@dnd-kit/core"
 
@@ -32,28 +31,29 @@ export default function AssignmentInterface({
 
   const handleDragStart = (event: DragStartEvent) => {
     setHeldSection(event.active.id);
+    //TODO - remove for more robust testing
+    console.log(`INFO: holding section id (${event.active.id})`)
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
     setHeldSection(null);
     const {active, over} = event
+    
+    //TODO - remove for more robust testing
+    console.log(`INFO: dropping section id (${active.id})`)    
+    console.log(`INFO: onto instructor id (${over?.id})`)
 
-    console.log(active)
-    console.log(active.id)
-    console.log(over)
-    console.log(over?.id)
+    const sectionDrag = active.data.current
+    const instructorDrop = over?.data.current
 
-    /*
-    // TODO - assignment functionality
-    if (!over || active.id === over.id) return;
-
-    setItems((items) => {
-      const oldIndex = items.findIndex(i => i.id === active.id);
-      const newIndex = items.findIndex(i => i.id === over.id);
-
-      return arrayMove(items, oldIndex, newIndex);
-    });
-    */
+    // if drop is not an instructor or drag is not a section, to not continue
+    if (instructorDrop?.type !== "instructor" || sectionDrag?.type !== "section"){
+      console.log(`WARN: ${active.id} is not a section or ${over?.id} is not an instructor`)
+      return
+    }
+    
+    // Call the assignment function with all the neccisary data
+    makeAssignment(sectionDrag.sectionId, instructorDrop.instructorId, instructorDrop.term, sectionDrag.prevInstructorId)
   }
  
   return (
@@ -67,7 +67,6 @@ export default function AssignmentInterface({
 
         <DndContext
           modifiers={[snapCenterToCursor]}
-          collisionDetection={closestCenter}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}
         >
