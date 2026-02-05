@@ -2,7 +2,7 @@ import * as mongoose from 'mongoose'
 
 import { User } from '../../types/user';
 
-const userSchema = new mongoose.Schema<User>(
+export const userSchema = new mongoose.Schema<User>(
     {
         id : {type : String, required: true},
         faculty_id : {type : String, required: true},
@@ -12,6 +12,5 @@ const userSchema = new mongoose.Schema<User>(
     }
 );
 
-export const userSchema
 export type UserModel = mongoose.InferSchemaType<typeof userSchema>;
 export const UserModel = mongoose.model("User", userSchema);
