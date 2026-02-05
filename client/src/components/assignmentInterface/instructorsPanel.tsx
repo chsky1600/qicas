@@ -6,7 +6,6 @@ import Instructor from "./instructor"
 import {
   Table,
   TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
