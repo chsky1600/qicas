@@ -35,14 +35,14 @@ export interface Instructor {
   name: string,
   positon: {short: string, long: string},
   workload_total: number,
-  fall_assigned: SectionId[],
-  wint_assigned: SectionId[],
+  fall_assigned: Set<SectionId>,
+  wint_assigned: Set<SectionId>,
   //TODO - warnings?
 }
 
 export interface InstructorState {
-  byId: Record<SectionId, Instructor>;
-  allIds: SectionId[];
+  byId: Record<InstructorId, Instructor>;
+  allIds: InstructorId[];
 }
 
 export const instructorStateEmpty: InstructorState = {

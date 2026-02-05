@@ -8,7 +8,12 @@ import { useDraggable } from "@dnd-kit/core"
 
 export default function Course(section : Section)  {
   const {attributes, listeners, setNodeRef, isDragging} = useDraggable({
-    id: section.id,
+    id: section.id,    
+      data: {
+        type: "section",
+        sectionId: section.id,
+        prevInstructorId: section.assigned_to,
+      }
   });
 
   const style = {
