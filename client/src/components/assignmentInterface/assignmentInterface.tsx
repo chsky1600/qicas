@@ -76,7 +76,7 @@ export default function AssignmentInterface({
           {/* Right panel - instructors */}        
           <InstructorsPanel instructorState={instructorState} sectionState={sectionState}/>
 
-          <DragOverlay>
+          <DragOverlay dropAnimation={null}>
             {heldSection ? (
               <span key={heldSection}  className="bg-green-500 text-white px-2 py-1 rounded text-sm content-center">
                 {sectionState.byId[heldSection].code}
