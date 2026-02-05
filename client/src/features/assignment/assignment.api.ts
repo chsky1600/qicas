@@ -17,6 +17,7 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
         year_introduced: "xx",
         section_num: 1,
         availability: SectionAvailability.F,
+        
         capacity: 200,
         assigned_to: null
       },
@@ -38,6 +39,7 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       section_num: 3,
       availability: SectionAvailability.F,
       capacity: 200,
+      assigned_to: "1"
       },
       "3": {
       id: "3",
@@ -47,6 +49,7 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       section_num: 4,
       availability: SectionAvailability.F,
       capacity: 200,
+      assigned_to: "1"
       },
       "4": {
       id: "4",
@@ -56,6 +59,7 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       section_num: 5,
       availability: SectionAvailability.F,
       capacity: 200,
+      assigned_to: "1"
       },
     },
     allIds: ["0", "1", "2", "3", "4"],
