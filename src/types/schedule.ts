@@ -5,8 +5,8 @@ export interface Assignment {
   id: string;
   /** Validation degree (computed, not persisted) */
   degree: AssignmentDegree;
-  /** Reference to the faculty this assignment belongs to */
-  faculty_id: string;
+  /** Reference to the instructor being assigned */
+  intructor_id: string;
   /** Reference to the section being assigned */
   section_id: string;
   /** Course code for the assigned course */
@@ -20,6 +20,8 @@ export interface Schedule {
   id: string;
   /** Display name for the schedule */
   name: string;
+  /** Reference to the assignment's schedule's year  */
+  year_id: string;
   /** When the schedule was created */
   date_created: Date;
   /** Whether this is a release candidate */
