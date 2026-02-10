@@ -1,18 +1,15 @@
 import { Request, Response } from "express";
 
-export const readUser = async (req : Request, res : Response) => {
-
-}
+// users are standalone from any faculty, but are added to them
+// Description of this thjing
+export const getUserByID = async (req : Request, res : Response) => {}
 
 export const createUser = async (req : Request, res : Response) => {
-
+    
 }
 
-export const updateUser = async (req : Request, res : Response) => {
+export const getAllUsers = async (req : Request, res : Response) => {}
 
-}
+export const updateUserByID = async (req : Request, res : Response) => {}
 
-export const deleteUser = async (req : Request, res : Response) => {
-
-}
-
+export const deleteUserByID = async (req : Request, res : Response) => {}

@@ -25,8 +25,3 @@ export const updateCourse = async (req : Request, res : Response) => {
 export const getCourseAssignmentsbyID = async (req : Request, res : Response) => {
 
 }
-
-// dupliucates some course's contents under a new course object with a new ID
-export const snapshotCourse = async (req : Request, res : Response) => {
-
-}

@@ -4,7 +4,6 @@ import {
     getAllCourses,
     getCourseByID,
     getCourseAssignmentsbyID,
-    snapshotCourse,
     createCourse,
     updateCourse
 } from "../controllers/courseController";
@@ -13,7 +12,7 @@ const router = express.Router();
 
 /**
  * @openapi
- * /courses:
+ * /courses/:year:
  *  get:
  *    tags:
  *      - Courses
@@ -35,6 +34,12 @@ const router = express.Router();
  *        schema:
  *          type: integer
  *        description: Optional filter by academic year.
+ *      - in: path
+ *        name: year
+ *        required: true
+ *        schema:
+ *          type: string
+ *        description: The year the course relates to.
  *    responses:
  *      200:
  *        description: List of courses.
@@ -74,7 +79,7 @@ const router = express.Router();
  *      403:
  *        description: Forbidden.
  * 
- * /courses/:course_id:
+ * /courses/:year/:course_id:
  *  get:
  *    tags:
  *      - Courses
@@ -89,6 +94,12 @@ const router = express.Router();
  *        schema:
  *          type: string
  *        description: The course ID.
+ *      - in: path
+ *        name: year
+ *        required: true
+ *        schema:
+ *          type: string
+ *        description: The year the course relates to.
  *    responses:
  *      200:
  *        description: Course details.
@@ -117,6 +128,12 @@ const router = express.Router();
  *        schema:
  *          type: string
  *        description: The course ID.
+ *      - in: path
+ *        name: year
+ *        required: true
+ *        schema:
+ *          type: string
+ *        description: The year the course relates to.
  *    requestBody:
  *      required: true
  *      content:
@@ -153,6 +170,12 @@ const router = express.Router();
  *        schema:
  *          type: string
  *        description: The course ID.
+ *      - in: path
+ *        name: year
+ *        required: true
+ *        schema:
+ *          type: string
+ *        description: The year the course relates to.
  *    responses:
  *      204:
  *        description: Course archived.
@@ -163,7 +186,7 @@ const router = express.Router();
  *      404:
  *        description: Course not found.
  *
- * /courses/:course_id/assignments:
+ * /courses/:year/:course_id/assignments:
  *  get:
  *    tags:
  *      - Courses
@@ -184,6 +207,12 @@ const router = express.Router();
  *        schema:
  *          type: integer
  *        description: Optional filter by academic year.
+ *      - in: path
+ *        name: year
+ *        required: true
+ *        schema:
+ *          type: string
+ *        description: The year the course relates to.
  *    responses:
  *      200:
  *        description: List of assignments for this course.
@@ -199,61 +228,12 @@ const router = express.Router();
  *        description: Forbidden.
  *      404:
  *        description: Course not found.
- *
- * /courses/:course_id/snapshot:
- *  post:
- *    tags:
- *      - Courses
- *    summary: Snapshot a course
- *    description: >
- *      Duplicate an existing course into a new course object with a new ID.
- *      Intended for reusing course details when preparing a new offering.
- *    security:
- *      - bearerAuth: []
- *    parameters:
- *      - in: path
- *        name: course_id
- *        required: true
- *        schema:
- *          type: string
- *        description: The ID of the course to snapshot.
- *    requestBody:
- *      required: false
- *      content:
- *        application/json:
- *          schema:
- *            type: object
- *            properties:
- *              year:
- *                type: integer
- *                description: Optional academic year to associate with the new course record.
- *              titleSuffix:
- *                type: string
- *                description: Optional suffix to append to the new course title.
- *    responses:
- *      201:
- *        description: Snapshot course created.
- *        content:
- *          application/json:
- *            schema:
- *              $ref: '#/components/schemas/Course'
- *      400:
- *        description: Invalid snapshot request.
- *      401:
- *        description: Unauthorized.
- *      403:
- *        description: Forbidden.
- *      404:
- *        description: Source course not found.
  */
 
-router.get("/courses", getAllCourses);
-router.get("/courses/:course_id", getCourseByID);
-router.get("/courses/:course_id/assignments", getCourseAssignmentsbyID);
-router.post("/courses/snapshot", snapshotCourse);
-router.post("/courses", createCourse);
-router.patch("/courses/:course_id", updateCourse);
-
-
+router.get("/courses/:year", getAllCourses);
+router.get("/courses/:year/:course_id", getCourseByID);
+router.get("/courses/:year/:course_id/assignments", getCourseAssignmentsbyID);
+router.post("/courses/:year", createCourse);
+router.patch("/courses/:year/:course_id", updateCourse);
 
 export default router;

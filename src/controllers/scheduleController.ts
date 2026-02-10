@@ -4,8 +4,7 @@ export const getScheduleByID = async (req : Request, res : Response) => {
 
 }
 
-// mainly to look at all snapshots for selection
-export const getSchedulesByFacultyID = async (req : Request, res : Response) => {
+export const getSchedules = async (req : Request, res : Response) => {
 
 }
 
@@ -22,5 +21,9 @@ export const setWorkingSchedule = async (req : Request, res : Response) => {
 
 // duplicates the given schedule and gives it a new ID and sets it to the current schedule?
 export const createSnapshot = async (req : Request, res : Response) => {
+
+}
+
+export const validateSchedule = async (req : Request, res : Response) => {
 
 }

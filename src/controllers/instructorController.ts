@@ -4,6 +4,7 @@ import { Request, Response } from "express";
 // optionally filtered by faculty or role
 export const getAllInstructors = async (_req: Request, _res: Response) => {
   // TODO: implement instructor listing logic
+  _res.send("instructors")
 };
 
 // gets an instructor by their ID
@@ -24,9 +25,4 @@ export const updateInstructor = async (_req: Request, _res: Response) => {
 // gets all course or schedule assignments where this instructor is involved
 export const getInstructorAssignmentsByID = async (_req: Request, _res: Response) => {
   // TODO: implement instructor assignment lookup
-};
-
-// duplicates an instructor profile into a new record (placeholder copy behaviour)
-export const snapshotInstructor = async (_req: Request, _res: Response) => {
-  // TODO: implement instructor snapshot
 };

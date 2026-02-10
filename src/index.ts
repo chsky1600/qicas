@@ -1,21 +1,27 @@
 import express from "express";
 import cors from "cors";
-import swaggerUi from "swagger-ui-express";
 
 import apiRouter from "./api";
-import { swaggerSpec } from "./docs/swagger";
+import authRouter from "./api/authRouter"
+import instructorRouter from "./api/instructorRouter"
+
+import { connectDB } from "./db/connection";
+import { verifyToken } from "./controllers/authController";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-// Serve interactive API docs generated from JSDoc annotations.
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
-
 app.use(apiRouter);
+app.use(authRouter);
+instructorRouter.use(verifyToken)
+app.use(instructorRouter);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+  });
 });
