@@ -19,8 +19,27 @@ export async function getYearConstraints(
     id: year_id,
     name: "2024-2025",
     schedules: [],
-    courses: ["CISC101", "CISC121", "CISC124", "CISC203", "CISC204"],
-    instructors: ["inst-1", "inst-2", "inst-3"],
+    courses: [
+      { id: "c-1", name: "Intro to Computing", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [{ id: "s-1", number: 1 }, { id: "s-2", number: 2 }, { id: "s-3", number: 3 }] },
+      { id: "c-2", name: "Intro to Computer Science", code: "CISC121", level: "undergrad1", year_introduced: "2000", notes: [], sections: [{ id: "s-4", number: 1 }] },
+      { id: "c-3", name: "Intro to CS II", code: "CISC124", level: "undergrad1", year_introduced: "2000", notes: [], sections: [{ id: "s-5", number: 1 }] },
+      { id: "c-4", name: "Data Structures", code: "CISC203", level: "undergrad2", year_introduced: "2000", notes: [], sections: [{ id: "s-6", number: 1 }] },
+      { id: "c-5", name: "Logic for Computing", code: "CISC204", level: "undergrad2", year_introduced: "2000", notes: [], sections: [{ id: "s-7", number: 1 }] },
+    ],
+    instructors: [
+      { id: "inst-1", name: "Dr. Smith", workload: 3, email: "smith@queensu.ca", rank: "FullProfessor", prev_taught: [
+        { id: "c-1", name: "Intro to Computing", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [] },
+        { id: "c-5", name: "Logic for Computing", code: "CISC204", level: "undergrad2", year_introduced: "2000", notes: [], sections: [] },
+      ], notes: [] },
+      { id: "inst-2", name: "Dr. Jones", workload: 4, email: "jones@queensu.ca", rank: "AssociateProfessor", prev_taught: [
+        { id: "c-1", name: "Intro to Computing", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [] },
+        { id: "c-2", name: "Intro to Computer Science", code: "CISC121", level: "undergrad1", year_introduced: "2000", notes: [], sections: [] },
+      ], notes: [] },
+      { id: "inst-3", name: "Dr. Lee", workload: 4, email: "lee@queensu.ca", rank: "AssistantProfessor", prev_taught: [
+        { id: "c-3", name: "Intro to CS II", code: "CISC124", level: "undergrad1", year_introduced: "2000", notes: [], sections: [] },
+        { id: "c-4", name: "Data Structures", code: "CISC203", level: "undergrad2", year_introduced: "2000", notes: [], sections: [] },
+      ], notes: [] },
+    ],
     instructor_rules: [
       {
         id: "ir-1",

@@ -2,16 +2,25 @@ import { CourseLevel } from "./enums";
 import { Note } from "./note";
 
 export interface Section {
+    /** Unique identifier for this section */
     id: string;
+    /** Section number */
     number: number;
 }
 
 export interface Course {
+    /** Unique identifier for this course */
     id: string;
-    name : string;
+    /** Display name of the course */
+    name: string;
+    /** Department course code (e.g., "CISC101") */
     code: string;
-    level: CourseLevel
+    /** Academic level classification */
+    level: CourseLevel;
+    /** Year the course was first introduced */
     year_introduced: string;
+    /** Administrative or contextual notes */
     notes: Note[];
-    sections: Section[]
+    /** Sections offered for this course */
+    sections: Section[];
 }
