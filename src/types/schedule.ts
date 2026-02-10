@@ -6,7 +6,7 @@ export interface Assignment {
   /** Validation degree (computed, not persisted) */
   degree: AssignmentDegree;
   /** Reference to the instructor being assigned */
-  intructor_id: string;
+  instructor_id: string;
   /** Reference to the section being assigned */
   section_id: string;
   /** Course code for the assigned course */

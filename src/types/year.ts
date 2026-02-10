@@ -38,7 +38,7 @@ export interface AcademicYear {
   name: string;
   /** Schedule IDs associated with this year */
   schedules: Schedule[];
-  /** Course IDs available this year */
+  /** Courses available this year */
   courses: Course[];
   /** Instructor IDs available this year */
   instructors: Instructor[];

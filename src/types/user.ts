@@ -1,12 +1,16 @@
+export type UserRole = "department_head" | "department_support";
+
 export interface User {
-  /** Unique identifier for this assignment */
+  /** Unique identifier for this user */
   id: string;
-  /** Validation degree (computed, not persisted) */
+  /** Reference to the user's faculty */
   faculty_id: string;
-
-  name : string;
-
-  email : string;
-
-  password : string;
+  /** Full name of the user */
+  name: string;
+  /** Email address */
+  email: string;
+  /** Hashed password */
+  password: string;
+  /** Authorization level determining edit vs read-only access */
+  role: UserRole;
 }

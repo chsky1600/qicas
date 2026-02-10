@@ -19,7 +19,7 @@ export interface Violation {
 
 export interface ValidationResult {
   /** Overall degree for the candidate assignment */
-  degree: "valid" | ViolationDegree;
-  /** List of violations (empty if valid) */
+  degree: "Valid" | ViolationDegree;
+  /** List of violations (empty if schedule valid) */
   violations: Violation[];
 }
