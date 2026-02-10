@@ -20,7 +20,7 @@ export interface Schedule {
   id: string;
   /** Display name for the schedule */
   name: string;
-  /** Reference to the assignment's schedule's year  */
+  /** Reference to the schedule's associated academic year */
   year_id: string;
   /** When the schedule was created */
   date_created: Date;

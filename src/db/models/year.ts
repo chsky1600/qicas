@@ -12,6 +12,7 @@ const instructorRuleSchema = new mongoose.Schema<InstructorRule>(
         designations: {type: [String], required: true},
         workload_delta: {type: Number, required: true},
         courses: {type: [String], required: true},
+        declined_courses: {type: [String], required: true},
     }
 )
 
@@ -26,6 +27,7 @@ const courseRuleSchema = new mongoose.Schema<CourseRule>(
         workload_fulfillment: {type: Number, required: true},
         is_full_year : {type : Boolean, required: true},
         sections_available: {type: [String], required: true},
+        is_external: {type: Boolean, required: true},
     }
 )
 
