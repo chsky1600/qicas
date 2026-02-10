@@ -1,6 +1,20 @@
-import * as mongoose from 'mongoose'
+import mongoose from "mongoose";
 
-const uri = "mongodb://127.0.0.1:27017/mongoose-app"
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/qicas";
 
-// lowkey idk how this works, docs aren't too insightful on the connection obj's usage
-export const connection = mongoose.createConnection(uri)
+export async function connectDB(): Promise<void> {
+  try {
+    await mongoose.connect(MONGO_URI);
+    console.log("MongoDB connected successfully");
+  } catch (error) {
+    console.error("MongoDB connection error:", error);
+    process.exit(1);
+  }
+}
+
+export async function disconnectDB(): Promise<void> {
+  await mongoose.disconnect();
+  console.log("MongoDB disconnected");
+}
+
+export { mongoose };
