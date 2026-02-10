@@ -20,6 +20,7 @@ export const scheduleSchema = new mongoose.Schema<Schedule>(
     {
         id : {type : String, required: true},
         name: {type : String, required: true},
+        year_id : {type : String, required: true},
         date_created : {type : Date, required: true},
         is_rc : {type : Boolean, required: true},
         assignments : { type: [assignmentSchema], required:true}

@@ -14,6 +14,8 @@ export interface InstructorRule {
   workload_delta: number;
   /** Specific courses this instructor is assigned/restricted to */
   courses: string[];
+  /** Courses this instructor has declined their right of refusal for */
+  declined_courses: string[];
 }
 
 export interface CourseRule {
@@ -29,6 +31,8 @@ export interface CourseRule {
   is_full_year: boolean;
   /** Section numbers available for this course */
   sections_available: string[];
+  /** Whether this course is offered by an external faculty */
+  is_external: boolean;
 }
 
 export interface AcademicYear {

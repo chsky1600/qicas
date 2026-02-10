@@ -47,6 +47,7 @@ export async function getYearConstraints(
         designations: ["undergrad-coordinator"],
         workload_delta: -1,
         courses: [],
+        declined_courses: [],
       },
       {
         id: "ir-2",
@@ -54,6 +55,7 @@ export async function getYearConstraints(
         designations: [],
         workload_delta: 0,
         courses: ["CISC101", "CISC121"],
+        declined_courses: [],
       },
     ],
     course_rules: [
@@ -64,6 +66,7 @@ export async function getYearConstraints(
         workload_fulfillment: 1,
         is_full_year: false,
         sections_available: ["001", "002", "003"],
+        is_external: false,
       },
       {
         id: "cr-2",
@@ -72,6 +75,7 @@ export async function getYearConstraints(
         workload_fulfillment: 1,
         is_full_year: false,
         sections_available: ["001"],
+        is_external: false,
       },
     ],
   };
