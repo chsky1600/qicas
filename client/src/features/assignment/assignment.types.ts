@@ -6,6 +6,7 @@ export interface Section {
   code: string,
   year_introduced: string,
   section_num: number,
+  workload: number,
   availability: SectionAvailability,
   capacity: number,
   assigned_to: InstructorId | null,
@@ -33,8 +34,11 @@ export type InstructorId = string;
 export interface Instructor {
   id: InstructorId,
   name: string,
-  positon: {short: string, long: string},
+  position: {short: string, long: string},
+  email: string,
   workload_total: number,
+  modifier: number,
+  notes: string,
   fall_assigned: SectionId[],
   wint_assigned: SectionId[],
   //TODO - warnings?

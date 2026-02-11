@@ -10,7 +10,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
   return (
     <TableRow key={instructor.id}>
       <TableCell className="text-center font-medium">
-        {instructor.positon.short + " " + instructor.name}
+        {instructor.position.short + " " + instructor.name}
       </TableCell>
       <TableCell className="text-center w-12">
         {(instructor.fall_assigned.length + instructor.wint_assigned.length) + "/" + instructor.workload_total}

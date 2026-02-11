@@ -16,8 +16,8 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
         code: "FREN101",
         year_introduced: "xx",
         section_num: 1,
+        workload: 1,
         availability: SectionAvailability.F,
-        
         capacity: 200,
         assigned_to: null
       },
@@ -27,6 +27,7 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
         code: "FREN101",
         year_introduced: "xx",
         section_num: 2,
+        workload: 1,
         availability: SectionAvailability.F,
         capacity: 200,
         assigned_to: "1"
@@ -37,6 +38,7 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       code: "FREN101",
       year_introduced: "xx",
       section_num: 3,
+      workload: 1,
       availability: SectionAvailability.F,
       capacity: 200,
       assigned_to: "1"
@@ -47,6 +49,7 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       code: "FREN101",
       year_introduced: "xx",
       section_num: 4,
+      workload: 1,
       availability: SectionAvailability.F,
       capacity: 200,
       assigned_to: "1"
@@ -57,6 +60,7 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       code: "FREN101",
       year_introduced: "xx",
       section_num: 5,
+      workload: 1,
       availability: SectionAvailability.F,
       capacity: 200,
       assigned_to: "1"
@@ -70,16 +74,22 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       "0": {
         id: "0",
         name: "John Robbin",
-        positon: {short: "Prof.", long: "Professor"},
+        position: {short: "Prof.", long: "Professor"},
+        email: "jr@queensu.ca",
         workload_total: 4,
+        modifier: 0,
+        notes: "",
         fall_assigned: ["0", "1", "2", "3"],
         wint_assigned: ["0"],
       },
       "1": {
         id: "1",
         name: "Erin Erika",
-        positon: {short: "T.F.", long: "Teaching Fellow"},
+        position: {short: "T.F.", long: "Teaching Fellow"},
+        email: "ee@queensu.ca",
         workload_total: 2,
+        modifier: 0,
+        notes: "",
         fall_assigned: [],
         wint_assigned: [],
       },

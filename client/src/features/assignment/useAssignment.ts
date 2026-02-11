@@ -69,22 +69,19 @@ export function useAssignment(): UseAssignmentResult {
   // User-triggered updates
   // TODO
   const updateSection = (id: assignmentType.SectionId, updated: assignmentType.Section) => {
-    console.log(updated)
-    /*
-    setSections(prev =>
-      prev.map(s => (s.id === updated.id ? updated : s))
-    );
-    */
+    setSectionState(prev => ({
+      ...prev,
+      byId: { ...prev.byId, [id]: updated },
+      }));
   };
 
   // TODO
   const updateInstructor = (id: assignmentType.InstructorId, updated: assignmentType.Instructor) => {
     console.log(updated)
-    /*
-    setSections(prev =>
-      prev.map(s => (s.id === updated.id ? updated : s))
-    );
-    */
+    setInstructorState(prev => ({
+      ...prev,
+      byId: { ...prev.byId, [id]: updated },
+      }));
   };
 
   // TODO

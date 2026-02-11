@@ -1,9 +1,15 @@
 import './toolbar.css';
-import type { SectionState, InstructorState } from '@/features/assignment/assignment.types';
+import type { SectionState, InstructorState, Section, Instructor } from '@/features/assignment/assignment.types';
 import { useState } from 'react';
 import PropertiesDialog from './propertiesDialog';
 
-export default function Toolbar({sectionState, instructorState}: {sectionState: SectionState, instructorState: InstructorState}) {
+export default function Toolbar({sectionState, instructorState, updateSection, updateInstructor}: {
+  sectionState: SectionState, 
+  instructorState: InstructorState, 
+  updateSection: (id: string, updated: Section) => void, 
+  updateInstructor: (id: string, updated: Instructor) => void
+}) {
+
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
   return (
     <div className="toolbar">

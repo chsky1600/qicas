@@ -59,7 +59,12 @@ export default function AssignmentInterface({
   return (
     <div className="assignment-interface">
       {/* Use the Toolbar component */}
-      <Toolbar sectionState={sectionState} instructorState={instructorState}/>
+      <Toolbar 
+        sectionState={sectionState} 
+        instructorState={instructorState}
+        updateSection={updateSection}
+        updateInstructor={updateInstructor}
+      />
 
       {/* Main content area - courses left, instructors right */}
       <div className="main-content">

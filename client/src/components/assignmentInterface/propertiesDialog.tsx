@@ -31,7 +31,7 @@ export default function PropertiesDialog({
     if (mode === "instructors") {
       return instructorState.allIds.map((id) => {
         const instructor = instructorState.byId[id]
-        return `${instructor.positon.short} ${instructor.name}`
+        return `${instructor.position.short} ${instructor.name}`
       })
     }
 
