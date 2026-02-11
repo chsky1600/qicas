@@ -54,7 +54,14 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
           Settings
         </button>
       </div>
-      <PropertiesDialog isOpen={isPropertiesOpen} onClose={() => setIsPropertiesOpen(false)} sectionState={sectionState} instructorState={instructorState} />
+      <PropertiesDialog
+        isOpen={isPropertiesOpen}
+        onClose={() => setIsPropertiesOpen(false)}
+        sectionState={sectionState}
+        instructorState={instructorState}
+        onUpdateSection={updateSection}
+        onUpdateInstructor={updateInstructor}
+      />
     </div>
   );
 }

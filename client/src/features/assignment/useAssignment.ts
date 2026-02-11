@@ -77,7 +77,6 @@ export function useAssignment(): UseAssignmentResult {
 
   // TODO
   const updateInstructor = (id: assignmentType.InstructorId, updated: assignmentType.Instructor) => {
-    console.log(updated)
     setInstructorState(prev => ({
       ...prev,
       byId: { ...prev.byId, [id]: updated },
