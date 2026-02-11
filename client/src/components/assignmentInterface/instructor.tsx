@@ -21,7 +21,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
             const section = sectionState.byId[sectionId];
             return section ? (
               <span key={sectionId} className="bg-green-500 text-white px-2 py-1 rounded text-sm">
-                {section.code}
+                {section.dept} {section.code}
               </span>
             ) : null;
           })}
@@ -33,7 +33,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
             const section = sectionState.byId[sectionId];
             return section ? (
               <span key={sectionId} className="bg-green-500 text-white px-2 py-1 rounded text-sm">
-                {section.code}
+                {section.dept} {section.code}
               </span>
             ) : null;
           })}

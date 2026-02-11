@@ -13,7 +13,8 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       "0": {
         id: "0",
         name: "intro to french (1)",
-        code: "FREN101",
+        dept: "FREN",
+        code: "101",
         year_introduced: "xx",
         section_num: 1,
         workload: 1,
@@ -24,7 +25,8 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       "1": {
         id: "1",
         name: "intro to french (2)",
-        code: "FREN101",
+        dept: "FREN",
+        code: "101",
         year_introduced: "xx",
         section_num: 2,
         workload: 1,
@@ -35,7 +37,8 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       "2": {
       id: "2",
       name: "intro to french (3)",
-      code: "FREN101",
+      dept: "FREN",
+      code: "101",
       year_introduced: "xx",
       section_num: 3,
       workload: 1,
@@ -46,7 +49,8 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       "3": {
       id: "3",
       name: "intro to french (4)",
-      code: "FREN101",
+      dept: "FREN",
+      code: "101",
       year_introduced: "xx",
       section_num: 4,
       workload: 1,
@@ -57,7 +61,8 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       "4": {
       id: "4",
       name: "intro to french (5)",
-      code: "FREN101",
+      dept: "FREN",
+      code: "101",
       year_introduced: "xx",
       section_num: 5,
       workload: 1,

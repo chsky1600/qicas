@@ -85,7 +85,7 @@ export default function AssignmentInterface({
           <DragOverlay>
             {heldSection ? (
               <span key={heldSection}  className="bg-green-500 text-white px-2 py-1 rounded text-sm content-center">
-                {sectionState.byId[heldSection].code}
+                {sectionState.byId[heldSection].dept} {sectionState.byId[heldSection].code}
               </span>
             ): null}
           </DragOverlay>        
