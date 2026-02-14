@@ -6,7 +6,7 @@ import type {
   Violation,
   ViolationDegree,
 } from "../types";
-import type { CourseLevel, InstructorRank } from "../types/enums";
+import type { CourseLevel, InstructorRank, Term } from "../types/enums";
 import { getYearConstraints } from "./yearService";
 import { applyCandidate } from "./scheduleService";
 
@@ -94,11 +94,33 @@ export function checkCourseRules(
   projected: Schedule,
   candidate: Assignment
 ): Violation[] {
-  // TODO: Implement course rule checks
-  // - Verify course is offered in candidate.term (terms_offered)
-  // - Check section availability (sections_available)
-  // - Check for course conflict groups
-  return [];
+  const violations: Violation[] = [];
+  const rule = ctx.course_rules.find(r => r.course_code === candidate.course_code);
+
+  // --- CROSS_TERM_DUPLICATE (Info) ---
+  // An instructor is assigned to the same course in both terms and the course is not full-year.
+  if (rule && !rule.is_full_year) {
+    const otherTerm: Term = candidate.term === "Fall" ? "Winter" : "Fall";
+    const duplicate = projected.assignments.find(
+      a =>
+        a.id !== candidate.id &&
+        a.instructor_id === candidate.instructor_id &&
+        a.course_code === candidate.course_code &&
+        a.term === otherTerm
+    );
+    if (duplicate) {
+      violations.push({
+        id: `v-cross-term-${candidate.id}`,
+        type: "Course",
+        offending_id: candidate.course_code,
+        code: "CROSS_TERM_DUPLICATE",
+        message: `Instructor ${candidate.instructor_id} is assigned to ${candidate.course_code} in both Fall and Winter, but this course is not full-year.`,
+        degree: "Info",
+      });
+    }
+  }
+
+  return violations;
 }
 
 /**
