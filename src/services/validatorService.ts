@@ -6,6 +6,7 @@ import type {
   Violation,
   ViolationDegree,
 } from "../types";
+import type { CourseLevel, InstructorRank } from "../types/enums";
 import { getYearConstraints } from "./yearService";
 import { applyCandidate } from "./scheduleService";
 
@@ -13,6 +14,45 @@ import { applyCandidate } from "./scheduleService";
  * Service for validating assignments against academic year rules.
  * Violations are computed on-demand and never persisted.
  */
+
+const CO_TEACHING_LIMIT = 2;
+
+const RANK_ELIGIBILITY: Record<CourseLevel, InstructorRank[]> = {
+  undergrad1: [
+    "FullProfessor", "AssociateProfessor", "AssistantProfessor",
+    "ContinuingAdjunct",
+    "TermAdjunctGRoR", "TermAdjunctSRoR", "TermAdjunctBasic",
+    "TeachingFellow", "ExchangeFellow", "Other",
+  ],
+  undergrad2: [
+    "FullProfessor", "AssociateProfessor", "AssistantProfessor",
+    "ContinuingAdjunct",
+    "TermAdjunctGRoR", "TermAdjunctSRoR", "TermAdjunctBasic",
+    "TeachingFellow", "ExchangeFellow", "Other",
+  ],
+  undergrad3: [
+    "FullProfessor", "AssociateProfessor", "AssistantProfessor",
+    "ContinuingAdjunct",
+    "TermAdjunctGRoR", "TermAdjunctSRoR", "TermAdjunctBasic",
+    "ExchangeFellow", "Other",
+  ],
+  undergrad4: [
+    "FullProfessor", "AssociateProfessor", "AssistantProfessor",
+    "ContinuingAdjunct",
+    "TermAdjunctGRoR", "TermAdjunctSRoR", "TermAdjunctBasic",
+    "ExchangeFellow", "Other",
+  ],
+  literature: [
+    "FullProfessor", "AssociateProfessor", "AssistantProfessor",
+    "ContinuingAdjunct",
+    "TermAdjunctGRoR", "TermAdjunctSRoR", "TermAdjunctBasic",
+    "ExchangeFellow", "Other",
+  ],
+  graduate: [
+    "FullProfessor", "AssociateProfessor", "AssistantProfessor",
+    "ContinuingAdjunct",
+  ],
+};
 
 /**
  * Validates a candidate assignment against all rules for the schedule's academic year.
@@ -36,7 +76,7 @@ export async function validateAssignment(
   ];
 
   const degree =
-    violations.length === 0 ? "valid" : worstDegree(violations);
+    violations.length === 0 ? "Valid" : worstDegree(violations);
 
   return { degree, violations };
 }

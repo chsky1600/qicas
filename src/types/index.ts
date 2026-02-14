@@ -6,3 +6,4 @@ export * from "./faculty";
 export * from "./instructor";
 export * from "./course";
 export * from "./note";
+export * from "./validation";
