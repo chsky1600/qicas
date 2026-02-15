@@ -1,6 +1,8 @@
 import { describe, test, expect } from "bun:test";
 import { checkCourseRules } from "../../src/services/validatorService";
 import type { AcademicYear, Assignment, Schedule } from "../../src/types";
+import { AcademicYearModel } from "../../src/db/models/year";
+import mongoose from "mongoose";
 
 // ── self-contained mock data (independent of yearService) ──
 

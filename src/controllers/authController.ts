@@ -5,8 +5,6 @@ import * as mongoose from 'mongoose'
 import { UserModel } from "../db/models/user"
 import { JOSEError, JWTClaimValidationFailed } from "jose/errors"
 
-import { connection } from "../db/connection"
-
 // change to something 
 const secret : Uint8Array = new TextEncoder().encode('queensuniversity')
 
@@ -14,17 +12,21 @@ const alg = 'HS256'
 
 // ------------TO REMOVE------------
 // await mongoose.connect("mongodb://127.0.0.1:27017/mongoose-app");
+await mongoose.connect("mongodb://localhost:27017/qicas");
 
-// const testUser = new UserModel({
-//     email: "Test",
-//     password: "Password"
-// });
-// await testUser.save();
+const testUser = await UserModel.create({
+    id: "Test-Id-1",
+    faculty_id: "F001",
+    name: "Test-Name",
+    email: "Test-Email",
+    password: "Test-Password",
+    role: "Test-Role"
+});
 
-// await mongoose.disconnect();
+await mongoose.disconnect();
 // ------------REMOVE------------
 
-
+// change to lookup users in all faculty docs?
 const fetchUser = async (email : String): Promise<UserModel | undefined> => {
     try {
         const user = await UserModel.findOne({email : email});
@@ -39,7 +41,7 @@ const fetchUser = async (email : String): Promise<UserModel | undefined> => {
 
 export const getToken = async (req : Request, res : Response) => {
 
-    const email : string | undefined = req.body.username
+    const email : string | undefined = req.body.email
     const password : string | undefined = req.body.password
 
     if(email && password) {
@@ -47,7 +49,7 @@ export const getToken = async (req : Request, res : Response) => {
         if(user){
             if(user.password === password) {
 
-                const jwt = await new jose.SignJWT({'urn:example:claim': true})
+                const jwt = await new jose.SignJWT({'faculty_id': user.faculty_id})
                     .setProtectedHeader({alg})
                     .setIssuedAt()
                     .setIssuer('qicas')
@@ -55,11 +57,12 @@ export const getToken = async (req : Request, res : Response) => {
                     .sign(secret)
                 
                 res.cookie("token",jwt)
-                res.send('Heres a token.')
+                res.sendStatus(200)
             } else {
                 res.send('Invalid password.')
             }
         } else { 
+            console.log("user not found.")
             res.sendStatus(404)
         }
     } else {
@@ -70,9 +73,9 @@ export const getToken = async (req : Request, res : Response) => {
 // verification middleware 
 export const verifyToken = async (req : Request, res : Response, next: NextFunction) => {
 
-    const token : string | undefined = req.headers.authorization;
+    const token : string | undefined = req.headers.cookie?.replace("token=", "");
 
-    console.log("Running middleware")
+    console.log("Verifying Token")
 
     if(token) {
         try {
@@ -82,7 +85,7 @@ export const verifyToken = async (req : Request, res : Response, next: NextFunct
             });
             console.log(payload)
             console.log(protectedHeader)
-
+            req.body.faculty_id = payload.faculty_id;
             next();
             return
         } catch (err) {

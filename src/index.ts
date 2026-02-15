@@ -1,32 +1,46 @@
 import express from "express";
 import cors from "cors";
-import swaggerUi from "swagger-ui-express";
+import cookieParser from "cookie-parser";
 
 import apiRouter from "./api";
-import authRouter from "./api/authRouter"
-import instructorRouter from "./api/instructorRouter"
+import authRouter from "./api/authRouter";
+import instructorRouter from "./api/instructorRouter";
+import scheduleRouter from "./api/scheduleRouter";
+import yearRouter from "./api/yearRouter";
+import userRouter from "./api/userRouter";
+import facultyRouter from "./api/facultyRouter";
 
-import { swaggerSpec } from "./docs/swagger";
-import mongoose from "mongoose";
+import { connectDB } from "./db/connection";
 import { verifyToken } from "./controllers/authController";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
-
-// Serve interactive API docs generated from JSDoc annotations.
-app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, { explorer: true }));
+app.use(cookieParser());
 
 app.use(apiRouter);
 app.use(authRouter);
-instructorRouter.use(verifyToken)
+
+instructorRouter.use(verifyToken);
 app.use(instructorRouter);
 
-// move this to seperate file
-await mongoose.connect("mongodb://127.0.0.1:27017/mongoose-app");
+scheduleRouter.use(verifyToken);
+app.use(scheduleRouter);
+
+yearRouter.use(verifyToken);
+app.use(yearRouter);
+
+userRouter.use(verifyToken);
+app.use(userRouter);
+
+facultyRouter.use(verifyToken);
+app.use(facultyRouter);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
+  });
 });
