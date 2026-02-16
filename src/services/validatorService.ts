@@ -72,13 +72,53 @@ export async function validateAssignment(
   const violations: Violation[] = [
     ...checkCourseRules(ctx, projected, candidate),
     ...checkInstructorRules(ctx, projected, candidate),
-    ...checkAssignmentRules(ctx, projected, candidate),
+    ...checkScheduleRules(ctx, projected, candidate),
   ];
 
   const degree =
     violations.length === 0 ? "Valid" : worstDegree(violations);
 
   return { degree, violations };
+}
+
+/**
+ * Validates an entire schedule against all rules for its academic year.
+ * Used after assignment removals or when loading a schedule to recompute all violations.
+ *
+ * @param schedule - The full schedule to validate
+ * @returns ValidationResult with overall degree and list of violations
+ */
+export async function validateSchedule(
+  schedule: Schedule
+): Promise<ValidationResult> {
+  const ctx = await getYearConstraints(schedule.year_id);
+
+  const violations: Violation[] = [];
+  for (const assignment of schedule.assignments) {
+    violations.push(...checkCourseRules(ctx, schedule, assignment));
+    violations.push(...checkInstructorRules(ctx, schedule, assignment));
+    violations.push(...checkScheduleRules(ctx, schedule, assignment));
+  }
+
+  const deduped = dedupeViolations(violations);
+  const degree =
+    deduped.length === 0 ? "Valid" : worstDegree(deduped);
+
+  return { degree, violations: deduped };
+}
+
+/**
+ * Removes duplicate violations by ID. Schedule-wide checks may produce
+ * the same violation from both sides of a pair (e.g., CROSS_TERM_DUPLICATE
+ * fires for both the Fall and Winter assignment).
+ */
+function dedupeViolations(violations: Violation[]): Violation[] {
+  const seen = new Set<string>();
+  return violations.filter(v => {
+    if (seen.has(v.id)) return false;
+    seen.add(v.id);
+    return true;
+  });
 }
 
 /**
@@ -144,23 +184,20 @@ export function checkInstructorRules(
 }
 
 /**
- * Checks assignment-level rules (e.g., scheduling conflicts, duplicates).
+ * Checks schedule-level rules (e.g., section-workload imbalance).
  *
  * @param ctx - Academic year constraints
  * @param projected - Schedule with candidate applied
  * @param candidate - The assignment being validated
- * @returns Array of assignment-related violations (may be empty)
+ * @returns Array of schedule-related violations (may be empty)
  */
-export function checkAssignmentRules(
+export function checkScheduleRules(
   ctx: AcademicYear,
   projected: Schedule,
   candidate: Assignment
 ): Violation[] {
-  // TODO: Implement assignment rule checks
-  // - Check for duplicate assignments  --> composite_id --> 
-  // code_insturctor1_section_term
-  // code_insturctor2_section_term
-  // - Verify section is not already assigned
+  // TODO: Implement schedule rule checks
+  // - SW_IMBALANCE: total sections ≠ total instructor workload
   return [];
 }
 

@@ -2,7 +2,8 @@ import { describe, test, expect } from "bun:test";
 import { checkCourseRules } from "../../src/services/validatorService";
 import type { AcademicYear, Assignment, Schedule } from "../../src/types";
 
-// ── self-contained mock data (independent of yearService) ──
+// -- self-contained mock data (independent of yearService) --
+// update for every new testcase
 
 const mockCtx: AcademicYear = {
   id: "year-test",
@@ -38,7 +39,7 @@ const mockCtx: AcademicYear = {
   ],
 };
 
-// ── Helpers ──
+// -- Helpers --
 
 function makeSchedule(assignments: Assignment[]): Schedule {
   return {
@@ -62,7 +63,7 @@ function makeAssignment(overrides: Partial<Assignment> & { id: string }): Assign
   };
 }
 
-// ── Tests ──
+// -- Tests --
 
 describe("checkCourseRules", () => {
   describe("CROSS_TERM_DUPLICATE (INFO)", () => {

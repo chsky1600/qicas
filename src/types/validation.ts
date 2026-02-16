@@ -1,4 +1,4 @@
-export type ViolationType = "Course" | "Instructor" | "Assignment";
+export type ViolationType = "Course" | "Instructor" | "Schedule";
 
 export type ViolationDegree = "Info" | "Warning" | "Error";
 
