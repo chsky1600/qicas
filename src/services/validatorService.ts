@@ -160,6 +160,42 @@ export function checkCourseRules(
     }
   }
 
+  // --- FULLYEAR_HALF_OPEN (Info) ---
+  // For a full-year course, one term has not yet been assigned,
+  // or its two halves are assigned to different instructors.
+  if (rule && rule.is_full_year) {
+    const fallAssignment = projected.assignments.find(
+      a => a.course_code === candidate.course_code && a.term === "Fall"
+    );
+    const winterAssignment = projected.assignments.find(
+      a => a.course_code === candidate.course_code && a.term === "Winter"
+    );
+
+    // Only for the case when one half is missing, i.e., XOR
+    const oneHalfMissing =
+      (fallAssignment && !winterAssignment) || (!fallAssignment && winterAssignment); 
+
+    if (oneHalfMissing) {
+      violations.push({
+        id: `v-fullyear-half-${candidate.course_code}`,
+        type: "Course",
+        offending_id: candidate.course_code,
+        code: "FULLYEAR_HALF_OPEN",
+        message: `Full-year course ${candidate.course_code} is only assigned in ${fallAssignment ? "Fall" : "Winter"}, missing the other term.`,
+        degree: "Info",
+      });
+    } else if (fallAssignment && winterAssignment && fallAssignment.instructor_id !== winterAssignment.instructor_id) {
+      violations.push({
+        id: `v-fullyear-half-${candidate.course_code}`,
+        type: "Course",
+        offending_id: candidate.course_code,
+        code: "FULLYEAR_HALF_OPEN",
+        message: `Full-year course ${candidate.course_code} has different instructors in Fall (${fallAssignment.instructor_id}) and Winter (${winterAssignment.instructor_id}).`,
+        degree: "Info",
+      });
+    }
+  }
+
   return violations;
 }
 
