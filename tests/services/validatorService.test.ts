@@ -28,6 +28,15 @@ const mockCtx: AcademicYear = {
       is_external: false,
     },
     {
+      id: "cr-2",
+      course_code: "CISC204",
+      terms_offered: ["Fall"],
+      workload_fulfillment: 1,
+      is_full_year: false,
+      sections_available: ["001"],
+      is_external: false,
+    },
+    {
       id: "cr-3",
       course_code: "CISC490",
       terms_offered: ["Fall", "Winter"],
@@ -180,6 +189,37 @@ describe("checkCourseRules", () => {
       const violations = checkCourseRules(mockCtx, schedule, fall);
 
       expect(violations).toHaveLength(0);
+    });
+  });
+
+  describe("TERM_NOT_OFFERED (WARNING)", () => {
+    test("fires when course is assigned in a term it is not offered", () => {
+      const winter = makeAssignment({ id: "a-1", course_code: "CISC204", section_id: "s-7", term: "Winter" });
+      const schedule = makeSchedule([winter]);
+
+      const violations = checkCourseRules(mockCtx, schedule, winter);
+
+      expect(violations).toHaveLength(1);
+      expect(violations[0]!.code).toBe("TERM_NOT_OFFERED");
+      expect(violations[0]!.degree).toBe("Warning");
+    });
+
+    test("does NOT fire when course is assigned in an offered term", () => {
+      const fall = makeAssignment({ id: "a-1", course_code: "CISC204", section_id: "s-7", term: "Fall" });
+      const schedule = makeSchedule([fall]);
+
+      const violations = checkCourseRules(mockCtx, schedule, fall);
+
+      expect(violations.filter(v => v.code === "TERM_NOT_OFFERED")).toHaveLength(0);
+    });
+
+    test("does NOT fire when course is offered in both terms", () => {
+      const winter = makeAssignment({ id: "a-1", course_code: "CISC101", term: "Winter" });
+      const schedule = makeSchedule([winter]);
+
+      const violations = checkCourseRules(mockCtx, schedule, winter);
+
+      expect(violations.filter(v => v.code === "TERM_NOT_OFFERED")).toHaveLength(0);
     });
   });
 });

@@ -196,6 +196,19 @@ export function checkCourseRules(
     }
   }
 
+  // --- TERM_NOT_OFFERED (Warning) ---
+  // Assigned course term does not exist in the course's terms_offered.
+  if (rule && !rule.terms_offered.includes(candidate.term)) {
+    violations.push({
+      id: `v-term-not-offered-${candidate.id}`,
+      type: "Course",
+      offending_id: candidate.course_code,
+      code: "TERM_NOT_OFFERED",
+      message: `${candidate.course_code} is assigned in ${candidate.term}, but is only offered in ${rule.terms_offered.join(", ")}.`,
+      degree: "Warning",
+    });
+  }
+
   return violations;
 }
 
