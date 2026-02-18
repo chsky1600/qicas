@@ -209,6 +209,24 @@ export function checkCourseRules(
     });
   }
 
+  // --- RANK_MISMATCH (Warning) ---
+  // Course section assigned to an instructor whose rank is not eligible for that course level.
+  const course = ctx.courses.find(c => c.code === candidate.course_code);
+  const instructor = ctx.instructors.find(i => i.id === candidate.instructor_id);
+  if (course && instructor) {
+    const eligible = RANK_ELIGIBILITY[course.level as CourseLevel];
+    if (eligible && !eligible.includes(instructor.rank)) {
+      violations.push({
+        id: `v-rank-mismatch-${candidate.id}`,
+        type: "Course",
+        offending_id: candidate.course_code,
+        code: "RANK_MISMATCH",
+        message: `${instructor.name} (${instructor.rank}) is not eligible to teach ${candidate.course_code} (${course.level}).`,
+        degree: "Warning",
+      });
+    }
+  }
+
   return violations;
 }
 

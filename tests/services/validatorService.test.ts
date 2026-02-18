@@ -1,6 +1,7 @@
 import { describe, test, expect } from "bun:test";
-import { checkCourseRules } from "../../src/services/validatorService";
+import { checkCourseRules, worstDegree } from "../../src/services/validatorService";
 import type { AcademicYear, Assignment, Schedule } from "../../src/types";
+const VERBOSE = process.env.ver === "1";
 
 // -- self-contained mock data (independent of yearService) --
 // update for every new testcase
@@ -12,9 +13,11 @@ const mockCtx: AcademicYear = {
   courses: [
     { id: "c-1", name: "Intro to Computing", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [{ id: "s-1", number: 1 }, { id: "s-2", number: 2 }] },
     { id: "c-6", name: "Senior Thesis", code: "CISC490", level: "undergrad4", year_introduced: "2010", notes: [], sections: [{ id: "s-8", number: 1 }] },
+    { id: "c-7", name: "Advanced Topics in AI", code: "CISC890", level: "graduate", year_introduced: "2015", notes: [], sections: [{ id: "s-9", number: 1 }] },
   ],
   instructors: [
     { id: "inst-1", name: "Dr. Smith", workload: 3, email: "smith@queensu.ca", rank: "FullProfessor", prev_taught: [], notes: [] },
+    { id: "inst-4", name: "A. Taylor", workload: 2, email: "taylor@queensu.ca", rank: "TeachingFellow", prev_taught: [], notes: [] },
   ],
   instructor_rules: [],
   course_rules: [
@@ -31,6 +34,15 @@ const mockCtx: AcademicYear = {
       id: "cr-2",
       course_code: "CISC204",
       terms_offered: ["Fall"],
+      workload_fulfillment: 1,
+      is_full_year: false,
+      sections_available: ["001"],
+      is_external: false,
+    },
+    {
+      id: "cr-4",
+      course_code: "CISC890",
+      terms_offered: ["Winter"],
       workload_fulfillment: 1,
       is_full_year: false,
       sections_available: ["001"],
@@ -86,6 +98,7 @@ describe("checkCourseRules", () => {
       expect(violations).toHaveLength(1);
       expect(violations[0]!.code).toBe("CROSS_TERM_DUPLICATE");
       expect(violations[0]!.degree).toBe("Info");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
     });
 
     test("does NOT fire for full-year course", () => {
@@ -138,6 +151,7 @@ describe("checkCourseRules", () => {
       expect(violations).toHaveLength(1);
       expect(violations[0]!.code).toBe("FULLYEAR_HALF_OPEN");
       expect(violations[0]!.degree).toBe("Info");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
     });
 
     test("fires when full-year course only has Winter assigned", () => {
@@ -148,6 +162,7 @@ describe("checkCourseRules", () => {
 
       expect(violations).toHaveLength(1);
       expect(violations[0]!.code).toBe("FULLYEAR_HALF_OPEN");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
     });
 
     test("fires when full-year course has different instructors per term", () => {
@@ -159,6 +174,7 @@ describe("checkCourseRules", () => {
 
       expect(violations).toHaveLength(1);
       expect(violations[0]!.code).toBe("FULLYEAR_HALF_OPEN");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
     });
 
     test("does NOT fire when full-year course has same instructor in both terms", () => {
@@ -202,6 +218,7 @@ describe("checkCourseRules", () => {
       expect(violations).toHaveLength(1);
       expect(violations[0]!.code).toBe("TERM_NOT_OFFERED");
       expect(violations[0]!.degree).toBe("Warning");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
     });
 
     test("does NOT fire when course is assigned in an offered term", () => {
@@ -221,5 +238,86 @@ describe("checkCourseRules", () => {
 
       expect(violations.filter(v => v.code === "TERM_NOT_OFFERED")).toHaveLength(0);
     });
+  });
+
+  describe("RANK_MISMATCH (WARNING)", () => {
+    test("fires when TeachingFellow is assigned to graduate course", () => {
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-4", course_code: "CISC890", section_id: "s-9", term: "Winter" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkCourseRules(mockCtx, schedule, a);
+
+      expect(violations).toHaveLength(1);
+      expect(violations[0]!.code).toBe("RANK_MISMATCH");
+      expect(violations[0]!.degree).toBe("Warning");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+    });
+
+    test("does NOT fire when FullProfessor is assigned to graduate course", () => {
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC890", section_id: "s-9", term: "Winter" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkCourseRules(mockCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "RANK_MISMATCH")).toHaveLength(0);
+    });
+
+    test("does NOT fire when TeachingFellow is assigned to undergrad course", () => {
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-4", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkCourseRules(mockCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "RANK_MISMATCH")).toHaveLength(0);
+    });
+  });
+});
+
+describe("worstDegree", () => {
+  test("returns Info when only Info violations", () => {
+    expect(worstDegree([
+      { id: "v-1", type: "Course", offending_id: "x", code: "TEST", message: "", degree: "Info" },
+    ])).toBe("Info");
+  });
+
+  test("returns Warning when mix of Info and Warning", () => {
+    expect(worstDegree([
+      { id: "v-1", type: "Course", offending_id: "x", code: "TEST", message: "", degree: "Info" },
+      { id: "v-2", type: "Course", offending_id: "x", code: "TEST", message: "", degree: "Warning" },
+    ])).toBe("Warning");
+  });
+
+  test("returns Error when mix of all degrees", () => {
+    expect(worstDegree([
+      { id: "v-1", type: "Course", offending_id: "x", code: "TEST", message: "", degree: "Info" },
+      { id: "v-2", type: "Course", offending_id: "x", code: "TEST", message: "", degree: "Warning" },
+      { id: "v-3", type: "Course", offending_id: "x", code: "TEST", message: "", degree: "Error" },
+    ])).toBe("Error");
+  });
+
+  test("returns Error even when it appears first", () => {
+    expect(worstDegree([
+      { id: "v-1", type: "Course", offending_id: "x", code: "TEST", message: "", degree: "Error" },
+      { id: "v-2", type: "Course", offending_id: "x", code: "TEST", message: "", degree: "Info" },
+    ])).toBe("Error");
+  });
+});
+
+describe("multi-rule integration", () => {
+  test("CROSS_TERM_DUPLICATE (Info) + TERM_NOT_OFFERED (Warning) compose to Warning", () => {
+    // CISC204 is only offered in Fall. Assign same instructor in both terms:
+    // - Fall: valid term, but cross-term duplicate
+    // - Winter: invalid term AND cross-term duplicate
+    const fall = makeAssignment({ id: "a-1", course_code: "CISC204", section_id: "s-7", term: "Fall" });
+    const winter = makeAssignment({ id: "a-2", course_code: "CISC204", section_id: "s-7", term: "Winter" });
+    const schedule = makeSchedule([fall, winter]);
+
+    const violations = checkCourseRules(mockCtx, schedule, winter);
+
+    const codes = violations.map(v => v.code);
+    expect(codes).toContain("CROSS_TERM_DUPLICATE");
+    expect(codes).toContain("TERM_NOT_OFFERED");
+    expect(worstDegree(violations)).toBe("Warning");
+    if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
   });
 });
