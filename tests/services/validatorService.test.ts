@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { checkCourseRules, worstDegree } from "../../src/services/validatorService";
+import { checkCourseRules, checkScheduleRules, worstDegree } from "../../src/services/validatorService";
 import type { AcademicYear, Assignment, Schedule } from "../../src/types";
 const VERBOSE = process.env.ver === "1";
 
@@ -308,7 +308,7 @@ describe("checkCourseRules", () => {
 });
 
 describe("worstDegree", () => {
-  test("returns Info when only Info violations", () => {
+  test("returns Info when given only Info violations", () => {
     expect(worstDegree([
       { id: "v-1", type: "Course", offending_id: "x", code: "TEST", message: "", degree: "Info" },
     ])).toBe("Info");
@@ -321,7 +321,7 @@ describe("worstDegree", () => {
     ])).toBe("Warning");
   });
 
-  test("returns Error when mix of all degrees", () => {
+  test("returns Error when given a mix of all degrees", () => {
     expect(worstDegree([
       { id: "v-1", type: "Course", offending_id: "x", code: "TEST", message: "", degree: "Info" },
       { id: "v-2", type: "Course", offending_id: "x", code: "TEST", message: "", degree: "Warning" },
@@ -329,7 +329,7 @@ describe("worstDegree", () => {
     ])).toBe("Error");
   });
 
-  test("returns Error even when it appears first", () => {
+  test("returns Error even when 'Error' appears first", () => {
     expect(worstDegree([
       { id: "v-1", type: "Course", offending_id: "x", code: "TEST", message: "", degree: "Error" },
       { id: "v-2", type: "Course", offending_id: "x", code: "TEST", message: "", degree: "Info" },
@@ -353,5 +353,91 @@ describe("multi-rule integration", () => {
     expect(codes).toContain("TERM_NOT_OFFERED");
     expect(worstDegree(violations)).toBe("Warning");
     if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+  });
+});
+
+describe("checkScheduleRules", () => {
+  // Isolated context for schedule-wide rules
+  // 1 instructor (workload 1), 1 internal course with 2 sections offered in Fall
+  const smallCtx: AcademicYear = {
+    id: "year-small",
+    name: "2026-2027",
+    schedules: [],
+    courses: [
+      { id: "c-1", name: "Intro", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [{ id: "s-1", number: 1 }, { id: "s-2", number: 2 }] },
+      { id: "c-ext", name: "Calculus", code: "MATH110", level: "undergrad1", year_introduced: "1990", notes: [], sections: [{ id: "s-ext", number: 1 }] },
+    ],
+    instructors: [
+      { id: "inst-1", name: "Dr. A", workload: 1, email: "a@q.ca", rank: "FullProfessor", prev_taught: [], notes: [] },
+    ],
+    instructor_rules: [],
+    course_rules: [
+      {
+        id: "cr-1",
+        course_code: "CISC101",
+        terms_offered: ["Fall"],
+        workload_fulfillment: 1,
+        is_full_year: false,
+        sections_available: ["s-1", "s-2"],
+        is_external: false,
+      },
+      {
+        id: "cr-ext",
+        course_code: "MATH110",
+        terms_offered: ["Fall"],
+        workload_fulfillment: 1,
+        is_full_year: false,
+        sections_available: ["s-ext"],
+        is_external: true,
+      },
+    ],
+  };
+
+  test("fires when all instructors at capacity and internal section unassigned", () => {
+    // inst-1 has workload 1, assigned 1 section — at capacity. s-2 in Fall is uncovered.
+    const schedule = makeSchedule([
+      makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" }),
+    ]);
+
+    const violations = checkScheduleRules(smallCtx, schedule);
+
+    expect(violations).toHaveLength(1);
+    expect(violations[0]!.code).toBe("SECTION_UNASSIGNED");
+    expect(violations[0]!.degree).toBe("Error");
+    if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+  });
+
+  test("does NOT fire when instructors still have capacity", () => {
+    // inst-1 has workload 1, assigned 0 sections — not at capacity
+    const schedule = makeSchedule([]);
+
+    const violations = checkScheduleRules(smallCtx, schedule);
+
+    expect(violations).toHaveLength(0);
+  });
+
+  test("does NOT fire when all internal sections are assigned", () => {
+    // Both sections covered, inst-1 over capacity but everything is assigned
+    const schedule = makeSchedule([
+      makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" }),
+      makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-2", term: "Fall" }),
+    ]);
+
+    const violations = checkScheduleRules(smallCtx, schedule);
+
+    expect(violations).toHaveLength(0);
+  });
+
+  test("does NOT fire for external (is_external) sections", () => {
+    // inst-1 at capacity, MATH110 section unassigned but it's external
+    const schedule = makeSchedule([
+      makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" }),
+      makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-2", term: "Fall" }),
+    ]);
+
+    const violations = checkScheduleRules(smallCtx, schedule);
+
+    // MATH110 s-ext is unassigned but external — should not fire
+    expect(violations.filter(v => v.offending_id === "MATH110")).toHaveLength(0);
   });
 });

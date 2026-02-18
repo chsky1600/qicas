@@ -72,7 +72,6 @@ export async function validateAssignment(
   const violations: Violation[] = [
     ...checkCourseRules(ctx, projected, candidate),
     ...checkInstructorRules(ctx, projected, candidate),
-    ...checkScheduleRules(ctx, projected, candidate),
   ];
 
   const degree =
@@ -97,8 +96,10 @@ export async function validateSchedule(
   for (const assignment of schedule.assignments) {
     violations.push(...checkCourseRules(ctx, schedule, assignment));
     violations.push(...checkInstructorRules(ctx, schedule, assignment));
-    violations.push(...checkScheduleRules(ctx, schedule, assignment));
   }
+
+  // Schedule-wide checks
+  violations.push(...checkScheduleRules(ctx, schedule));
 
   const deduped = dedupeViolations(violations);
   const degree =
@@ -135,6 +136,29 @@ export function checkCourseRules(
   candidate: Assignment
 ): Violation[] {
   const violations: Violation[] = [];
+
+  // --- DUPLICATE ASSIGNMENT (Error) --- check first
+  // An instructor was assigned to this course's section twice (same section, same term).
+  const duplicate = projected.assignments.find(
+    a =>
+      a.id !== candidate.id &&
+      a.instructor_id === candidate.instructor_id &&
+      a.section_id === candidate.section_id &&
+      a.course_code === candidate.course_code &&
+      a.term === candidate.term
+  );
+  if (duplicate) {
+    violations.push({
+      id: `v-duplicate-${candidate.id}`,
+      type: "Course",
+      offending_id: candidate.course_code,
+      code: "DUPLICATE_ASSIGNMENT",
+      message: `Instructor ${candidate.instructor_id} is assigned to ${candidate.course_code} section ${candidate.section_id} in ${candidate.term} more than once.`,
+      degree: "Error",
+    });
+    return violations;
+  }
+
   const rule = ctx.course_rules.find(r => r.course_code === candidate.course_code);
 
   // --- CROSS_TERM_DUPLICATE (Info) ---
@@ -227,27 +251,6 @@ export function checkCourseRules(
     }
   }
 
-  // --- DUPLICATE ASSIGNMENT (Error) ---
-  // An instructor was assigned to the same section twice (same section, same term).
-  const duplicate = projected.assignments.find(
-    a =>
-      a.id !== candidate.id &&
-      a.instructor_id === candidate.instructor_id &&
-      a.section_id === candidate.section_id &&
-      a.course_code === candidate.course_code &&
-      a.term === candidate.term
-  );
-  if (duplicate) {
-    violations.push({
-      id: `v-duplicate-${candidate.id}`,
-      type: "Course",
-      offending_id: candidate.course_code,
-      code: "DUPLICATE_ASSIGNMENT",
-      message: `Instructor ${candidate.instructor_id} is assigned to ${candidate.course_code} section ${candidate.section_id} in ${candidate.term} more than once.`,
-      degree: "Error",
-    });
-  }
-  
   return violations;
 }
 
@@ -272,21 +275,64 @@ export function checkInstructorRules(
 }
 
 /**
- * Checks schedule-level rules (e.g., section-workload imbalance).
+ * Checks schedule-wide rules. Called once from validateSchedule, not per-candidate.
+ * Contains rules that require full schedule context (e.g., SECTION_UNASSIGNED, SW_IMBALANCE).
  *
  * @param ctx - Academic year constraints
- * @param projected - Schedule with candidate applied
- * @param candidate - The assignment being validated
+ * @param schedule - The full schedule
  * @returns Array of schedule-related violations (may be empty)
  */
 export function checkScheduleRules(
   ctx: AcademicYear,
-  projected: Schedule,
-  candidate: Assignment
+  schedule: Schedule
 ): Violation[] {
-  // TODO: Implement schedule rule checks
-  // - SW_IMBALANCE: total sections ≠ total instructor workload
-  return [];
+  const violations: Violation[] = [];
+
+  // --- SECTION_UNASSIGNED (Error) ---
+  // All instructors are at or above their workload target and an internal
+  // (in-faculty) section remains unassigned.
+  const allAtCapacity = ctx.instructors.every(instructor => {
+    const rule = ctx.instructor_rules.find(r => r.instructor_id === instructor.id);
+    const delta = rule?.workload_delta ?? 0;
+    const target = instructor.workload + delta;
+
+    const assignedWorkload = schedule.assignments
+      .filter(a => a.instructor_id === instructor.id)
+      .reduce((sum, a) => {
+        const cr = ctx.course_rules.find(r => r.course_code === a.course_code);
+        return sum + (cr?.workload_fulfillment ?? 1);
+      }, 0);
+
+    return assignedWorkload >= target;
+  });
+
+  if (allAtCapacity) {
+    for (const cr of ctx.course_rules) {
+      if (cr.is_external) continue;
+
+      for (const term of cr.terms_offered) {
+        for (const sectionId of cr.sections_available) {
+          const assigned = schedule.assignments.some(
+            a => a.course_code === cr.course_code && a.section_id === sectionId && a.term === term
+          );
+          if (!assigned) {
+            violations.push({
+              id: `v-section-unassigned-${cr.course_code}-${sectionId}-${term}`,
+              type: "Schedule",
+              offending_id: cr.course_code,
+              code: "SECTION_UNASSIGNED",
+              message: `${cr.course_code} section ${sectionId} in ${term} is unassigned and all instructors are at capacity.`,
+              degree: "Error",
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // TODO: SW_IMBALANCE
+
+  return violations;
 }
 
 /**
