@@ -227,6 +227,27 @@ export function checkCourseRules(
     }
   }
 
+  // --- DUPLICATE ASSIGNMENT (Error) ---
+  // An instructor was assigned to the same section twice (same section, same term).
+  const duplicate = projected.assignments.find(
+    a =>
+      a.id !== candidate.id &&
+      a.instructor_id === candidate.instructor_id &&
+      a.section_id === candidate.section_id &&
+      a.course_code === candidate.course_code &&
+      a.term === candidate.term
+  );
+  if (duplicate) {
+    violations.push({
+      id: `v-duplicate-${candidate.id}`,
+      type: "Course",
+      offending_id: candidate.course_code,
+      code: "DUPLICATE_ASSIGNMENT",
+      message: `Instructor ${candidate.instructor_id} is assigned to ${candidate.course_code} section ${candidate.section_id} in ${candidate.term} more than once.`,
+      degree: "Error",
+    });
+  }
+  
   return violations;
 }
 

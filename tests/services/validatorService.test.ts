@@ -271,6 +271,40 @@ describe("checkCourseRules", () => {
       expect(violations.filter(v => v.code === "RANK_MISMATCH")).toHaveLength(0);
     });
   });
+
+  describe("DUPLICATE_ASSIGNMENT (ERROR)", () => {
+    test("fires when same instructor assigned to same section twice in same term", () => {
+      const a1 = makeAssignment({ id: "a-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", term: "Fall" });
+      const schedule = makeSchedule([a1, a2]);
+
+      const violations = checkCourseRules(mockCtx, schedule, a2);
+
+      expect(violations.filter(v => v.code === "DUPLICATE_ASSIGNMENT")).toHaveLength(1);
+      expect(violations.find(v => v.code === "DUPLICATE_ASSIGNMENT")!.degree).toBe("Error");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+    });
+
+    test("does NOT fire when same instructor assigned to same section in different terms", () => {
+      const fall = makeAssignment({ id: "a-1", term: "Fall" });
+      const winter = makeAssignment({ id: "a-2", term: "Winter" });
+      const schedule = makeSchedule([fall, winter]);
+
+      const violations = checkCourseRules(mockCtx, schedule, winter);
+
+      expect(violations.filter(v => v.code === "DUPLICATE_ASSIGNMENT")).toHaveLength(0);
+    });
+
+    test("does NOT fire when different instructors assigned to same section in same term", () => {
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-4", term: "Fall" });
+      const schedule = makeSchedule([a1, a2]);
+
+      const violations = checkCourseRules(mockCtx, schedule, a2);
+
+      expect(violations.filter(v => v.code === "DUPLICATE_ASSIGNMENT")).toHaveLength(0);
+    });
+  });
 });
 
 describe("worstDegree", () => {
