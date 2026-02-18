@@ -251,6 +251,25 @@ export function checkCourseRules(
     }
   }
 
+  // --- SECTION_OVERASSIGNED (Error) ---
+  // More instructors assigned to a section (same term) than CO_TEACHING_LIMIT.
+  const sectionCount = projected.assignments.filter(
+    a =>
+      a.course_code === candidate.course_code &&
+      a.section_id === candidate.section_id &&
+      a.term === candidate.term
+  ).length;
+  if (sectionCount > CO_TEACHING_LIMIT) {
+    violations.push({
+      id: `v-section-overassigned-${candidate.course_code}-${candidate.section_id}-${candidate.term}`,
+      type: "Course",
+      offending_id: candidate.course_code,
+      code: "SECTION_OVERASSIGNED",
+      message: `${candidate.course_code} section ${candidate.section_id} in ${candidate.term} has ${sectionCount} instructors assigned, exceeding the co-teaching limit of ${CO_TEACHING_LIMIT}.`,
+      degree: "Error",
+    });
+  }
+
   return violations;
 }
 

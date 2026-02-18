@@ -305,6 +305,53 @@ describe("checkCourseRules", () => {
       expect(violations.filter(v => v.code === "DUPLICATE_ASSIGNMENT")).toHaveLength(0);
     });
   });
+  describe("SECTION_OVERASSIGNED (ERROR)", () => {
+    test("fires when 3 instructors assigned to same section in same term", () => {
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-1", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-4", section_id: "s-1", term: "Fall" });
+      const a3 = makeAssignment({ id: "a-3", instructor_id: "inst-3", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a1, a2, a3]);
+
+      const violations = checkCourseRules(mockCtx, schedule, a3);
+
+      expect(violations).toHaveLength(1);
+      expect(violations[0]!.code).toBe("SECTION_OVERASSIGNED");
+      expect(violations[0]!.degree).toBe("Error");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+    });
+
+    test("does NOT fire when exactly 2 instructors assigned (at limit)", () => {
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-1", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-4", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a1, a2]);
+
+      const violations = checkCourseRules(mockCtx, schedule, a2);
+
+      expect(violations.filter(v => v.code === "SECTION_OVERASSIGNED")).toHaveLength(0);
+    });
+
+    test("does NOT fire when 3 instructors are across different terms", () => {
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-1", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-4", section_id: "s-1", term: "Fall" });
+      const a3 = makeAssignment({ id: "a-3", instructor_id: "inst-3", section_id: "s-1", term: "Winter" });
+      const schedule = makeSchedule([a1, a2, a3]);
+
+      const violations = checkCourseRules(mockCtx, schedule, a3);
+
+      expect(violations.filter(v => v.code === "SECTION_OVERASSIGNED")).toHaveLength(0);
+    });
+
+    test("does NOT fire when 3 instructors are across different sections", () => {
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-1", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-4", section_id: "s-1", term: "Fall" });
+      const a3 = makeAssignment({ id: "a-3", instructor_id: "inst-3", section_id: "s-2", term: "Fall" });
+      const schedule = makeSchedule([a1, a2, a3]);
+
+      const violations = checkCourseRules(mockCtx, schedule, a3);
+
+      expect(violations.filter(v => v.code === "SECTION_OVERASSIGNED")).toHaveLength(0);
+    });
+  });
 });
 
 describe("worstDegree", () => {
@@ -392,52 +439,54 @@ describe("checkScheduleRules", () => {
       },
     ],
   };
+  describe("SECTION_UNASSIGNED (ERROR)", () => {
+    test("fires when all instructors at capacity and internal section unassigned", () => {
+      // inst-1 has workload 1, assigned 1 section — at capacity. s-2 in Fall is uncovered.
+      const schedule = makeSchedule([
+        makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" }),
+      ]);
 
-  test("fires when all instructors at capacity and internal section unassigned", () => {
-    // inst-1 has workload 1, assigned 1 section — at capacity. s-2 in Fall is uncovered.
-    const schedule = makeSchedule([
-      makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" }),
-    ]);
+      const violations = checkScheduleRules(smallCtx, schedule);
 
-    const violations = checkScheduleRules(smallCtx, schedule);
+      expect(violations).toHaveLength(1);
+      expect(violations[0]!.code).toBe("SECTION_UNASSIGNED");
+      expect(violations[0]!.degree).toBe("Error");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+    });
 
-    expect(violations).toHaveLength(1);
-    expect(violations[0]!.code).toBe("SECTION_UNASSIGNED");
-    expect(violations[0]!.degree).toBe("Error");
-    if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
-  });
 
-  test("does NOT fire when instructors still have capacity", () => {
-    // inst-1 has workload 1, assigned 0 sections — not at capacity
-    const schedule = makeSchedule([]);
+    test("does NOT fire when instructors still have capacity", () => {
+      // inst-1 has workload 1, assigned 0 sections — not at capacity
+      const schedule = makeSchedule([]);
 
-    const violations = checkScheduleRules(smallCtx, schedule);
+      const violations = checkScheduleRules(smallCtx, schedule);
 
-    expect(violations).toHaveLength(0);
-  });
+      expect(violations).toHaveLength(0);
+    });
 
-  test("does NOT fire when all internal sections are assigned", () => {
-    // Both sections covered, inst-1 over capacity but everything is assigned
-    const schedule = makeSchedule([
-      makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" }),
-      makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-2", term: "Fall" }),
-    ]);
+    test("does NOT fire when all internal sections are assigned", () => {
+      // Both sections covered, inst-1 over capacity but everything is assigned
+      const schedule = makeSchedule([
+        makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" }),
+        makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-2", term: "Fall" }),
+      ]);
 
-    const violations = checkScheduleRules(smallCtx, schedule);
+      const violations = checkScheduleRules(smallCtx, schedule);
 
-    expect(violations).toHaveLength(0);
-  });
+      expect(violations).toHaveLength(0);
+    });
 
-  test("does NOT fire for external (is_external) sections", () => {
-    // inst-1 at capacity, MATH110 section unassigned but it's external
-    const schedule = makeSchedule([
-      makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" }),
-      makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-2", term: "Fall" }),
-    ]);
+    test("does NOT fire for external (is_external) sections", () => {
+      // inst-1 at capacity, MATH110 section unassigned but it's external
+      const schedule = makeSchedule([
+        makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" }),
+        makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-2", term: "Fall" }),
+      ]);
 
-    const violations = checkScheduleRules(smallCtx, schedule);
+      const violations = checkScheduleRules(smallCtx, schedule);
 
-    // MATH110 s-ext is unassigned but external — should not fire
-    expect(violations.filter(v => v.offending_id === "MATH110")).toHaveLength(0);
-  });
-});
+      // MATH110 s-ext is unassigned but external — should not fire
+      expect(violations.filter(v => v.offending_id === "MATH110")).toHaveLength(0);
+    });
+  }); 
+}); 
