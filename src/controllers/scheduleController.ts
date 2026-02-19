@@ -30,10 +30,47 @@ const fetchScheduleByFacultyIdScheduleIdAndYear = async (faculty_id : string, sc
 
 export const getScheduleByID = async (req : Request, res : Response) => {
 
-}
+    const year_id : string = req.params.year as string;
+    const faculty_id : string = req.body.faculty_id;
+    const schedule_id : string = req.params.schedule_id as string;
+
+    const doc = await FacultyModel.findOne(
+        {
+            id: faculty_id,
+            "academic_years.id": year_id,
+        },
+        {
+            _id: 0,
+            academic_years: { $elemMatch: { id: year_id } },
+        }
+    ).lean();
+
+    if (!doc) return res.json(null);
+
+    const year = doc.academic_years[0];
+    const schedule = year?.schedules?.find(
+        (s: any) => s.id === schedule_id
+    );
+
+    res.json(schedule ?? null);
+    }
 
 export const getSchedules = async (req : Request, res : Response) => {
+    const year_id : string = req.params.year as string;
+    const faculty_id : string = req.body.faculty_id;
 
+    const doc = await FacultyModel.findOne(
+        {
+            id: faculty_id,
+            "academic_years.id": year_id,
+        },
+        {
+            _id: 0,
+            academic_years: { $elemMatch: { id: year_id } },
+        }
+    ).lean();
+
+    res.json(doc?.academic_years?.[0]?.schedules ?? []);
 }
 
 // takes in a schedule, and overrides the currently saved one with the same ID

@@ -6,6 +6,7 @@ import apiRouter from "./api";
 import authRouter from "./api/authRouter"
 import instructorRouter from "./api/instructorRouter"
 import scheduleRouter from "./api/scheduleRouter";
+import courseRouter from "./api/courseRouter";
 
 import { connectDB } from "./db/connection";
 import { verifyToken } from "./controllers/authController";
@@ -21,7 +22,8 @@ app.use(apiRouter);
 app.use(authRouter);
 instructorRouter.use(verifyToken)
 app.use(instructorRouter);
-
+courseRouter.use(verifyToken)
+app.use(courseRouter)
 scheduleRouter.use(verifyToken)
 app.use(scheduleRouter);
 app.use(express.json());
