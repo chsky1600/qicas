@@ -11,6 +11,7 @@ export default function Course(section : Section)  {
     id: `section-${section.id}-row`,     
     data: {
       type: "section",
+      source: "panel",
       sectionId: section.id,
       prevInstructorId: section.assigned_to,
     }

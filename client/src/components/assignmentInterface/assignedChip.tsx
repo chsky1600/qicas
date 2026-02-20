@@ -6,7 +6,8 @@ export default function AssignedChip(section : Section)  {
   const {attributes, listeners, setNodeRef, isDragging} = useDraggable({
     id: `section-${section.id}-chip`,    
     data: {
-      type: "section",
+      type: "section",      
+      source: "chip",
       sectionId: section.id,
       prevInstructorId: section.assigned_to,
     }

@@ -60,12 +60,22 @@ export default function AssignmentInterface({
     }
     
     // drop location is an instructor, make new assignment
-    if (dropLocation?.type == "instructor" ){
-      makeAssignment(sectionDrag.sectionId, dropLocation.instructorId, dropLocation.term, sectionDrag.prevInstructorId)
+    if (dropLocation?.type == "instructor"){
+      // dont process if assign location and previous location are the same
+      if (dropLocation.instructorId != sectionDrag.prevInstructorId){
+        makeAssignment(sectionDrag.sectionId, dropLocation.instructorId, dropLocation.term, sectionDrag.prevInstructorId)
+        return
+      }
+      console.log(`INFO: ${over?.id} reAssigned to the same instructor`)
     }
-    // drop location is the instructor panel, remove assignment
+    // drop location is the instructor panel and the drag did not originate from the panel, remove assignment
+    // second statement prevents user from unassigning by picking up course from courses panel, then dropping back into courses panel
     else if (dropLocation?.type == "panel"){
-      removeAssignment(sectionDrag.sectionId, sectionDrag.prevInstructorId)
+      if (sectionDrag?.source != "panel"){
+        removeAssignment(sectionDrag.sectionId, sectionDrag.prevInstructorId)
+        return
+      }
+      console.log(`INFO: ${over?.id} originated from panel, and will not be removed by being draged to it`)
     }
     // drop location not recognised, ignore
     else {
