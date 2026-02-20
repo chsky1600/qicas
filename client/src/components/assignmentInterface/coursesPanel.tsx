@@ -1,5 +1,6 @@
 import type { Section, SectionState } from "@/features/assignment/assignment.types"
 import Course from "./course"
+import { useDroppable } from "@dnd-kit/core";
 
 import {
   Table,
@@ -13,10 +14,23 @@ import {
 
 function CoursesPanel(sectionState : SectionState)  {
   //TODO functionality to sort sections, separate into distinct sections
-  const sectionsList: Section[] = sectionState.allIds.map(id => sectionState.byId[id])  
+  const sectionsList: Section[] = sectionState.allIds.map(id => sectionState.byId[id])
+
+  // section panel is receptical for unassigning sections
+  // when section dragged here, the section is unassigned
+  const {isOver: isOverFall, setNodeRef: setNodeRefFall} = useDroppable({
+      id: `section-panel`,
+      data: {
+        type: "panel",
+      }
+    })
+  
+  const styleReturn = {
+    opacity: isOverFall ? 0.5 : 1,
+  }
 
   return (
-    <div className="courses-panel">
+    <div className="courses-panel" ref={setNodeRefFall} style={styleReturn}>
 
       <h2>Courses</h2>
       <Table>

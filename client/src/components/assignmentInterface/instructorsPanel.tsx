@@ -48,14 +48,6 @@ function InstructorsPanel({instructorState, sectionState}: InstructorsPanelProps
         </TableBody>
       </Table>
 
-      {/*
-      <ul>
-        {sectionsList?.map((section) => (
-          <Course {...section}/>
-        ))}
-      </ul>
-      */}
-
     </div>
   )
 }

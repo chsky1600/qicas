@@ -30,9 +30,16 @@ export default function AssignmentInterface({
   const [heldSection, setHeldSection] = useState<number | string | null>(null)
 
   const handleDragStart = (event: DragStartEvent) => {
-    setHeldSection(event.active.id);
-    //TODO - remove for more robust testing
     console.log(`INFO: holding section id (${event.active.id})`)
+    const sectionDrag = event.active.data.current
+
+    // if drop is not an instructor or drag is not a section, to not continue
+    if (sectionDrag?.type !== "section"){
+      console.log(`WARN: ${event.active.id} is not a section`)
+      return
+    }
+
+    setHeldSection(sectionDrag.sectionId);
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -44,16 +51,36 @@ export default function AssignmentInterface({
     console.log(`INFO: onto instructor id (${over?.id})`)
 
     const sectionDrag = active.data.current
-    const instructorDrop = over?.data.current
+    const dropLocation = over?.data.current
 
     // if drop is not an instructor or drag is not a section, to not continue
-    if (instructorDrop?.type !== "instructor" || sectionDrag?.type !== "section"){
-      console.log(`WARN: ${active.id} is not a section or ${over?.id} is not an instructor`)
+    if (sectionDrag?.type !== "section"){
+      console.log(`WARN: ${active.id} is not a section`)
       return
     }
     
-    // Call the assignment function with all the neccisary data
-    makeAssignment(sectionDrag.sectionId, instructorDrop.instructorId, instructorDrop.term, sectionDrag.prevInstructorId)
+    // drop location is an instructor, make new assignment
+    if (dropLocation?.type == "instructor"){
+      // dont process if assign location and previous location are the same
+      if (dropLocation.instructorId != sectionDrag.prevInstructorId){
+        makeAssignment(sectionDrag.sectionId, dropLocation.instructorId, dropLocation.term, sectionDrag.prevInstructorId)
+        return
+      }
+      console.log(`INFO: ${over?.id} reAssigned to the same instructor`)
+    }
+    // drop location is the instructor panel and the drag did not originate from the panel, remove assignment
+    // second statement prevents user from unassigning by picking up course from courses panel, then dropping back into courses panel
+    else if (dropLocation?.type == "panel"){
+      if (sectionDrag?.source != "panel"){
+        removeAssignment(sectionDrag.sectionId, sectionDrag.prevInstructorId)
+        return
+      }
+      console.log(`INFO: ${over?.id} originated from panel, and will not be removed by being draged to it`)
+    }
+    // drop location not recognised, ignore
+    else {
+      console.log(`WARN: ${over?.id} is not an viable drop location`)
+    }
   }
  
   return (
@@ -76,7 +103,7 @@ export default function AssignmentInterface({
           {/* Right panel - instructors */}        
           <InstructorsPanel instructorState={instructorState} sectionState={sectionState}/>
 
-          <DragOverlay>
+          <DragOverlay dropAnimation={null}>
             {heldSection ? (
               <span key={heldSection}  className="bg-green-500 text-white px-2 py-1 rounded text-sm content-center">
                 {sectionState.byId[heldSection].code}

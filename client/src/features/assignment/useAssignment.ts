@@ -13,7 +13,7 @@ export interface UseAssignmentResult {
   updateSection: (updatedSection: assignmentType.Section) => void;  
   updateInstructor: (updatedInstructor: assignmentType.Instructor) => void;  
   makeAssignment: (assignedSectionId: assignmentType.SectionId, nextInstructorId: assignmentType.InstructorId, assignmentLocation: assignmentType.SectionAvailability, prevInstructorId: assignmentType.InstructorId | null) => void;  
-  removeAssignment: () => void;
+  removeAssignment: (unassignedSectionId: assignmentType.SectionId, prevInstructorId: assignmentType.InstructorId) => void;
 }
 
 function stateObjectExists(state: assignmentType.InstructorState | assignmentType.SectionState, id: assignmentType.InstructorId | assignmentType.SectionId): boolean {
@@ -186,7 +186,7 @@ export function useAssignment(): UseAssignmentResult {
       console.log(instructorState.byId[prevInstructorId])
       console.log(modifiablePrevInstructor.fall_assigned)
 
-      // remove any instances of the assigned Section from 
+      // remove any instances of the assigned Section from prev instructor
       modifiablePrevInstructor.fall_assigned.delete(assignedSectionId);
       modifiablePrevInstructor.wint_assigned.delete(assignedSectionId);
       
@@ -241,12 +241,62 @@ export function useAssignment(): UseAssignmentResult {
     }))
   };
 
-  const removeAssignment = () => {
-    /*
-    setSections(prev =>
-      prev.map(s => (s.id === updated.id ? updated : s))
-    );
-    */
+  const removeAssignment = (unassignedSectionId: assignmentType.SectionId, 
+                          prevInstructorId: assignmentType.InstructorId) => {
+
+    // if Section id does not exist, return error
+    if (!stateObjectExists(sectionState, unassignedSectionId)) {
+      // TODO return error      
+      console.log(`WARN: section with id ${unassignedSectionId} does not exist`)
+      return
+    }
+
+    // if next Instructor id does not exist, return error
+    if (!stateObjectExists(instructorState, prevInstructorId)) {
+      // TODO return error
+      console.log(`WARN: instructor with id ${prevInstructorId} does not exist`)
+      return
+    }
+
+    // remove section from prev
+    // TODO: call api to remove sectionID from prevInstructorID
+
+    // local copy of the prev Instructor which can be modified without mutating the instructorState
+    const modifiablePrevInstructor: assignmentType.Instructor = { ...instructorState.byId[prevInstructorId]}
+
+    console.log("PREV")
+    console.log(instructorState.byId[prevInstructorId])
+    console.log(modifiablePrevInstructor.fall_assigned)
+
+    // remove any instances of the removed Section from prev instructor
+    modifiablePrevInstructor.fall_assigned.delete(unassignedSectionId);
+    modifiablePrevInstructor.wint_assigned.delete(unassignedSectionId);
+    
+    console.log(modifiablePrevInstructor.fall_assigned)
+    
+    setInstructorState(prev => ({
+      ...prev,
+      byId: {
+        ...prev.byId,
+        [prevInstructorId]: modifiablePrevInstructor
+      }
+    }))
+
+    // remove prev Instructor from section, to set it as null / unassigned
+
+    // local copy of the assigned section which can be modified without mutating the sectionState
+    const modifiableAssignedSection: assignmentType.Section = {...sectionState.byId[unassignedSectionId]}
+
+    modifiableAssignedSection.assigned_to = null
+
+    setSectionState(prev => ({
+      ...prev,
+      byId: {
+        ...prev.byId,
+        [unassignedSectionId]: modifiableAssignedSection
+      }
+    }))
+    
   };
 
   return {
