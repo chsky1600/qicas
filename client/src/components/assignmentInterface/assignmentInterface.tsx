@@ -30,9 +30,16 @@ export default function AssignmentInterface({
   const [heldSection, setHeldSection] = useState<number | string | null>(null)
 
   const handleDragStart = (event: DragStartEvent) => {
-    setHeldSection(event.active.id);
-    //TODO - remove for more robust testing
     console.log(`INFO: holding section id (${event.active.id})`)
+    const sectionDrag = event.active.data.current
+
+    // if drop is not an instructor or drag is not a section, to not continue
+    if (sectionDrag?.type !== "section"){
+      console.log(`WARN: ${event.active.id} is not a section`)
+      return
+    }
+
+    setHeldSection(sectionDrag.sectionId);
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -44,16 +51,26 @@ export default function AssignmentInterface({
     console.log(`INFO: onto instructor id (${over?.id})`)
 
     const sectionDrag = active.data.current
-    const instructorDrop = over?.data.current
+    const dropLocation = over?.data.current
 
     // if drop is not an instructor or drag is not a section, to not continue
-    if (instructorDrop?.type !== "instructor" || sectionDrag?.type !== "section"){
-      console.log(`WARN: ${active.id} is not a section or ${over?.id} is not an instructor`)
+    if (sectionDrag?.type !== "section"){
+      console.log(`WARN: ${active.id} is not a section`)
       return
     }
     
-    // Call the assignment function with all the neccisary data
-    makeAssignment(sectionDrag.sectionId, instructorDrop.instructorId, instructorDrop.term, sectionDrag.prevInstructorId)
+    // drop location is an instructor, make new assignment
+    if (dropLocation?.type == "instructor" ){
+      makeAssignment(sectionDrag.sectionId, dropLocation.instructorId, dropLocation.term, sectionDrag.prevInstructorId)
+    }
+    // drop location is the instructor panel, remove assignment
+    else if (dropLocation?.type == "panel"){
+      removeAssignment(sectionDrag.sectionId, sectionDrag.prevInstructorId)
+    }
+    // drop location not recognised, ignore
+    else {
+      console.log(`WARN: ${over?.id} is not an viable drop location`)
+    }
   }
  
   return (

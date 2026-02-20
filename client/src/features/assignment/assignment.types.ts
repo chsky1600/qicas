@@ -24,8 +24,8 @@ export const sectionStateEmpty: SectionState = {
 export enum SectionAvailability {
     F = "Fall",
     W = "Winter",
-    FandW = "Fall/Wint.",
-    ForW = "Full Year",
+    FandW = "Full Year",
+    ForW = "Fall/Wint.",
 }
 
 export type InstructorId = string;

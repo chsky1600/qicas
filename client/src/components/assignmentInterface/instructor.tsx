@@ -1,6 +1,7 @@
 import { type Instructor as InstructorType, type SectionState, SectionAvailability } from "@/features/assignment/assignment.types"
 import { TableCell, TableRow } from "@/components/ui/table"
 import { useDroppable } from "@dnd-kit/core";
+import AssignedChip from "./assignedChip"
 
 interface InstructorProps {
   instructor: InstructorType;
@@ -28,11 +29,11 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
   })
 
   const styleFall = {
-    opacity: isOverFall ? 1 : 0.5,
+    opacity: isOverFall ? 0.5 : 1,
   }
 
   const styleWint = {
-    opacity: isOverWint ? 1 : 0.5,
+    opacity: isOverWint ? 0.5 : 1,
   }
 
 
@@ -51,9 +52,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
           {Array.from(instructor.fall_assigned).map((sectionId) => {
             const section = sectionState.byId[sectionId];
             return section ? (
-              <span key={sectionId} className="bg-green-500 text-white px-2 py-1 rounded text-sm">
-                {section.code}
-              </span>
+              <AssignedChip {...section}/>
             ) : null;
           })}
         </div>
@@ -65,9 +64,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
           {Array.from(instructor.wint_assigned).map((sectionId) => {
             const section = sectionState.byId[sectionId];
             return section ? (
-              <span key={sectionId} className="bg-green-500 text-white px-2 py-1 rounded text-sm">
-                {section.code}
-              </span>
+              <AssignedChip {...section}/>
             ) : null;
           })}
         </div>
