@@ -14,8 +14,6 @@ import courseRouter from "./api/courseRouter";
 import { connectDB } from "./db/connection";
 import { verifyToken } from "./controllers/authController";
 
-const cookieParser = require('cookie-parser');
-
 const app = express();
 
 app.use(cors());
@@ -27,6 +25,9 @@ app.use(authRouter);
 
 instructorRouter.use(verifyToken);
 app.use(instructorRouter);
+
+courseRouter.use(verifyToken);
+app.use(courseRouter);
 
 scheduleRouter.use(verifyToken);
 app.use(scheduleRouter);
