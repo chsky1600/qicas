@@ -16,3 +16,5 @@ router.delete("/users/:user_id", deleteUserByID)
 
 router.post("/users", createUser)
 router.get("/users", getAllUsers)
+
+export default router;
