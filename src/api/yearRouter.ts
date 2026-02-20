@@ -28,3 +28,5 @@ router.post("/year/:year/rules/instructors", addInstructorRule)
 router.get("/year/:year/rules/instructors/:rule_id", getInstructorRuleByID)
 router.put("/year/:year/rules/instructors/:rule_id", updateInstructorRuleByID)
 router.delete("/year/:year/rules/instructors/:rule_id", deleteInstructorRuleByID)
+
+export default router;
