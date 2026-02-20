@@ -26,7 +26,7 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
         id: "1",
         name: "intro to french (2)",
         dept: "FREN",
-        code: "101",
+        code: "102",
         year_introduced: "xx",
         section_num: 2,
         workload: 1,
@@ -38,37 +38,37 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
         id: "2",
         name: "intro to french (3)",
         dept: "FREN",
-        code: "101",
+        code: "103",
         year_introduced: "xx",
         section_num: 3,
         workload: 1,
         availability: SectionAvailability.F,
         capacity: 200,
-        assigned_to: "1"
+        assigned_to: "0"
       },
       "3": {
         id: "3",
         name: "intro to french (4)",
         dept: "FREN",
-        code: "101",
+        code: "104",
         year_introduced: "xx",
         section_num: 4,
         workload: 1,
         availability: SectionAvailability.F,
         capacity: 200,
-        assigned_to: "1"
+        assigned_to: "0"
       },
       "4": {
         id: "4",
         name: "intro to french (5)",
         dept: "FREN",
-        code: "101",
+        code: "105",
         year_introduced: "xx",
         section_num: 5,
         workload: 1,
-        availability: SectionAvailability.F,
+        availability: SectionAvailability.FandW,
         capacity: 200,
-        assigned_to: "1"
+        assigned_to: "0"
       },
     },
     allIds: ["0", "1", "2", "3", "4"],

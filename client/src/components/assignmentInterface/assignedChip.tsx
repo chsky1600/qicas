@@ -20,7 +20,7 @@ export default function AssignedChip(section : Section)  {
 
   return (
     <span key={section.id} ref={setNodeRef} style={style} {...listeners} {...attributes} className="bg-green-500 text-white px-2 py-1 rounded text-sm">
-        {section.code}
+        {section.dept}{section.code}
     </span>
   )
 }
