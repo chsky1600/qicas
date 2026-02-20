@@ -25,6 +25,9 @@ app.use(authRouter);
 instructorRouter.use(verifyToken);
 app.use(instructorRouter);
 
+courseRouter.use(verifyToken);
+app.use(courseRouter);
+
 scheduleRouter.use(verifyToken);
 app.use(scheduleRouter);
 
