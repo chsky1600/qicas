@@ -73,7 +73,13 @@ export const getToken = async (req : Request, res : Response) => {
 // verification middleware 
 export const verifyToken = async (req : Request, res : Response, next: NextFunction) => {
 
-    const token : string | undefined = req.headers.cookie?.replace("token=", "");
+    const tokenFromCookies = (req as any).cookies?.token as string | undefined;
+    const tokenFromHeader = req.headers.cookie
+        ?.split(";")
+        .map((s) => s.trim())
+        .find((s) => s.startsWith("token="))
+        ?.split("=")[1];
+    const token : string | undefined = tokenFromCookies || tokenFromHeader;
 
     console.log("Verifying Token")
 
@@ -85,6 +91,7 @@ export const verifyToken = async (req : Request, res : Response, next: NextFunct
             });
             console.log(payload)
             console.log(protectedHeader)
+            if (!req.body) req.body = {};
             req.body.faculty_id = payload.faculty_id;
             next();
             return
