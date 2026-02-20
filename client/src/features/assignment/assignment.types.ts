@@ -3,9 +3,11 @@ export type SectionId = string;
 export interface Section {
   id: SectionId,
   name: string,
+  dept: string,
   code: string,
   year_introduced: string,
   section_num: number,
+  workload: number,
   availability: SectionAvailability,
   capacity: number,
   assigned_to: InstructorId | null,
@@ -33,8 +35,11 @@ export type InstructorId = string;
 export interface Instructor {
   id: InstructorId,
   name: string,
-  positon: {short: string, long: string},
+  position: {short: string, long: string},
+  email: string,
   workload_total: number,
+  modifier: number,
+  notes: string,
   fall_assigned: Set<SectionId>,
   wint_assigned: Set<SectionId>,
   //TODO - warnings?

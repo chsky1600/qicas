@@ -1,6 +1,16 @@
 import './toolbar.css';
+import type { SectionState, InstructorState, Section, Instructor } from '@/features/assignment/assignment.types';
+import { useState } from 'react';
+import PropertiesDialog from './propertiesDialog';
 
-export default function Toolbar() {
+export default function Toolbar({sectionState, instructorState, updateSection, updateInstructor}: {
+  sectionState: SectionState, 
+  instructorState: InstructorState, 
+  updateSection: (id: string, updated: Section) => void, 
+  updateInstructor: (id: string, updated: Instructor) => void
+}) {
+
+  const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
   return (
     <div className="toolbar">
       {/* Left side - Logo and Schedule selector */}
@@ -24,7 +34,7 @@ export default function Toolbar() {
           Tutorial
         </button>
         
-        <button className="toolbar-btn">
+        <button className="toolbar-btn" onClick={() => setIsPropertiesOpen(true)}>
           <span className="icon">📄</span>
           Edit Properties
         </button>
@@ -44,6 +54,14 @@ export default function Toolbar() {
           Settings
         </button>
       </div>
+      <PropertiesDialog
+        isOpen={isPropertiesOpen}
+        onClose={() => setIsPropertiesOpen(false)}
+        sectionState={sectionState}
+        instructorState={instructorState}
+        onUpdateSection={updateSection}
+        onUpdateInstructor={updateInstructor}
+      />
     </div>
   );
 }

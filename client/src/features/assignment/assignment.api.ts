@@ -13,9 +13,11 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       "0": {
         id: "0",
         name: "intro to french (1)",
-        code: "FREN101",
+        dept: "FREN",
+        code: "101",
         year_introduced: "xx",
         section_num: 1,
+        workload: 1,
         availability: SectionAvailability.F,
         capacity: 200,
         assigned_to: "0"
@@ -23,9 +25,11 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       "1": {
         id: "1",
         name: "intro to french (2)",
-        code: "FREN102",
+        dept: "FREN",
+        code: "101",
         year_introduced: "xx",
         section_num: 2,
+        workload: 1,
         availability: SectionAvailability.F,
         capacity: 200,
         assigned_to: "0"
@@ -33,32 +37,38 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       "2": {
         id: "2",
         name: "intro to french (3)",
-        code: "FREN103",
+        dept: "FREN",
+        code: "101",
         year_introduced: "xx",
         section_num: 3,
+        workload: 1,
         availability: SectionAvailability.F,
-        capacity: 200,      
-        assigned_to: "0"
+        capacity: 200,
+        assigned_to: "1"
       },
       "3": {
         id: "3",
         name: "intro to french (4)",
-        code: "FREN104",
+        dept: "FREN",
+        code: "101",
         year_introduced: "xx",
         section_num: 4,
+        workload: 1,
         availability: SectionAvailability.F,
         capacity: 200,
-        assigned_to: "0"
+        assigned_to: "1"
       },
       "4": {
         id: "4",
         name: "intro to french (5)",
-        code: "FREN105",
+        dept: "FREN",
+        code: "101",
         year_introduced: "xx",
         section_num: 5,
-        availability: SectionAvailability.FandW,
-        capacity: 200,        
-        assigned_to: "0"
+        workload: 1,
+        availability: SectionAvailability.F,
+        capacity: 200,
+        assigned_to: "1"
       },
     },
     allIds: ["0", "1", "2", "3", "4"],
@@ -69,16 +79,22 @@ export function fetchAssignment(/*faculty_id, academic_year_id, Schedule_id*/) {
       "0": {
         id: "0",
         name: "John Robbin",
-        positon: {short: "Prof.", long: "Professor"},
+        position: {short: "Prof.", long: "Professor"},
+        email: "jr@queensu.ca",
         workload_total: 4,
+        modifier: 0,
+        notes: "",
         fall_assigned: new Set<string>(["0", "1", "2", "3","4"]),
         wint_assigned: new Set<string>(["4"]),
       },
       "1": {
         id: "1",
         name: "Erin Erika",
-        positon: {short: "T.F.", long: "Teaching Fellow"},
+        position: {short: "T.F.", long: "Teaching Fellow"},
+        email: "ee@queensu.ca",
         workload_total: 2,
+        modifier: 0,
+        notes: "",
         fall_assigned: new Set<string>(),
         wint_assigned: new Set<string>(),
       },

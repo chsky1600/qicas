@@ -89,8 +89,7 @@ export function useAssignment(): UseAssignmentResult {
     return () => clearInterval(interval);
   }, [fetchData]);
   */
-
-  // User-triggered updates
+  
   const updateSection = (updatedSection: assignmentType.Section) => {
     //TODO - Loading consideration?
     //TODO - API call
