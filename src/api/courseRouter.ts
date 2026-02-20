@@ -12,7 +12,7 @@ const router = express.Router();
 
 router.get("/courses/:year", getAllCourses);
 router.get("/courses/:year/:course_id", getCourseByID);
-router.get("/courses/:year/:course_id/assignments", getCourseAssignmentsbyID);
+router.get("/courses/:year/:course_code/assignments", getCourseAssignmentsbyID);
 router.post("/courses/:year", createCourse);
 router.patch("/courses/:year/:course_id", updateCourse);
 

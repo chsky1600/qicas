@@ -9,9 +9,12 @@ import scheduleRouter from "./api/scheduleRouter";
 import yearRouter from "./api/yearRouter";
 import userRouter from "./api/userRouter";
 import facultyRouter from "./api/facultyRouter";
+import courseRouter from "./api/courseRouter";
 
 import { connectDB } from "./db/connection";
 import { verifyToken } from "./controllers/authController";
+
+const cookieParser = require('cookie-parser');
 
 const app = express();
 

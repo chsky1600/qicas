@@ -13,10 +13,10 @@ const router = express.Router();
 
 router.use(verifyToken)
 
-router.get("/instructors", getAllInstructors);
-router.get("/instructors/:instructor_id", getInstructorByID);
-router.get("/instructors/:instructor_id/assignments", getInstructorAssignmentsByID);
-router.post("/instructors", createInstructor);
-router.patch("/instructors/:instructor_id", updateInstructor);
+router.get("/instructors/:year", getAllInstructors);
+router.get("/instructors/:year/:instructor_id", getInstructorByID);
+router.get("/instructors/:year/:instructor_id/assignments", getInstructorAssignmentsByID);
+router.post("/instructors/:year", createInstructor);
+router.patch("/instructors/:year/:instructor_id", updateInstructor);
 
 export default router;
