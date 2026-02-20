@@ -26,8 +26,8 @@ export const sectionStateEmpty: SectionState = {
 export enum SectionAvailability {
     F = "Fall",
     W = "Winter",
-    FandW = "Fall/Wint.",
-    ForW = "Full Year",
+    FandW = "Full Year",
+    ForW = "Fall/Wint.",
 }
 
 export type InstructorId = string;
@@ -40,14 +40,14 @@ export interface Instructor {
   workload_total: number,
   modifier: number,
   notes: string,
-  fall_assigned: SectionId[],
-  wint_assigned: SectionId[],
+  fall_assigned: Set<SectionId>,
+  wint_assigned: Set<SectionId>,
   //TODO - warnings?
 }
 
 export interface InstructorState {
-  byId: Record<SectionId, Instructor>;
-  allIds: SectionId[];
+  byId: Record<InstructorId, Instructor>;
+  allIds: InstructorId[];
 }
 
 export const instructorStateEmpty: InstructorState = {
