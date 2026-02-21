@@ -15,6 +15,44 @@ export function isFacultyServiceError(err: unknown): err is ServiceError {
   return err instanceof ServiceError;
 }
 
+function normalizeForClone<T>(value: T): T {
+  const anyValue = value as any;
+  if (anyValue && typeof anyValue === "object") {
+    const maybeToObject = anyValue.toObject as (() => unknown) | undefined;
+    if (typeof maybeToObject === "function") {
+      return maybeToObject.call(anyValue) as T;
+    }
+  }
+  return value;
+}
+
+function cloneWithoutMongoIds<T>(value: T): T {
+  if (value === null || value === undefined) return value;
+
+  const normalized = normalizeForClone(value);
+
+  if (normalized instanceof Date) {
+    return new Date(normalized.getTime()) as T;
+  }
+
+  if (Array.isArray(normalized)) {
+    return normalized.map((item) => cloneWithoutMongoIds(item)) as T;
+  }
+
+  if (typeof normalized === "object") {
+    const result: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(
+      normalized as Record<string, unknown>
+    )) {
+      if (key === "_id" || key === "__v") continue;
+      result[key] = cloneWithoutMongoIds(val as unknown);
+    }
+    return result as T;
+  }
+
+  return normalized;
+}
+
 /**
  * Get the authenticated faculty (as a list of one).
  *
@@ -160,6 +198,7 @@ export async function removeUserFromFacultyByID(
 
 /**
  * Clone rules/courses/instructors into a new academic year with empty schedules.
+ * Uses a deep clone and strips Mongo _id fields to avoid shared references.
  *
  * @param faculty_id - Faculty identifier from JWT
  * @param target_id - Faculty id from route param
@@ -202,10 +241,10 @@ export async function migrateFacultyToNewYear(
     id: new_year_id,
     name: name ?? `${source.name} (Copy)`,
     schedules: [],
-    courses: [...source.courses],
-    instructors: [...source.instructors],
-    instructor_rules: [...source.instructor_rules],
-    course_rules: [...source.course_rules],
+    courses: cloneWithoutMongoIds(source.courses),
+    instructors: cloneWithoutMongoIds(source.instructors),
+    instructor_rules: cloneWithoutMongoIds(source.instructor_rules),
+    course_rules: cloneWithoutMongoIds(source.course_rules),
   };
 
   faculty.academic_years.push(newYear);
