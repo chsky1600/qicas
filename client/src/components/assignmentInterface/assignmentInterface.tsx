@@ -5,6 +5,7 @@ import Toolbar from './toolbar';
 import './assignmentInterface.css';
 import { useState } from "react";
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
+import AssignedChip from "./assignedChip";
 
 import {
   DndContext,
@@ -61,12 +62,8 @@ export default function AssignmentInterface({
     
     // drop location is an instructor, make new assignment
     if (dropLocation?.type == "instructor"){
-      // dont process if assign location and previous location are the same
-      if (dropLocation.instructorId != sectionDrag.prevInstructorId){
-        makeAssignment(sectionDrag.sectionId, dropLocation.instructorId, dropLocation.term, sectionDrag.prevInstructorId)
-        return
-      }
-      console.log(`INFO: ${over?.id} reAssigned to the same instructor`)
+      makeAssignment(sectionDrag.sectionId, dropLocation.instructorId, dropLocation.term, sectionDrag.prevInstructorId)
+      return
     }
     // drop location is the instructor panel and the drag did not originate from the panel, remove assignment
     // second statement prevents user from unassigning by picking up course from courses panel, then dropping back into courses panel
@@ -110,9 +107,7 @@ export default function AssignmentInterface({
 
           <DragOverlay dropAnimation={null}>
             {heldSection ? (
-              <span key={heldSection}  className="bg-green-500 text-white px-2 py-1 rounded text-sm content-center">
-                {sectionState.byId[heldSection].dept} {sectionState.byId[heldSection].code}
-              </span>
+              <AssignedChip key={heldSection} {...sectionState.byId[heldSection]}/>
             ): null}
           </DragOverlay>        
         </DndContext>
