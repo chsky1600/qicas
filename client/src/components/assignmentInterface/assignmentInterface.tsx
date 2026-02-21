@@ -5,6 +5,7 @@ import Toolbar from './toolbar';
 import './assignmentInterface.css';
 import { useState } from "react";
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
+import AssignedChip from "./assignedChip";
 
 import {
   DndContext,
@@ -106,9 +107,7 @@ export default function AssignmentInterface({
 
           <DragOverlay dropAnimation={null}>
             {heldSection ? (
-              <span key={heldSection}  className="bg-green-500 text-white px-2 py-1 rounded text-sm content-center">
-                {sectionState.byId[heldSection].dept}{sectionState.byId[heldSection].code}
-              </span>
+              <AssignedChip key={heldSection} {...sectionState.byId[heldSection]}/>
             ): null}
           </DragOverlay>        
         </DndContext>

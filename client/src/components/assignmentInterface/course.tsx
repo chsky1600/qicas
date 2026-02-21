@@ -23,11 +23,11 @@ export default function Course(section : Section)  {
   };
 
   return (
-    <TableRow ref={setNodeRef} style={style} {...listeners} {...attributes} key={section.id}>
-      <TableCell className="text-center font-medium">{section.dept}{section.code}</TableCell>              
-      <TableCell className="text-center">{section.section_num}</TableCell>
-      <TableCell className="text-center">{section.availability}</TableCell>
-      <TableCell className="text-center">{section.capacity}</TableCell>
+    <TableRow ref={setNodeRef} style={style} {...listeners} {...attributes}>
+      <TableCell key="course_code_column" className="text-center font-medium">{section.dept}{section.code}</TableCell>              
+      <TableCell key="section_column" className="text-center">{section.section_num}</TableCell>
+      <TableCell key="avail_column" className="text-center">{section.availability}</TableCell>
+      <TableCell key="capacity_column" className="text-center">{section.capacity}</TableCell>
       {/*TODO: dropdown menuing */}
     </TableRow>
   )
