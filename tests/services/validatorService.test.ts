@@ -20,8 +20,11 @@ const mockCtx: AcademicYear = {
       { id: "c-1", name: "Intro to Computing", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [] },
     ], notes: [] },
     { id: "inst-4", name: "A. Taylor", workload: 2, email: "taylor@queensu.ca", rank: "TeachingFellow", prev_taught: [], notes: [] },
+    { id: "inst-5", name: "B. Adams", workload: 2, email: "adams@queensu.ca", rank: "TermAdjunctSRoR", prev_taught: [], notes: [] },
   ],
-  instructor_rules: [],
+  instructor_rules: [
+    { id: "ir-5", instructor_id: "inst-5", designations: [], workload_delta: 0, courses: ["CISC101", "CISC490"], declined_courses: [] },
+  ],
   course_rules: [
     {
       id: "cr-1",
@@ -389,6 +392,87 @@ describe("checkInstructorRules", () => {
       const violations = checkInstructorRules(mockCtx, schedule, a);
 
       expect(violations.filter(v => v.code === "FIRST_TIME_TEACHING")).toHaveLength(0);
+    });
+  });
+
+  describe("UNEVEN_YEAR (INFO)", () => {
+    test("fires when instructor has 3 Fall sections and 1 Winter section (gap of 2)", () => {
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-2", term: "Fall" });
+      const a3 = makeAssignment({ id: "a-3", instructor_id: "inst-1", course_code: "CISC490", section_id: "s-8", term: "Fall" });
+      const a4 = makeAssignment({ id: "a-4", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Winter" });
+      const schedule = makeSchedule([a1, a2, a3, a4]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a3);
+
+      expect(violations.filter(v => v.code === "UNEVEN_YEAR")).toHaveLength(1);
+      expect(violations.find(v => v.code === "UNEVEN_YEAR")!.degree).toBe("Info");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+    });
+
+    test("does NOT fire when gap is exactly 1 (2 Fall, 1 Winter)", () => {
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-2", term: "Fall" });
+      const a3 = makeAssignment({ id: "a-3", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Winter" });
+      const schedule = makeSchedule([a1, a2, a3]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a2);
+
+      expect(violations.filter(v => v.code === "UNEVEN_YEAR")).toHaveLength(0);
+    });
+
+    test("does NOT fire when terms are balanced (1 Fall, 1 Winter)", () => {
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Winter" });
+      const schedule = makeSchedule([a1, a2]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a1);
+
+      expect(violations.filter(v => v.code === "UNEVEN_YEAR")).toHaveLength(0);
+    });
+
+    test("fires when instructor has 0 Fall and 2 Winter (gap of 2)", () => {
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Winter" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-2", term: "Winter" });
+      const schedule = makeSchedule([a1, a2]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a2);
+
+      expect(violations.filter(v => v.code === "UNEVEN_YEAR")).toHaveLength(1);
+    });
+  });
+
+  describe("TADJ_UNASSIGNED (WARNING)", () => {
+    test("fires when SRoR adjunct is missing a designated course", () => {
+      // inst-5 (SRoR) has designated courses [CISC101, CISC490], only assigned CISC101.
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-5", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "TADJ_UNASSIGNED")).toHaveLength(1);
+      expect(violations.find(v => v.code === "TADJ_UNASSIGNED")!.degree).toBe("Warning");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+    });
+
+    test("does NOT fire when SRoR adjunct is assigned all designated courses", () => {
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-5", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-5", course_code: "CISC490", section_id: "s-8", term: "Fall" });
+      const schedule = makeSchedule([a1, a2]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a1);
+
+      expect(violations.filter(v => v.code === "TADJ_UNASSIGNED")).toHaveLength(0);
+    });
+
+    test("does NOT fire for non-SRoR/GRoR instructors", () => {
+      // inst-1 is FullProfessor — rule should not apply even if instructor_rules existed.
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "TADJ_UNASSIGNED")).toHaveLength(0);
     });
   });
 });

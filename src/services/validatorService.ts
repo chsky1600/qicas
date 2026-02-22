@@ -304,6 +304,49 @@ export function checkInstructorRules(
     });
   }
 
+  // --- UNEVEN_YEAR (Info) ---
+  // An instructor has a gap of 2+ between sections taught in Fall vs. Winter.
+  const fallCount = projected.assignments.filter(
+    a => a.instructor_id === candidate.instructor_id && a.term === "Fall"
+  ).length;
+  const winterCount = projected.assignments.filter(
+    a => a.instructor_id === candidate.instructor_id && a.term === "Winter"
+  ).length;
+  if (Math.abs(fallCount - winterCount) >= 2) {
+    violations.push({
+      id: `v-uneven-year-${candidate.instructor_id}`,
+      type: "Instructor",
+      offending_id: candidate.instructor_id,
+      code: "UNEVEN_YEAR",
+      message: `${instructor.name} has ${fallCount} sections in Fall and ${winterCount} in Winter (gap of ${Math.abs(fallCount - winterCount)}).`,
+      degree: "Info",
+    });
+  }
+
+  // --- TADJ_UNASSIGNED (Warning) ---
+  // A (S/G)RoR adjunct has not yet been assigned all of their designated courses.
+  const iRule = ctx.instructor_rules.find(r => r.instructor_id === candidate.instructor_id);
+  if (
+    iRule &&
+    (instructor.rank === "TermAdjunctSRoR" || instructor.rank === "TermAdjunctGRoR") &&
+    iRule.courses.length > 0
+  ) {
+    const assignedCodes = projected.assignments
+      .filter(a => a.instructor_id === candidate.instructor_id)
+      .map(a => a.course_code);
+    const missing = iRule.courses.filter(c => !assignedCodes.includes(c));
+    if (missing.length > 0) {
+      violations.push({
+        id: `v-tadj-unassigned-${candidate.instructor_id}`,
+        type: "Instructor",
+        offending_id: candidate.instructor_id,
+        code: "TADJ_UNASSIGNED",
+        message: `${instructor.name} (${instructor.rank}) has not been assigned designated course(s): ${missing.join(", ")}.`,
+        degree: "Warning",
+      });
+    }
+  }
+
   return violations;
 }
 
