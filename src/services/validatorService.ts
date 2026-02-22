@@ -286,11 +286,25 @@ export function checkInstructorRules(
   projected: Schedule,
   candidate: Assignment
 ): Violation[] {
-  // TODO: Implement instructor rule checks
-  // - Check workload limits (base + workload_delta)
-  // - Verify instructor is allowed to teach this course
-  // - Check for designation-based restrictions
-  return [];
+  const violations: Violation[] = [];
+  const instructor = ctx.instructors.find(i => i.id === candidate.instructor_id);
+  if (!instructor) return violations;
+
+  // --- FIRST_TIME_TEACHING (Info) ---
+  // An instructor is assigned to a course not in their prev_taught.
+  const hasTaught = instructor.prev_taught.some(c => c.code === candidate.course_code);
+  if (!hasTaught) {
+    violations.push({
+      id: `v-first-time-${candidate.id}`,
+      type: "Instructor",
+      offending_id: candidate.instructor_id,
+      code: "FIRST_TIME_TEACHING",
+      message: `${instructor.name} has not previously taught ${candidate.course_code}.`,
+      degree: "Info",
+    });
+  }
+
+  return violations;
 }
 
 /**

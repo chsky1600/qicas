@@ -1,5 +1,5 @@
 import { describe, test, expect } from "bun:test";
-import { checkCourseRules, checkScheduleRules, worstDegree } from "../../src/services/validatorService";
+import { checkCourseRules, checkInstructorRules, checkScheduleRules, worstDegree } from "../../src/services/validatorService";
 import type { AcademicYear, Assignment, Schedule } from "../../src/types";
 const VERBOSE = process.env.ver === "1";
 
@@ -16,7 +16,9 @@ const mockCtx: AcademicYear = {
     { id: "c-7", name: "Advanced Topics in AI", code: "CISC890", level: "graduate", year_introduced: "2015", notes: [], sections: [{ id: "s-9", number: 1 }] },
   ],
   instructors: [
-    { id: "inst-1", name: "Dr. Smith", workload: 3, email: "smith@queensu.ca", rank: "FullProfessor", prev_taught: [], notes: [] },
+    { id: "inst-1", name: "Dr. Smith", workload: 3, email: "smith@queensu.ca", rank: "FullProfessor", prev_taught: [
+      { id: "c-1", name: "Intro to Computing", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [] },
+    ], notes: [] },
     { id: "inst-4", name: "A. Taylor", workload: 2, email: "taylor@queensu.ca", rank: "TeachingFellow", prev_taught: [], notes: [] },
   ],
   instructor_rules: [],
@@ -350,6 +352,43 @@ describe("checkCourseRules", () => {
       const violations = checkCourseRules(mockCtx, schedule, a3);
 
       expect(violations.filter(v => v.code === "SECTION_OVERASSIGNED")).toHaveLength(0);
+    });
+  });
+});
+
+describe("checkInstructorRules", () => {
+  describe("FIRST_TIME_TEACHING (INFO)", () => {
+    test("fires when instructor has not previously taught the course", () => {
+      // inst-1 (Dr. Smith) has prev_taught = [CISC101]. Assign to CISC490 — never taught.
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC490", section_id: "s-8", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a);
+
+      expect(violations).toHaveLength(1);
+      expect(violations[0]!.code).toBe("FIRST_TIME_TEACHING");
+      expect(violations[0]!.degree).toBe("Info");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+    });
+
+    test("fires when instructor has empty prev_taught", () => {
+      // inst-4 (A. Taylor) has prev_taught = []. Any course is first time.
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-4", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "FIRST_TIME_TEACHING")).toHaveLength(1);
+    });
+
+    test("does NOT fire when instructor has previously taught the course", () => {
+      // inst-1 (Dr. Smith) has prev_taught = [CISC101]. Assign to CISC101.
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "FIRST_TIME_TEACHING")).toHaveLength(0);
     });
   });
 });
