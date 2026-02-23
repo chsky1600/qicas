@@ -519,7 +519,28 @@ export function checkScheduleRules(
     }
   }
 
-  // TODO: SW_IMBALANCE
+  // --- SW_IMBALANCE (Warning) ---
+  // Total available internal course sections != total instructor workload across the schedule.
+  const totalSections = ctx.course_rules
+    .filter(cr => !cr.is_external)
+    .reduce((sum, cr) => sum + cr.sections_available.length * cr.terms_offered.length, 0);
+
+  const totalWorkload = ctx.instructors.reduce((sum, instructor) => {
+    const rule = ctx.instructor_rules.find(r => r.instructor_id === instructor.id);
+    const delta = rule?.workload_delta ?? 0;
+    return sum + instructor.workload + delta;
+  }, 0);
+
+  if (totalSections !== totalWorkload) {
+    violations.push({
+      id: `v-sw-imbalance`,
+      type: "Schedule",
+      offending_id: "schedule",
+      code: "SW_IMBALANCE",
+      message: `Total internal sections (${totalSections}) does not match total instructor workload (${totalWorkload}).`,
+      degree: "Warning",
+    });
+  }
 
   return violations;
 }

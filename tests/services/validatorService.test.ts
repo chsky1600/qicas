@@ -197,7 +197,7 @@ describe("checkCourseRules", () => {
     test("does NOT fire when neither term is assigned (vType is 'Unassigned', and not 'HalfOpen')", () => {
       const unrelated = makeAssignment({ id: "a-1", course_code: "CISC101", term: "Fall" });
       const candidate = makeAssignment({ id: "a-99", course_code: "CISC490", section_id: "s-8", term: "Fall" });
-      // Schedule has no CISC490 assignments — candidate is not in the schedule
+      // Schedule has no CISC490 assignments, so candidate is not in the schedule
       const schedule = makeSchedule([unrelated]);
 
       const violations = checkCourseRules(mockCtx, schedule, candidate);
@@ -364,7 +364,7 @@ describe("checkCourseRules", () => {
 describe("checkInstructorRules", () => {
   describe("FIRST_TIME_TEACHING (INFO)", () => {
     test("fires when instructor has not previously taught the course", () => {
-      // inst-1 (Dr. Smith) has prev_taught = [CISC101]. Assign to CISC490 — never taught.
+      // inst-1 (Dr. Smith) has prev_taught = [CISC101]. Assign to CISC490 (never taught)
       const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC490", section_id: "s-8", term: "Fall" });
       const schedule = makeSchedule([a]);
 
@@ -467,7 +467,7 @@ describe("checkInstructorRules", () => {
     });
 
     test("does NOT fire for non-SRoR/GRoR instructors", () => {
-      // inst-1 is FullProfessor — rule should not apply even if instructor_rules existed.
+      // inst-1 is FullProfessor: rule should not apply even if instructor_rules existed.
       const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
       const schedule = makeSchedule([a]);
 
@@ -507,7 +507,7 @@ describe("checkInstructorRules", () => {
     });
 
     test("does NOT fire when candidate is not a TermAdjunctBasic", () => {
-      // inst-1 (FullProfessor) assigned CISC101 — SRoR has rights but rule only applies to BasicAdj.
+      // inst-1 (FullProfessor) assigned CISC101— SRoR has rights but rule only applies to BasicAdj.
       const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
       const schedule = makeSchedule([a]);
 
@@ -517,7 +517,7 @@ describe("checkInstructorRules", () => {
     });
 
     test("does NOT fire when course is not in SRoR's designated courses", () => {
-      // inst-6 (TermAdjunctBasic) assigned CISC890 — inst-5 has rights to CISC101 and CISC490, not CISC890.
+      // inst-6 (TermAdjunctBasic) assigned CISC890— inst-5 has rights to CISC101 and CISC490, not CISC890.
       const a = makeAssignment({ id: "a-1", instructor_id: "inst-6", course_code: "CISC890", section_id: "s-9", term: "Winter" });
       const schedule = makeSchedule([a]);
 
@@ -561,7 +561,7 @@ describe("checkInstructorRules", () => {
     });
 
     test("does NOT fire for non-ExchangeFellow instructors", () => {
-      // inst-1 (FullProfessor) with only 1 Fall — rule should not apply.
+      // inst-1 (FullProfessor) with only 1 Fall, rule should not apply.
       const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
       const schedule = makeSchedule([a]);
 
@@ -825,27 +825,26 @@ describe("checkScheduleRules", () => {
   };
   describe("SECTION_UNASSIGNED (ERROR)", () => {
     test("fires when all instructors at capacity and internal section unassigned", () => {
-      // inst-1 has workload 1, assigned 1 section — at capacity. s-2 in Fall is uncovered.
+      // inst-1 has workload 1, assigned 1 section so at capacity. s-2 in Fall is uncovered.
       const schedule = makeSchedule([
         makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" }),
       ]);
 
       const violations = checkScheduleRules(smallCtx, schedule);
 
-      expect(violations).toHaveLength(1);
-      expect(violations[0]!.code).toBe("SECTION_UNASSIGNED");
-      expect(violations[0]!.degree).toBe("Error");
+      expect(violations.filter(v => v.code === "SECTION_UNASSIGNED")).toHaveLength(1);
+      expect(violations.find(v => v.code === "SECTION_UNASSIGNED")!.degree).toBe("Error");
       if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
     });
 
 
     test("does NOT fire when instructors still have capacity", () => {
-      // inst-1 has workload 1, assigned 0 sections — not at capacity
+      // inst-1 has workload 1, assigned 0 sections, not at capacity
       const schedule = makeSchedule([]);
 
       const violations = checkScheduleRules(smallCtx, schedule);
 
-      expect(violations).toHaveLength(0);
+      expect(violations.filter(v => v.code === "SECTION_UNASSIGNED")).toHaveLength(0);
     });
 
     test("does NOT fire when all internal sections are assigned", () => {
@@ -857,7 +856,7 @@ describe("checkScheduleRules", () => {
 
       const violations = checkScheduleRules(smallCtx, schedule);
 
-      expect(violations).toHaveLength(0);
+      expect(violations.filter(v => v.code === "SECTION_UNASSIGNED")).toHaveLength(0);
     });
 
     test("does NOT fire for external (is_external) sections", () => {
@@ -869,8 +868,83 @@ describe("checkScheduleRules", () => {
 
       const violations = checkScheduleRules(smallCtx, schedule);
 
-      // MATH110 s-ext is unassigned but external — should not fire
+      // MATH110 s-ext is unassigned but external, so should not fire
       expect(violations.filter(v => v.offending_id === "MATH110")).toHaveLength(0);
     });
-  }); 
-}); 
+  });
+
+  describe("SW_IMBALANCE (WARNING)", () => {
+    test("fires when total internal sections != total instructor workload", () => {
+      // smallCtx: 2 internal sections (CISC101 s-1 and s-2 in Fall), 1 instructor (workload 1) -> 2 != 1
+      const schedule = makeSchedule([]);
+
+      const violations = checkScheduleRules(smallCtx, schedule);
+
+      expect(violations.filter(v => v.code === "SW_IMBALANCE")).toHaveLength(1);
+      expect(violations.find(v => v.code === "SW_IMBALANCE")!.degree).toBe("Warning");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+    });
+
+    test("does NOT fire when sections and workload are balanced", () => {
+      const balancedCtx: AcademicYear = {
+        id: "year-balanced",
+        name: "2026-2027",
+        schedules: [],
+        courses: [
+          { id: "c-1", name: "Intro", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [{ id: "s-1", number: 1 }] },
+        ],
+        instructors: [
+          { id: "inst-1", name: "Dr. A", workload: 1, email: "a@q.ca", rank: "FullProfessor", prev_taught: [], notes: [] },
+        ],
+        instructor_rules: [],
+        course_rules: [
+          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false },
+        ],
+      };
+      const schedule = makeSchedule([]);
+
+      const violations = checkScheduleRules(balancedCtx, schedule);
+
+      expect(violations.filter(v => v.code === "SW_IMBALANCE")).toHaveLength(0);
+    });
+
+    test("excludes external sections from the count", () => {
+      // 1 internal section + 1 external section, 1 instructor (workload 1) -> 1 == 1, balanced
+      const schedule = makeSchedule([]);
+
+      const violations = checkScheduleRules(smallCtx, schedule);
+
+      // smallCtx has 2 internal sections and 1 external. External is excluded,
+      // but 2 internal != 1 workload, so still fires. Verify external isn't counted
+      const v = violations.find(v => v.code === "SW_IMBALANCE");
+      expect(v).toBeTruthy();
+      expect(v!.message).toContain("2"); // 2 internal sections, not 3
+    });
+
+    test("accounts for workload_delta in total workload", () => {
+      const deltaCtx: AcademicYear = {
+        id: "year-delta",
+        name: "2026-2027",
+        schedules: [],
+        courses: [
+          { id: "c-1", name: "Intro", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [{ id: "s-1", number: 1 }] },
+        ],
+        instructors: [
+          { id: "inst-1", name: "Dr. A", workload: 2, email: "a@q.ca", rank: "FullProfessor", prev_taught: [], notes: [] },
+        ],
+        instructor_rules: [
+          { id: "ir-1", instructor_id: "inst-1", designations: [], workload_delta: -1, courses: [], declined_courses: [] },
+        ],
+        course_rules: [
+          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false },
+        ],
+      };
+      // 1 section, workload 2 + delta of -1 = 1, balanced
+      const schedule = makeSchedule([]);
+
+      const violations = checkScheduleRules(deltaCtx, schedule);
+
+      expect(violations.filter(v => v.code === "SW_IMBALANCE")).toHaveLength(0);
+    });
+  });
+});
