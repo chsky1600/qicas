@@ -26,21 +26,21 @@ export async function getYearConstraints(
       is_rc: false,
       assignments: [
         // Dr. Smith assigned to CISC101-001 in both terms (CROSS_TERM_DUPLICATE if not full-year)
-        { id: "a-1", degree: "valid", instructor_id: "inst-1", section_id: "s-1", course_code: "CISC101", term: "Fall" },
-        { id: "a-2", degree: "valid", instructor_id: "inst-1", section_id: "s-1", course_code: "CISC101", term: "Winter" },
+        { id: "a-1", degree: "Valid", instructor_id: "inst-1", section_id: "s-1", course_code: "CISC101", term: "Fall" },
+        { id: "a-2", degree: "Valid", instructor_id: "inst-1", section_id: "s-1", course_code: "CISC101", term: "Winter" },
         // CISC490 full-year: only Fall assigned, Winter missing (FULLYEAR_HALF_OPEN)
-        { id: "a-3", degree: "valid", instructor_id: "inst-3", section_id: "s-8", course_code: "CISC490", term: "Fall" },
+        { id: "a-3", degree: "Valid", instructor_id: "inst-3", section_id: "s-8", course_code: "CISC490", term: "Fall" },
         // Dr. Jones assigned to CISC101-002 twice in Fall (DUPLICATE_ASSIGNMENT)
-        { id: "a-4", degree: "valid", instructor_id: "inst-2", section_id: "s-2", course_code: "CISC101", term: "Fall" },
-        { id: "a-5", degree: "valid", instructor_id: "inst-2", section_id: "s-2", course_code: "CISC101", term: "Fall" },
+        { id: "a-4", degree: "Valid", instructor_id: "inst-2", section_id: "s-2", course_code: "CISC101", term: "Fall" },
+        { id: "a-5", degree: "Valid", instructor_id: "inst-2", section_id: "s-2", course_code: "CISC101", term: "Fall" },
         // 3 instructors on CISC101-003 in Fall (SECTION_OVERASSIGNED, limit=2)
-        { id: "a-6", degree: "valid", instructor_id: "inst-1", section_id: "s-3", course_code: "CISC101", term: "Fall" },
-        { id: "a-7", degree: "valid", instructor_id: "inst-2", section_id: "s-3", course_code: "CISC101", term: "Fall" },
-        { id: "a-8", degree: "valid", instructor_id: "inst-3", section_id: "s-3", course_code: "CISC101", term: "Fall" },
+        { id: "a-6", degree: "Valid", instructor_id: "inst-1", section_id: "s-3", course_code: "CISC101", term: "Fall" },
+        { id: "a-7", degree: "Valid", instructor_id: "inst-2", section_id: "s-3", course_code: "CISC101", term: "Fall" },
+        { id: "a-8", degree: "Valid", instructor_id: "inst-3", section_id: "s-3", course_code: "CISC101", term: "Fall" },
         // Teaching Fellow assigned to graduate course (RANK_MISMATCH)
-        { id: "a-9", degree: "valid", instructor_id: "inst-4", section_id: "s-9", course_code: "CISC890", term: "Winter" },
+        { id: "a-9", degree: "Valid", instructor_id: "inst-4", section_id: "s-9", course_code: "CISC890", term: "Winter" },
         // CISC204 assigned in Winter but only offered in Fall (TERM_NOT_OFFERED)
-        { id: "a-10", degree: "valid", instructor_id: "inst-3", section_id: "s-7", course_code: "CISC204", term: "Winter" },
+        { id: "a-10", degree: "Valid", instructor_id: "inst-3", section_id: "s-7", course_code: "CISC204", term: "Winter" },
       ],
     }],
     courses: [

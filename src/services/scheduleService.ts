@@ -6,7 +6,7 @@ import type { Assignment, Schedule } from "../types";
 
 /**
  * Applies a candidate assignment to a schedule, returning the projected state.
- * Does NOT persist changes and is used for validation purposes.
+ * Does not persist changes and is used for validation purposes.
  *
  * @param schedule - The current schedule
  * @param candidate - The assignment to apply
@@ -28,4 +28,22 @@ export function applyCandidate(
       : [...schedule.assignments, candidate];
 
   return { ...schedule, assignments: newAssignments };
+}
+
+/**
+ * Removes an assignment from a schedule, returning the projected state.
+ * Does not persist changes and is used for validation purposes.
+ *
+ * @param schedule - The current schedule
+ * @param assignmentId - The ID of the assignment to remove
+ * @returns A new Schedule object with the assignment removed
+ */
+export function removeCandidate(
+  schedule: Schedule,
+  assignmentId: string
+): Schedule {
+  return {
+    ...schedule,
+    assignments: schedule.assignments.filter(a => a.id !== assignmentId),
+  };
 }

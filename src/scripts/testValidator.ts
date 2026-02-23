@@ -1,7 +1,10 @@
 import { validateAssignment } from "../services/validatorService";
 import { getYearConstraints } from "../services/yearService";
 
-async function main() {
+// one-off script to test validatorService (with actual reads from Altas db: icas-dev)
+// for unit tests see validatorService.test.ts
+
+async function main() { 
   const ctx = await getYearConstraints("test-year");
 
   // don't run this without a schedule to test i.e., pass a year_id you know exits in Mongo
