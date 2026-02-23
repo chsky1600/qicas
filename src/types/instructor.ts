@@ -13,7 +13,7 @@ export interface Instructor {
   email: string;
   /** Academic rank */
   rank: InstructorRank;
-  /** Course codes previously taught by this instructor */
+  /** Courses previously taught by this instructor */
   prev_taught: Course[];
   /** Administrative or contextual notes */
   notes: Note[];

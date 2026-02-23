@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Assignment, Schedule } from "../types";
-import { validateAssignment } from "../services";
+import { validateAssignment, validateSchedule as validateScheduleService } from "../services";
 import { FacultyModel } from "../db/models/faculty";
 
 const fetchScheduleByFacultyIdScheduleIdAndYear = async (faculty_id : string, schedule_id : string, year_id : string): Promise<Schedule | undefined> => {
@@ -158,19 +158,20 @@ export const validateSchedule = async (req : Request, res : Response) => {
 
     const schedule : Schedule | undefined = await fetchScheduleByFacultyIdScheduleIdAndYear(faculty_id, schedule_id ,year_id);
 
-    if(assignment && schedule){
-        console.log(schedule)
-        const validationResult = await validateAssignment(schedule,assignment)
-        res.json({validationResult : validationResult})
-
-    } else if (!assignment){
-        res.status(400)
-        res.json({error: "No assignment found"})
-        console.log("No assignment found.")
-    } else {
+    if (!schedule) {
         res.status(404)
         res.json({error: "No schedule found"})
-        console.log("No schedule found.")
+        return
+    }
+
+    if (assignment) {
+        // Per-candidate validation (add/update)
+        const validationResult = await validateAssignment(schedule, assignment)
+        res.json({ validationResult })
+    } else {
+        // Schedule-wide validation (removals, full-schedule load)
+        const validationResult = await validateScheduleService(schedule)
+        res.json({ validationResult })
     }
 
 }
