@@ -77,40 +77,33 @@ export default function PropertiesDialog({
   // Local working copy of the selected course.
   const [sectionEdit, setSectionEdit] = React.useState<Section | null>(null)
 
-  // ── Initialise / sync edit state ──────────────────────────────────────────
-
-  // Whenever the user switches mode or selects a different sidebar item we
-  // re-populate the local edit state from the canonical parent state.
-  React.useEffect(() => {
-    if (mode === "instructors") {
-      const id = instructorState.allIds[selectedIndex]
-      const instructor = id ? instructorState.byId[id] : null
-      // Spread into a new object so edits don't mutate the original
-      setInstructorEdit(instructor ? { ...instructor } : null)
-    } else {
-      const id = sectionState.allIds[selectedIndex]
-      const section = id ? sectionState.byId[id] : null
-      setSectionEdit(section ? { ...section } : null)
-    }
-  }, [mode, selectedIndex, instructorState, sectionState])
-
   // ── Derived values ────────────────────────────────────────────────────────
 
   // Build the sidebar list labels from whichever mode is active
   const items = React.useMemo(() => {
     if (mode === "instructors") {
-      return instructorState.allIds.map((id) => {
+      return instructorState.allIds
+      .filter((id) => {
+        const dropped = instructorState.byId[id].dropped
+        return status === "dropped" ? dropped : !dropped
+      })
+      .map((id) => {
         const instructor = instructorState.byId[id]
-        return `${instructor.position.short} ${instructor.name}`
+        return { id, label: `${instructor.position.short} ${instructor.name}` }
       })
     }
-    return sectionState.allIds.map((id) => {
-      const section = sectionState.byId[id]
-      return `${section.dept} ${section.code} - ${section.name}`
+    return sectionState.allIds
+    .filter((id) => {
+      const dropped = sectionState.byId[id].dropped
+      return status === "dropped" ? dropped : !dropped
     })
-  }, [mode, sectionState, instructorState])
+    .map((id) => {
+      const section = sectionState.byId[id]
+      return { id, label: `${section.dept} ${section.code} - ${section.name}` }
+    })
+  }, [mode, status, sectionState, instructorState])
 
-  const selectedLabel = items[selectedIndex] ?? ""
+  const selectedLabel = items[selectedIndex]?.label ?? ""
 
   // True when the sidebar status tab is set to "Dropped"
   const isDropped = status === "dropped"
@@ -125,7 +118,24 @@ export default function PropertiesDialog({
     return selectedLabel
   }, [mode, selectedLabel])
 
-  // ── Save ──────────────────────────────────────────────────────────────────
+  // ── Initialise / sync edit state ──────────────────────────────────────────
+
+  // Whenever the user switches mode or selects a different sidebar item we
+  // re-populate the local edit state from the canonical parent state.
+  React.useEffect(() => {
+    if (mode === "instructors") {
+      const id = items[selectedIndex]?.id
+      const instructor = id ? instructorState.byId[id] : null
+      // Spread into a new object so edits don't mutate the original
+      setInstructorEdit(instructor ? { ...instructor } : null)
+    } else {
+      const id = items[selectedIndex]?.id
+      const section = id ? sectionState.byId[id] : null
+      setSectionEdit(section ? { ...section } : null)
+    }
+  }, [mode, selectedIndex, instructorState, sectionState, items])
+
+  // ── Save, Drop, Renew ─────────────────────────────────────────────────────
 
   // Push the local edit copy back up to the parent state via the callback props
   const handleSave = () => {
@@ -135,6 +145,21 @@ export default function PropertiesDialog({
       onUpdateSection(sectionEdit.id, sectionEdit)
     }
   }
+
+  // When dropping or renewing, we want to update the "dropped" status in the parent state
+  const setDroppedFromSelected = (nextDropped: boolean) => {
+    if (mode === "instructors" && instructorEdit) {
+      const updated = { ...instructorEdit, dropped: nextDropped }
+      onUpdateInstructor(updated.id, updated)
+    } else if (mode === "courses" && sectionEdit) {
+      const updated = { ...sectionEdit, dropped: nextDropped }
+      onUpdateSection(updated.id, updated)
+    }
+    setStatus(nextDropped ? "dropped" : "current")
+    setSelectedIndex(0)
+  }
+  const handleDrop = () => setDroppedFromSelected(true)
+  const handleRenew = () => setDroppedFromSelected(false)
 
   // ── Styling helpers ───────────────────────────────────────────────────────
 
@@ -211,14 +236,14 @@ export default function PropertiesDialog({
 
             {/* Scrollable list of instructors or courses */}
             <div className="flex-1 overflow-y-auto py-2">
-              {items.map((label, i) => (
+              {items.map((item, i) => (
                 <SidebarListItem
-                  key={`${label}-${i}`}
+                  key={item.id}
                   active={i === selectedIndex}
                   onClick={() => setSelectedIndex(i)}
                   type="button"
                 >
-                  {label}
+                  {item.label}
                 </SidebarListItem>
               ))}
             </div>
@@ -330,7 +355,9 @@ export default function PropertiesDialog({
                 {/* Row 4: Action buttons (status change + save) */}
                 <div className="flex items-center gap-4">
                   {isDropped ? (
-                    <button className="bg-blue-800 text-white px-6 py-2 rounded-md border border-black font-semibold">
+                    <button
+                    onClick={handleRenew} 
+                    className="bg-blue-800 text-white px-6 py-2 rounded-md border border-black font-semibold">
                       Renew Instructor
                     </button>
                   ) : isNew ? (
@@ -338,7 +365,9 @@ export default function PropertiesDialog({
                       Remove Instructor
                     </button>
                   ) : (
-                    <button className="bg-[#3f4a54] text-white px-6 py-2 rounded-md border border-black font-semibold">
+                    <button 
+                    onClick={handleDrop}
+                    className="bg-[#3f4a54] text-white px-6 py-2 rounded-md border border-black font-semibold">
                       Drop Instructor
                     </button>
                   )}
@@ -400,6 +429,7 @@ export default function PropertiesDialog({
                     <input
                       className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center"
                       type="number"
+                      step="0.5"
                       value={sectionEdit.workload}
                       onChange={(e) => setSectionEdit({ ...sectionEdit, workload: Number(e.target.value) })}
                     />

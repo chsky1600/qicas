@@ -11,6 +11,7 @@ export interface Section {
   availability: SectionAvailability,
   capacity: number,
   assigned_to: InstructorId | null,
+  dropped: boolean,
 }
 
 export interface SectionState {
@@ -42,6 +43,7 @@ export interface Instructor {
   notes: string,
   fall_assigned: Set<SectionId>,
   wint_assigned: Set<SectionId>,
+  dropped: boolean,
   //TODO - warnings?
 }
 
