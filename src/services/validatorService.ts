@@ -347,6 +347,72 @@ export function checkInstructorRules(
     }
   }
 
+  // --- TADJ_CONFLICT (Warning) ---
+  // A course a (S/G)RoR has rights to was assigned to a TermAdjunctBasic
+  // without the (S/G)RoR declining that course.
+  if (instructor.rank === "TermAdjunctBasic") {
+    for (const rule of ctx.instructor_rules) {
+      const ruleInstructor = ctx.instructors.find(i => i.id === rule.instructor_id);
+      if (
+        ruleInstructor &&
+        (ruleInstructor.rank === "TermAdjunctSRoR" || ruleInstructor.rank === "TermAdjunctGRoR") &&
+        rule.courses.includes(candidate.course_code) &&
+        !rule.declined_courses.includes(candidate.course_code)
+      ) {
+        violations.push({
+          id: `v-tadj-conflict-${candidate.id}-${rule.instructor_id}`,
+          type: "Instructor",
+          offending_id: candidate.instructor_id,
+          code: "TADJ_CONFLICT",
+          message: `${candidate.course_code} is assigned to ${instructor.name} (TermAdjunctBasic), but ${ruleInstructor.name} (${ruleInstructor.rank}) has rights to this course and has not declined.`,
+          degree: "Warning",
+        });
+      }
+    }
+  }
+
+  // --- EF_WORKLOAD (Warning) ---
+  // An ExchangeFellow has not been assigned exactly 1 section in Fall and exactly 1 in Winter.
+  if (instructor.rank === "ExchangeFellow") {
+    const efFall = projected.assignments.filter(
+      a => a.instructor_id === candidate.instructor_id && a.term === "Fall"
+    ).length;
+    const efWinter = projected.assignments.filter(
+      a => a.instructor_id === candidate.instructor_id && a.term === "Winter"
+    ).length;
+    if (efFall !== 1 || efWinter !== 1) {
+      violations.push({
+        id: `v-ef-workload-${candidate.instructor_id}`,
+        type: "Instructor",
+        offending_id: candidate.instructor_id,
+        code: "EF_WORKLOAD",
+        message: `${instructor.name} (ExchangeFellow) has ${efFall} Fall and ${efWinter} Winter sections, expected exactly 1 each.`,
+        degree: "Warning",
+      });
+    }
+  }
+
+  // --- WORKLOAD_EXCEEDED (Warning) ---
+  // An instructor's assigned workload exceeds their target (workload + workload_delta).
+  const delta = iRule?.workload_delta ?? 0;
+  const target = instructor.workload + delta;
+  const assignedWorkload = projected.assignments
+    .filter(a => a.instructor_id === candidate.instructor_id)
+    .reduce((sum, a) => {
+      const cr = ctx.course_rules.find(r => r.course_code === a.course_code);
+      return sum + (cr?.workload_fulfillment ?? 1);
+    }, 0);
+  if (assignedWorkload > target) {
+    violations.push({
+      id: `v-workload-exceeded-${candidate.instructor_id}`,
+      type: "Instructor",
+      offending_id: candidate.instructor_id,
+      code: "WORKLOAD_EXCEEDED",
+      message: `${instructor.name} has assigned workload of ${assignedWorkload}, exceeding target of ${target}.`,
+      degree: "Warning",
+    });
+  }
+
   return violations;
 }
 

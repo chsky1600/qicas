@@ -21,6 +21,8 @@ const mockCtx: AcademicYear = {
     ], notes: [] },
     { id: "inst-4", name: "A. Taylor", workload: 2, email: "taylor@queensu.ca", rank: "TeachingFellow", prev_taught: [], notes: [] },
     { id: "inst-5", name: "B. Adams", workload: 2, email: "adams@queensu.ca", rank: "TermAdjunctSRoR", prev_taught: [], notes: [] },
+    { id: "inst-6", name: "C. Brown", workload: 2, email: "brown@queensu.ca", rank: "TermAdjunctBasic", prev_taught: [], notes: [] },
+    { id: "inst-7", name: "D. Xu", workload: 2, email: "xu@queensu.ca", rank: "ExchangeFellow", prev_taught: [], notes: [] },
   ],
   instructor_rules: [
     { id: "ir-5", instructor_id: "inst-5", designations: [], workload_delta: 0, courses: ["CISC101", "CISC490"], declined_courses: [] },
@@ -473,6 +475,149 @@ describe("checkInstructorRules", () => {
       const violations = checkInstructorRules(mockCtx, schedule, a);
 
       expect(violations.filter(v => v.code === "TADJ_UNASSIGNED")).toHaveLength(0);
+    });
+  });
+
+  describe("TADJ_CONFLICT (WARNING)", () => {
+    test("fires when TermAdjunctBasic assigned a course a SRoR has rights to and has not declined", () => {
+      // inst-6 (TermAdjunctBasic) assigned CISC101, but inst-5 (SRoR) has rights to CISC101 and hasn't declined.
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-6", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "TADJ_CONFLICT")).toHaveLength(1);
+      expect(violations.find(v => v.code === "TADJ_CONFLICT")!.degree).toBe("Warning");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+    });
+
+    test("does NOT fire when SRoR has declined the course", () => {
+      // Create context where inst-5 declined CISC101.
+      const declinedCtx = {
+        ...mockCtx,
+        instructor_rules: [
+          { ...mockCtx.instructor_rules[0]!, declined_courses: ["CISC101"] },
+        ],
+      };
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-6", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(declinedCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "TADJ_CONFLICT")).toHaveLength(0);
+    });
+
+    test("does NOT fire when candidate is not a TermAdjunctBasic", () => {
+      // inst-1 (FullProfessor) assigned CISC101 — SRoR has rights but rule only applies to BasicAdj.
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "TADJ_CONFLICT")).toHaveLength(0);
+    });
+
+    test("does NOT fire when course is not in SRoR's designated courses", () => {
+      // inst-6 (TermAdjunctBasic) assigned CISC890 — inst-5 has rights to CISC101 and CISC490, not CISC890.
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-6", course_code: "CISC890", section_id: "s-9", term: "Winter" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "TADJ_CONFLICT")).toHaveLength(0);
+    });
+  });
+
+  describe("EF_WORKLOAD (WARNING)", () => {
+    test("fires when ExchangeFellow has 1 Fall but 0 Winter", () => {
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-7", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "EF_WORKLOAD")).toHaveLength(1);
+      expect(violations.find(v => v.code === "EF_WORKLOAD")!.degree).toBe("Warning");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+    });
+
+    test("fires when ExchangeFellow has 2 Fall and 1 Winter", () => {
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-7", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-7", course_code: "CISC101", section_id: "s-2", term: "Fall" });
+      const a3 = makeAssignment({ id: "a-3", instructor_id: "inst-7", course_code: "CISC101", section_id: "s-1", term: "Winter" });
+      const schedule = makeSchedule([a1, a2, a3]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a2);
+
+      expect(violations.filter(v => v.code === "EF_WORKLOAD")).toHaveLength(1);
+    });
+
+    test("does NOT fire when ExchangeFellow has exactly 1 Fall and 1 Winter", () => {
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-7", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-7", course_code: "CISC101", section_id: "s-1", term: "Winter" });
+      const schedule = makeSchedule([a1, a2]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a1);
+
+      expect(violations.filter(v => v.code === "EF_WORKLOAD")).toHaveLength(0);
+    });
+
+    test("does NOT fire for non-ExchangeFellow instructors", () => {
+      // inst-1 (FullProfessor) with only 1 Fall — rule should not apply.
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "EF_WORKLOAD")).toHaveLength(0);
+    });
+  });
+
+  describe("WORKLOAD_EXCEEDED (WARNING)", () => {
+    test("fires when instructor exceeds base workload", () => {
+      // inst-4 (A. Taylor) has workload 2, no instructor rule. Assign 3 sections.
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-4", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-4", course_code: "CISC101", section_id: "s-2", term: "Fall" });
+      const a3 = makeAssignment({ id: "a-3", instructor_id: "inst-4", course_code: "CISC101", section_id: "s-1", term: "Winter" });
+      const schedule = makeSchedule([a1, a2, a3]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a3);
+
+      expect(violations.filter(v => v.code === "WORKLOAD_EXCEEDED")).toHaveLength(1);
+      expect(violations.find(v => v.code === "WORKLOAD_EXCEEDED")!.degree).toBe("Warning");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+    });
+
+    test("does NOT fire when assigned workload equals target", () => {
+      // inst-4 has workload 2. Assign exactly 2 sections.
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-4", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-4", course_code: "CISC101", section_id: "s-1", term: "Winter" });
+      const schedule = makeSchedule([a1, a2]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a2);
+
+      expect(violations.filter(v => v.code === "WORKLOAD_EXCEEDED")).toHaveLength(0);
+    });
+
+    test("respects workload_delta from instructor rule", () => {
+      // inst-5 (SRoR) has workload 2, workload_delta 0 -> target 2. Assign 3 sections
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-5", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-5", course_code: "CISC490", section_id: "s-8", term: "Fall" });
+      const a3 = makeAssignment({ id: "a-3", instructor_id: "inst-5", course_code: "CISC101", section_id: "s-1", term: "Winter" });
+      const schedule = makeSchedule([a1, a2, a3]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a3);
+
+      expect(violations.filter(v => v.code === "WORKLOAD_EXCEEDED")).toHaveLength(1);
+    });
+
+    test("accounts for workload_fulfillment (CISC490 = 2)", () => {
+      // inst-4 has workload 2. CISC490 fulfills 2 by itself -> at target i.e., not exceeded.
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-4", course_code: "CISC490", section_id: "s-8", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "WORKLOAD_EXCEEDED")).toHaveLength(0);
     });
   });
 });
