@@ -413,6 +413,53 @@ export function checkInstructorRules(
     });
   }
 
+  // --- OUT_OF_WHEELHOUSE (Warning) ---
+  // An instructor is only assigned courses they have never taught before.
+  const instructorAssignments = projected.assignments.filter(
+    a => a.instructor_id === candidate.instructor_id
+  );
+  if (instructorAssignments.length > 0) {
+    const allNew = instructorAssignments.every(
+      a => !instructor.prev_taught.some(c => c.code === a.course_code)
+    );
+    if (allNew) {
+      violations.push({
+        id: `v-out-of-wheelhouse-${candidate.instructor_id}`,
+        type: "Instructor",
+        offending_id: candidate.instructor_id,
+        code: "OUT_OF_WHEELHOUSE",
+        message: `${instructor.name} is only assigned courses they have never taught before.`,
+        degree: "Warning",
+      });
+    }
+  }
+
+  // --- INSUFFICIENT_WORKLOAD (Error) ---
+  // An instructor's assigned workload is below their required workload
+  // and no unassigned internal courses remain to fill it.
+  if (assignedWorkload < target) {
+    const hasUnassignedSections = ctx.course_rules.some(cr => {
+      if (cr.is_external) return false;
+      return cr.terms_offered.some(term =>
+        cr.sections_available.some(sectionId =>
+          !projected.assignments.some(
+            a => a.course_code === cr.course_code && a.section_id === sectionId && a.term === term
+          )
+        )
+      );
+    });
+    if (!hasUnassignedSections) {
+      violations.push({
+        id: `v-insufficient-workload-${candidate.instructor_id}`,
+        type: "Instructor",
+        offending_id: candidate.instructor_id,
+        code: "INSUFFICIENT_WORKLOAD",
+        message: `${instructor.name} has assigned workload of ${assignedWorkload}, below target of ${target}, and no unassigned sections remain.`,
+        degree: "Error",
+      });
+    }
+  }
+
   return violations;
 }
 

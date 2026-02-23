@@ -370,9 +370,8 @@ describe("checkInstructorRules", () => {
 
       const violations = checkInstructorRules(mockCtx, schedule, a);
 
-      expect(violations).toHaveLength(1);
-      expect(violations[0]!.code).toBe("FIRST_TIME_TEACHING");
-      expect(violations[0]!.degree).toBe("Info");
+      expect(violations.filter(v => v.code === "FIRST_TIME_TEACHING")).toHaveLength(1);
+      expect(violations.find(v => v.code === "FIRST_TIME_TEACHING")!.degree).toBe("Info");
       if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
     });
 
@@ -618,6 +617,123 @@ describe("checkInstructorRules", () => {
       const violations = checkInstructorRules(mockCtx, schedule, a);
 
       expect(violations.filter(v => v.code === "WORKLOAD_EXCEEDED")).toHaveLength(0);
+    });
+  });
+
+  describe("OUT_OF_WHEELHOUSE (WARNING)", () => {
+    test("fires when all assigned courses are new to the instructor", () => {
+      // inst-1 (Dr. Smith) has prev_taught = [CISC101]. Assign only CISC490 (never taught)
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC490", section_id: "s-8", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "OUT_OF_WHEELHOUSE")).toHaveLength(1);
+      expect(violations.find(v => v.code === "OUT_OF_WHEELHOUSE")!.degree).toBe("Warning");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+    });
+
+    test("does NOT fire when at least one assigned course is in prev_taught", () => {
+      // inst-1 has prev_taught = [CISC101]. Assigned to CISC101 + CISC490.
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "CISC490", section_id: "s-8", term: "Fall" });
+      const schedule = makeSchedule([a1, a2]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a2);
+
+      expect(violations.filter(v => v.code === "OUT_OF_WHEELHOUSE")).toHaveLength(0);
+    });
+
+    test("does NOT fire when all assigned courses are in prev_taught", () => {
+      // inst-1 has prev_taught = [CISC101] only assigned CISC101.
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(mockCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "OUT_OF_WHEELHOUSE")).toHaveLength(0);
+    });
+  });
+
+  describe("INSUFFICIENT_WORKLOAD (ERROR)", () => {
+    // Isolated context: 1 instructor (workload 2), 1 course with 1 section in Fall
+    const insuffCtx: AcademicYear = {
+      id: "year-insuff",
+      name: "2026-2027",
+      schedules: [],
+      courses: [
+        { id: "c-1", name: "Intro", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [{ id: "s-1", number: 1 }] },
+      ],
+      instructors: [
+        { id: "inst-1", name: "Dr. A", workload: 2, email: "a@q.ca", rank: "FullProfessor", prev_taught: [
+          { id: "c-1", name: "Intro", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [] },
+        ], notes: [] },
+      ],
+      instructor_rules: [],
+      course_rules: [
+        { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false },
+      ],
+    };
+
+    test("fires when instructor is below target and all sections are assigned", () => {
+      // inst-1 has workload 2, assigned 1 section, and that's the only section available
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(insuffCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "INSUFFICIENT_WORKLOAD")).toHaveLength(1);
+      expect(violations.find(v => v.code === "INSUFFICIENT_WORKLOAD")!.degree).toBe("Error");
+      if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
+    });
+
+    test("does NOT fire when unassigned sections still exist", () => {
+      // add a second section so there's room to fill the gap.
+      const twoSectionCtx: AcademicYear = {
+        ...insuffCtx,
+        course_rules: [
+          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1", "s-2"], is_external: false },
+        ],
+      };
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(twoSectionCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "INSUFFICIENT_WORKLOAD")).toHaveLength(0);
+    });
+
+    test("does NOT fire when instructor meets their target", () => {
+      const metCtx: AcademicYear = {
+        ...insuffCtx,
+        course_rules: [
+          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall", "Winter"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false },
+        ],
+      };
+      const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const a2 = makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Winter" });
+      const schedule = makeSchedule([a1, a2]);
+
+      const violations = checkInstructorRules(metCtx, schedule, a2);
+
+      expect(violations.filter(v => v.code === "INSUFFICIENT_WORKLOAD")).toHaveLength(0);
+    });
+
+    test("ignores external sections when checking for remaining capacity", () => {
+      // Only section left is external so doesn't count
+      const externalCtx: AcademicYear = {
+        ...insuffCtx,
+        course_rules: [
+          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false },
+          { id: "cr-ext", course_code: "MATH110", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-ext"], is_external: true },
+        ],
+      };
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(externalCtx, schedule, a);
+
+      expect(violations.filter(v => v.code === "INSUFFICIENT_WORKLOAD")).toHaveLength(1);
     });
   });
 });
