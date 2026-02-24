@@ -6,8 +6,8 @@ import PropertiesDialog from './propertiesDialog';
 export default function Toolbar({sectionState, instructorState, updateSection, updateInstructor}: {
   sectionState: SectionState, 
   instructorState: InstructorState, 
-  updateSection: (id: string, updated: Section) => void, 
-  updateInstructor: (id: string, updated: Instructor) => void
+  updateSection: (updatedSection: Section) => void, 
+  updateInstructor: (updatedInstructor: Instructor) => void
 }) {
 
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);

@@ -42,8 +42,8 @@ interface PropertiesDialogProps {
   sectionState: SectionState
   instructorState: InstructorState
   // Callbacks that bubble the saved data back up to useAssignment
-  onUpdateInstructor: (id: string, updated: Instructor) => void
-  onUpdateSection: (id: string, updated: Section) => void
+  onUpdateInstructor: (updated: Instructor) => void
+  onUpdateSection: (updated: Section) => void
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -140,9 +140,9 @@ export default function PropertiesDialog({
   // Push the local edit copy back up to the parent state via the callback props
   const handleSave = () => {
     if (mode === "instructors" && instructorEdit) {
-      onUpdateInstructor(instructorEdit.id, instructorEdit)
+      onUpdateInstructor(instructorEdit)
     } else if (mode === "courses" && sectionEdit) {
-      onUpdateSection(sectionEdit.id, sectionEdit)
+      onUpdateSection(sectionEdit)
     }
   }
 
@@ -150,10 +150,10 @@ export default function PropertiesDialog({
   const setDroppedFromSelected = (nextDropped: boolean) => {
     if (mode === "instructors" && instructorEdit) {
       const updated = { ...instructorEdit, dropped: nextDropped }
-      onUpdateInstructor(updated.id, updated)
+      onUpdateInstructor(updated)
     } else if (mode === "courses" && sectionEdit) {
       const updated = { ...sectionEdit, dropped: nextDropped }
-      onUpdateSection(updated.id, updated)
+      onUpdateSection(updated)
     }
     setStatus(nextDropped ? "dropped" : "current")
     setSelectedIndex(0)
@@ -482,7 +482,9 @@ export default function PropertiesDialog({
                 {/* Row 5: Action buttons (status change + save) */}
                 <div className="flex items-center gap-4">
                   {isDropped ? (
-                    <button className="bg-blue-800 text-white px-6 py-2 rounded-md border border-black font-semibold">
+                    <button 
+                      onClick={handleRenew}
+                      className="bg-blue-800 text-white px-6 py-2 rounded-md border border-black font-semibold">
                       Renew Course
                     </button>
                   ) : isNew ? (
@@ -490,7 +492,9 @@ export default function PropertiesDialog({
                       Remove Course
                     </button>
                   ) : (
-                    <button className="bg-[#3f4a54] text-white px-6 py-2 rounded-md border border-black font-semibold">
+                    <button 
+                      onClick={handleDrop}
+                      className="bg-[#3f4a54] text-white px-6 py-2 rounded-md border border-black font-semibold">
                       Drop Course
                     </button>
                   )}

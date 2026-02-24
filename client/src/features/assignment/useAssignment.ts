@@ -95,7 +95,7 @@ export function useAssignment(): UseAssignmentResult {
     //TODO - API call
 
     // if id not in the sectionState.allIds list, make no changes
-    if (sectionState.allIds.indexOf(updatedSection.id) > -1) return
+    if (sectionState.allIds.indexOf(updatedSection.id) == -1) return
 
     // if Section not in SectionState, make no changes
     if (!sectionState.byId[updatedSection.id]) return 
