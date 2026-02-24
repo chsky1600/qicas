@@ -10,7 +10,8 @@ export interface Section {
   workload: number,
   availability: SectionAvailability,
   capacity: number,
-  assigned_to: InstructorId | null, // null implies not assigned
+  assigned_to: InstructorId | null,
+  dropped: boolean,
   in_violation: ViolationDegree | null, // null implies not in violation of any rules
 }
 
@@ -68,6 +69,8 @@ export interface Instructor {
   notes: string,
   fall_assigned: Set<SectionId>,
   wint_assigned: Set<SectionId>,
+  dropped: boolean,
+  //TODO - warnings?
   // violations are either in the instructor details column, the fall term column, or the winter term column
   violations: {
     details_col_violations: Violation[],
