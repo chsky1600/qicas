@@ -29,8 +29,7 @@ function InstructorsPanel({instructorState, sectionState}: InstructorsPanelProps
         {/*<TableCaption>A list of your recent invoices.</TableCaption>*/}
         <TableHeader >
           <TableRow>
-            <TableHead className="text-center text-base ">Name</TableHead>
-            <TableHead className="text-center text-base w-12">Workload</TableHead>
+            <TableHead className="text-center text-base w-120">Instructor</TableHead>
             <TableHead className="text-center text-base bg-orange-100 w-200">Fall</TableHead>
             <TableHead className="text-center text-base bg-cyan-100 w-200">Winter</TableHead>
             {/*<span className="sm:hidden">Cap.</span>*/}

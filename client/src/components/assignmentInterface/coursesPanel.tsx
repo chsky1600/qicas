@@ -46,7 +46,7 @@ function CoursesPanel(sectionState : SectionState)  {
         </TableHeader>
         <TableBody>
           {sectionsList.map((section) => (
-            <Course {...section}/>
+            <Course key={section.id+"_in_panel"} {...section}/>
           ))}
         </TableBody>
       </Table>

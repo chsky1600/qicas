@@ -4,11 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "bun test 2>&1",
     "dev": "bun --watch src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun",
-    "start": "bun dist/index.js",
-    "swagger": "npm run build && node dist/scripts/generateSwagger.js"
+    "start": "bun dist/index.js"
   },
   "repository": {
     "type": "git",
@@ -22,11 +21,11 @@
   },
   "homepage": "https://github.com/chsky1600/qicas#readme",
   "devDependencies": {
+    "@types/bun": "^1.3.9",
+    "@types/cookie-parser": "^1.4.7",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
     "@types/node": "^24.10.1",
-    "@types/swagger-jsdoc": "^6.0.4",
-    "@types/swagger-ui-express": "^4.1.7",
     "@typescript-eslint/eslint-plugin": "^8.47.0",
     "@typescript-eslint/parser": "^8.47.0",
     "bun-types": "^1.3.6",
@@ -37,9 +36,10 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "express": "^5.1.0",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
+    "jose": "^6.1.3",
+    "mongoose": "^9.1.5"
   }
 }
