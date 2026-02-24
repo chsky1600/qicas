@@ -103,6 +103,7 @@ export const sectionStateMock: SectionState = {
       availability: SectionAvailability.F,
       capacity: 200,
       assigned_to: "0",
+      dropped: false,
       in_violation: null,
     },
     "1": {
@@ -116,6 +117,7 @@ export const sectionStateMock: SectionState = {
       availability: SectionAvailability.F,
       capacity: 200,
       assigned_to: "0",
+      dropped: false,
       in_violation: ViolationDegree.I,
     },
     "2": {
@@ -129,6 +131,7 @@ export const sectionStateMock: SectionState = {
       availability: SectionAvailability.F,
       capacity: 200,
       assigned_to: "0",
+      dropped: false,
       in_violation: ViolationDegree.W,
     },
     "3": {
@@ -142,6 +145,7 @@ export const sectionStateMock: SectionState = {
       availability: SectionAvailability.F,
       capacity: 200,
       assigned_to: "0",
+      dropped: false,
       in_violation: null,
     },
     "4": {
@@ -155,6 +159,7 @@ export const sectionStateMock: SectionState = {
       availability: SectionAvailability.FandW,
       capacity: 200,
       assigned_to: "0",
+      dropped: false,
       in_violation: null,
     },
   },
@@ -173,6 +178,7 @@ export const instructorStateMock: InstructorState = {
       notes: "",
       fall_assigned: new Set<string>(["0", "1", "2", "3","4"]),
       wint_assigned: new Set<string>(["4"]),
+      dropped: false,
       violations: {
         details_col_violations: [
           {msg: "This instructor has exceeded their workload", degree: ViolationDegree.W},
@@ -195,6 +201,7 @@ export const instructorStateMock: InstructorState = {
       notes: "",
       fall_assigned: new Set<string>(),
       wint_assigned: new Set<string>(),
+      dropped: false,
       violations: {
         details_col_violations: [
         ],
