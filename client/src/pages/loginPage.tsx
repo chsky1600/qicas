@@ -16,6 +16,7 @@ export default function LoginPage() {
       body: JSON.stringify({ email, password }),
     })
     if (res.ok) {
+      localStorage.setItem("loggedIn", "true") // simple client-side flag for logged in status
       navigate("/schedule")
     } else {
       setError("Invalid email or password")
