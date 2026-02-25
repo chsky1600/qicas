@@ -164,14 +164,18 @@ export const validateSchedule = async (req : Request, res : Response) => {
         return
     }
 
-    if (assignment) {
-        // Per-candidate validation (add/update)
-        const validationResult = await validateAssignment(schedule, assignment)
-        res.json({ validationResult })
-    } else {
-        // Schedule-wide validation (removals, full-schedule load)
-        const validationResult = await validateScheduleService(schedule)
-        res.json({ validationResult })
+    try {
+        if (assignment) {
+            // Per-candidate validation (add/update)
+            const validationResult = await validateAssignment(schedule, assignment)
+            res.json({ validationResult })
+        } else {
+            // Schedule-wide validation (removals, full-schedule load)
+            const validationResult = await validateScheduleService(schedule)
+            res.json({ validationResult })
+        }
+    } catch (err: any) {
+        res.status(400).json({ error: err.message })
     }
 
 }
