@@ -215,3 +215,12 @@ export const instructorStateMock: InstructorState = {
   },
   allIds: ["0", "1"],
 };
+
+// Snapshot Types
+export interface Snapshot {
+  id: string,
+  name: string,
+  date: string // "YYYY-MM-DD",
+  sectionState: SectionState,
+  instructorState: InstructorState,
+}

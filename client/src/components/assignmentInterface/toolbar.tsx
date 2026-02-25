@@ -2,15 +2,20 @@ import './toolbar.css';
 import type { SectionState, InstructorState, Section, Instructor } from '@/features/assignment/assignment.types';
 import { useState } from 'react';
 import PropertiesDialog from './propertiesDialog';
+import { useSnapshots } from '@/features/assignment/useSnapshots';
+import SnapshotsDialog from './snapshotsDialog';
 
-export default function Toolbar({sectionState, instructorState, updateSection, updateInstructor}: {
+export default function Toolbar({sectionState, instructorState, updateSection, updateInstructor, loadState}: {
   sectionState: SectionState, 
   instructorState: InstructorState, 
   updateSection: (updatedSection: Section) => void, 
   updateInstructor: (updatedInstructor: Instructor) => void
+  loadState: (sectionState: SectionState, instructorState: InstructorState) => void
 }) {
 
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
+  const [isSnapshotsOpen, setIsSnapshotsOpen] = useState(false);
+  const { snapshots, saveSnapshots, loadSnapshot, renameSnapshot, deleteSnapshot } = useSnapshots();
   return (
     <div className="toolbar">
       {/* Left side - Logo and Schedule selector */}
@@ -39,7 +44,7 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
           Edit Properties
         </button>
         
-        <button className="toolbar-btn">
+        <button className="toolbar-btn" onClick={() => setIsSnapshotsOpen(true)}>
           <span className="icon">📸</span>
           Snapshots
         </button>
@@ -61,6 +66,18 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
         instructorState={instructorState}
         onUpdateSection={updateSection}
         onUpdateInstructor={updateInstructor}
+      />
+      <SnapshotsDialog
+        isOpen={isSnapshotsOpen}
+        onClose={() => setIsSnapshotsOpen(false)}
+        snapshots={snapshots}
+        sectionState={sectionState}
+        instructorState={instructorState}
+        onSave={saveSnapshots}
+        onLoad={loadSnapshot}
+        onRename={renameSnapshot}
+        onDelete={deleteSnapshot}
+        onApplyLoad={loadState}
       />
     </div>
   );
