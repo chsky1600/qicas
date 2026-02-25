@@ -11,6 +11,7 @@ const newYearId = "Y2027";
 
 const seedFaculty = {
   id: facultyId,
+  name: "School of Computing",
   users: [],
   academic_years: [
     {

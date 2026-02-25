@@ -13,6 +13,7 @@ async function main() {
 
   const faculty = {
     id: "F001",
+    name: "School of Computing",
     users: [
       {
         id: "U001",
