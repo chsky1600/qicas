@@ -177,6 +177,8 @@ export default function SnapshotsDialog({
   const [sortDirection, setSortDirection] = React.useState<SortDirection>("desc")
   const [renamingId, setRenamingId] = React.useState<string | null>(null)
   const [renameValue, setRenameValue] = React.useState("")
+  const [savingMode, setSavingMode] = React.useState(false)
+  const [saveName, setSaveName] = React.useState("")
 
   // Keep a counter so auto-names stay unique even after deletions
   const snapshotCounter = React.useRef(0)
@@ -192,8 +194,16 @@ export default function SnapshotsDialog({
   // "Save Current as Snapshot" — auto-names with incrementing counter
   const handleSaveCurrent = () => {
     snapshotCounter.current += 1
-    const name = `Snapshot ${snapshotCounter.current}`
-    onSave(name, sectionState, instructorState)
+    setSaveName(`${snapshotCounter.current} - `)
+    setSavingMode(true)
+  }
+
+  // Confirm the save with the given name
+  const confirmSave = () => {
+    if (saveName.trim()) {
+      onSave(saveName.trim(), sectionState, instructorState)
+      setSavingMode(false)
+    }
   }
 
   // Load the selected row (header button)
@@ -233,26 +243,52 @@ export default function SnapshotsDialog({
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
       <DialogContent
         showCloseButton={false}
-        className="w-[800px] h-[520px] p-0 gap-0 overflow-hidden border border-black rounded-md bg-[#f4f4f4]"
+        className="w-[800px] h-[520px] p-0 gap-0 overflow-hidden border border-black rounded-md bg-[#f4f4f4] flex flex-col"
       >
         {/* ── Header bar ──────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between bg-black text-white h-13 px-4 gap-4">
           <div className="text-sm font-semibold opacity-80">Snapshots</div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={handleSaveCurrent}
-              className="!bg-white !text-black text-sm font-semibold px-4 py-1.5 rounded border border-gray-400 hover:!bg-gray-100"
-            >
-              Save Current as Snapshot
-            </button>
-            <button
-              onClick={handleLoadSelected}
-              disabled={!selectedId}
-              className="!bg-white !text-black text-sm font-semibold px-4 py-1.5 rounded border border-gray-400 hover:!bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              Load Snapshot
-            </button>
+          <div className="flex gap-2 items-center">
+            {savingMode ? (
+              <>
+                <input
+                  autoFocus
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") confirmSave() }}
+                  className="bg-white text-black text-sm px-3 py-1.5 rounded border border-gray-400 w-52"
+                />
+                <button
+                  onClick={confirmSave}
+                  className="!bg-white !text-black text-sm font-semibold px-4 py-1.5 rounded border border-gray-400 hover:!bg-gray-100"
+                >
+                  Confirm Save
+                </button>
+                <button
+                  onClick={() => setSavingMode(false)}
+                  className="!bg-transparent !text-white text-sm px-2 py-1.5 hover:opacity-70"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleSaveCurrent}
+                  className="!bg-white !text-black text-sm font-semibold px-4 py-1.5 rounded border border-gray-400 hover:!bg-gray-100"
+                >
+                  Save Current as Snapshot
+                </button>
+                <button
+                  onClick={handleLoadSelected}
+                  disabled={!selectedId}
+                  className="!bg-white !text-black text-sm font-semibold px-4 py-1.5 rounded border border-gray-400 hover:!bg-gray-100"
+                >
+                  Load Snapshot
+                </button>
+              </>
+            )}
           </div>
 
           <button onClick={onClose} className="text-lg leading-none hover:opacity-80 ml-auto">
@@ -306,7 +342,7 @@ export default function SnapshotsDialog({
                       />
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="truncate max-w-[220px] block">{snap.name}</span>
+                        <span className="truncate max-w-[220px] block" title={snap.name}>{snap.name}</span>
                         <ViolationIcon snap={snap} />
                       </div>
                     )}

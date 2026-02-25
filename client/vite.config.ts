@@ -16,7 +16,7 @@ export default defineConfig({
       "/auth": "http://localhost:3000",
       "/courses": "http://localhost:3000",
       "/instructors": "http://localhost:3000",
-      "/schedule": "http://localhost:3000",
+      "/schedule/": "http://localhost:3000",
       "/year": "http://localhost:3000",
     },
   },  

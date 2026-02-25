@@ -44,6 +44,7 @@ interface PropertiesDialogProps {
   // Callbacks that bubble the saved data back up to useAssignment
   onUpdateInstructor: (updated: Instructor) => void
   onUpdateSection: (updated: Section) => void
+  onDropInstructor: (instructorId: string, dropped: boolean) => void
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -55,6 +56,7 @@ export default function PropertiesDialog({
   instructorState,
   onUpdateInstructor,
   onUpdateSection,
+  onDropInstructor,
 }: PropertiesDialogProps) {
 
   // ── Navigation state ──────────────────────────────────────────────────────
@@ -167,6 +169,7 @@ export default function PropertiesDialog({
         const updated = { ...instructorEdit, dropped: false }
         onUpdateInstructor(updated)
       }
+      onDropInstructor(instructorEdit.id, nextDropped)
     } else if (mode === "courses" && sectionEdit) {
       const updated = { ...sectionEdit, dropped: nextDropped }
       onUpdateSection(updated)
