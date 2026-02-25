@@ -1,4 +1,4 @@
-name: Tests
+name: bun tests
 on:
   workflow_dispatch:
   pull_request:
