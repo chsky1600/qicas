@@ -70,6 +70,7 @@ export interface Instructor {
   fall_assigned: Set<SectionId>,
   wint_assigned: Set<SectionId>,
   dropped: boolean,
+  rule_id: string | null,
   //TODO - warnings?
   // violations are either in the instructor details column, the fall term column, or the winter term column
   violations: {
@@ -89,6 +90,16 @@ export const instructorStateEmpty: InstructorState = {
   allIds: [],
 };
 
+// Snapshot Types
+export interface Snapshot {
+  id: string,
+  name: string,
+  date: string // "YYYY-MM-DD",
+  sectionState: SectionState,
+  instructorState: InstructorState,
+}
+
+/* Mock Data --- IGNORE ---
 
 export const sectionStateMock: SectionState = {
   byId: {
@@ -215,12 +226,4 @@ export const instructorStateMock: InstructorState = {
   },
   allIds: ["0", "1"],
 };
-
-// Snapshot Types
-export interface Snapshot {
-  id: string,
-  name: string,
-  date: string // "YYYY-MM-DD",
-  sectionState: SectionState,
-  instructorState: InstructorState,
-}
+*/

@@ -18,7 +18,8 @@ export function fetchAssignment(faculty_id, academic_year_id, Schedule_id) {
 import type {
   SectionState, InstructorState, Section, Instructor, SectionAvailability
 } from "./assignment.types";
-import { sectionStateMock, instructorStateMock } from "./assignment.types";
+// Mock data is imported for testing frontend without backend, remove when backend is running
+//import { sectionStateMock, instructorStateMock } from "./assignment.types";
 import { SectionAvailability as SA } from "./assignment.types"
 
 // ─── Backend response shapes ──────────────────────────────────────────────────
@@ -42,7 +43,7 @@ interface BCourseRule {
   course_code: string; terms_offered: ("Fall" | "Winter")[];
   workload_fulfillment: number; is_full_year: boolean;
 }
-interface BInstructorRule { instructor_id: string; workload_delta: number }
+interface BInstructorRule { id: string; instructor_id: string; workload_delta: number; dropped: boolean }
 
 // ─── Mapping helpers ──────────────────────────────────────────────────────────
 
@@ -163,7 +164,8 @@ function mapToFrontendState(
       notes: inst.notes.map(n => n.content).join('\n'),
       fall_assigned: sets.fall,
       wint_assigned: sets.wint,
-      dropped: false,
+      dropped: rule?.dropped ?? false,
+      rule_id: rule?.id ?? null,
       violations: { details_col_violations: [], fall_col_violations: [], wint_col_violations: [] },
     }
     instructorAllIds.push(inst.id)
@@ -214,12 +216,12 @@ export async function saveScheduleToBackend(
     for (const sectionId of instructor.fall_assigned) {
       const section = sectionState.byId[sectionId]
       if (!section) continue
-      assignments.push({ id: crypto.randomUUID(), degree: "Valid", instructor_id: instructorId, section_id: sectionId, course_code: `${section.dept}${section.code}`, term: "Fall" })
+      assignments.push({ id: crypto.randomUUID(), instructor_id: instructorId, section_id: sectionId, course_code: `${section.dept}${section.code}`, term: "Fall" })
     }
     for (const sectionId of instructor.wint_assigned) {
       const section = sectionState.byId[sectionId]
       if (!section) continue
-      assignments.push({ id: crypto.randomUUID(), degree: "Valid", instructor_id: instructorId, section_id: sectionId, course_code: `${section.dept}${section.code}`, term: "Winter" })
+      assignments.push({ id: crypto.randomUUID(), instructor_id: instructorId, section_id: sectionId, course_code: `${section.dept}${section.code}`, term: "Winter" })
     }
   }
   await fetch(`${API_BASE}/schedule/${year}`, {
@@ -230,9 +232,18 @@ export async function saveScheduleToBackend(
   })
 }
 
+export async function saveDropped(year: string, rule_id: string, dropped: boolean): Promise<void> {
+  await fetch(`${API_BASE}/year/${year}/rules/instructors/${rule_id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ dropped }),
+  })
+}
+
 
 // ─── Mock fallback (keep while backend is not running) ────────────────────────
-
+/*
 export function fetchAssignmentMock(): { sectionState: SectionState; instructorState: InstructorState } {
   return { sectionState: sectionStateMock, instructorState: instructorStateMock }
 }
+*/

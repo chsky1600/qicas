@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchAssignment, saveScheduleToBackend } from './assignment.api'
+import { fetchAssignment, saveScheduleToBackend, saveDropped } from './assignment.api'
 //import type { SectionId, Section, SectionState, InstructorId, Instructor, InstructorState } from "./assignment.types";
 import * as assignmentType from "./assignment.types";
 
@@ -17,6 +17,7 @@ export interface UseAssignmentResult {
   removeAssignment: (unassignedSectionId: assignmentType.SectionId, prevInstructorId: assignmentType.InstructorId) => void;
   loadState: (sectionState: assignmentType.SectionState, instructorState: assignmentType.InstructorState) => void;
   activeSchedule: { id: string; name:string; year_id: string; date_created: string; is_rc: boolean } | null;
+  dropInstructor: (instructor_id: assignmentType.InstructorId, dropped: boolean) => void;
 }
 
 function stateObjectExists(state: assignmentType.InstructorState | assignmentType.SectionState, id: assignmentType.InstructorId | assignmentType.SectionId): boolean {
@@ -49,13 +50,17 @@ export function useAssignment(): UseAssignmentResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeSchedule, setActiveSchedule] = useState<{ id: string; name: string; year_id: string; date_created: string; is_rc: boolean } | null>(null)
+  const [year, setYear] = useState<string>("Y2026")
 
   const sectionStateRef = useRef(sectionState)
   const instructorStateRef = useRef(instructorState)
   const activeScheduleRef = useRef(activeSchedule)
+  const yearRef = useRef(year)
+
   useEffect(() => { sectionStateRef.current = sectionState }, [sectionState])
   useEffect(() => { instructorStateRef.current = instructorState }, [instructorState])
   useEffect(() => { activeScheduleRef.current = activeSchedule }, [activeSchedule])
+  useEffect(() => { yearRef.current = year }, [year])
 
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const abortController = useRef<AbortController | null>(null)
@@ -68,7 +73,7 @@ export function useAssignment(): UseAssignmentResult {
       const controller = new AbortController()
       abortController.current = controller
       try {
-        await saveScheduleToBackend("Y2026", activeScheduleRef.current, sectionStateRef.current, instructorStateRef.current, controller.signal)
+        await saveScheduleToBackend(yearRef.current, activeScheduleRef.current, sectionStateRef.current, instructorStateRef.current, controller.signal)
       } catch (e) {
         if ((e as Error).name !== "AbortError") console.error("Auto-save failed", e)
       }
@@ -95,11 +100,12 @@ export function useAssignment(): UseAssignmentResult {
       const instructorsData = await instructorsRes.json();
       */
 
-      const assignment = await fetchAssignment("Y2026")
+      const assignment = await fetchAssignment(yearRef.current);
 
       setSectionState(assignment.sectionState);
       setInstructorState(assignment.instructorState);
       setActiveSchedule(assignment.activeSchedule)
+      if (assignment.activeSchedule?.year_id) setYear(assignment.activeSchedule.year_id)
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -334,6 +340,13 @@ export function useAssignment(): UseAssignmentResult {
     setSectionState(newSectionState);
     setInstructorState(newInstructorState);
   }
+  const dropInstructor = async (instructorId: assignmentType.InstructorId, dropped: boolean) => {
+    const instructor = instructorState.byId[instructorId]
+    if (!instructor || !instructor.rule_id) return
+    await saveDropped(yearRef.current, instructor.rule_id, dropped)
+    updateInstructor({ ...instructor, dropped })
+  }
+
 
   return {
     sectionState,
@@ -347,5 +360,6 @@ export function useAssignment(): UseAssignmentResult {
     removeAssignment,
     loadState,
     activeSchedule,
+    dropInstructor
   }
 }
