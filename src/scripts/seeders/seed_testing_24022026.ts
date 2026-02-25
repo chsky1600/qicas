@@ -45,32 +45,32 @@ async function main() {
             is_rc: false,
             assignments: [
               // Dr. Smith on CISC101-001 Fall + Winter -- CROSS_TERM_DUPLICATE
-              { id: "A001", degree: "Valid", instructor_id: "inst-1", section_id: "s-1", course_code: "CISC101", term: "Fall" },
-              { id: "A002", degree: "Valid", instructor_id: "inst-1", section_id: "s-1", course_code: "CISC101", term: "Winter" },
+              { id: "A001", instructor_id: "inst-1", section_id: "s-1", course_code: "CISC101", term: "Fall" },
+              { id: "A002", instructor_id: "inst-1", section_id: "s-1", course_code: "CISC101", term: "Winter" },
 
               // CISC490 full-year: only Fall assigned -- FULLYEAR_HALF_OPEN
-              { id: "A003", degree: "Valid", instructor_id: "inst-1", section_id: "s-8", course_code: "CISC490", term: "Fall" },
+              { id: "A003", instructor_id: "inst-1", section_id: "s-8", course_code: "CISC490", term: "Fall" },
 
               // Teaching Fellow on graduate course -- RANK_MISMATCH
-              { id: "A004", degree: "Valid", instructor_id: "inst-4", section_id: "s-9", course_code: "CISC890", term: "Winter" },
+              { id: "A004", instructor_id: "inst-4", section_id: "s-9", course_code: "CISC890", term: "Winter" },
 
               // CISC204 assigned in Winter but only offered Fall -- TERM_NOT_OFFERED
-              { id: "A005", degree: "Valid", instructor_id: "inst-1", section_id: "s-7", course_code: "CISC204", term: "Winter" },
+              { id: "A005", instructor_id: "inst-1", section_id: "s-7", course_code: "CISC204", term: "Winter" },
 
               // Dr. Smith on CISC101-002 twice in Fall -- DUPLICATE_ASSIGNMENT
-              { id: "A006", degree: "Valid", instructor_id: "inst-1", section_id: "s-2", course_code: "CISC101", term: "Fall" },
-              { id: "A007", degree: "Valid", instructor_id: "inst-1", section_id: "s-2", course_code: "CISC101", term: "Fall" },
+              { id: "A006", instructor_id: "inst-1", section_id: "s-2", course_code: "CISC101", term: "Fall" },
+              { id: "A007", instructor_id: "inst-1", section_id: "s-2", course_code: "CISC101", term: "Fall" },
 
               // 3 instructors on CISC101-003 Fall -- SECTION_OVERASSIGNED (limit=2)
-              { id: "A008", degree: "Valid", instructor_id: "inst-1", section_id: "s-3", course_code: "CISC101", term: "Fall" },
-              { id: "A009", degree: "Valid", instructor_id: "inst-4", section_id: "s-3", course_code: "CISC101", term: "Fall" },
-              { id: "A010", degree: "Valid", instructor_id: "inst-5", section_id: "s-3", course_code: "CISC101", term: "Fall" },
+              { id: "A008", instructor_id: "inst-1", section_id: "s-3", course_code: "CISC101", term: "Fall" },
+              { id: "A009", instructor_id: "inst-4", section_id: "s-3", course_code: "CISC101", term: "Fall" },
+              { id: "A010", instructor_id: "inst-5", section_id: "s-3", course_code: "CISC101", term: "Fall" },
 
               // TermAdjunctBasic on CISC101 while SRoR has rights and hasn't declined -- TADJ_CONFLICT
-              { id: "A011", degree: "Valid", instructor_id: "inst-6", section_id: "s-1", course_code: "CISC101", term: "Fall" },
+              { id: "A011", instructor_id: "inst-6", section_id: "s-1", course_code: "CISC101", term: "Fall" },
 
               // ExchangeFellow with only 1 section in Fall, none in Winter -- EF_WORKLOAD
-              { id: "A012", degree: "Valid", instructor_id: "inst-7", section_id: "s-4", course_code: "CISC121", term: "Fall" },
+              { id: "A012", instructor_id: "inst-7", section_id: "s-4", course_code: "CISC121", term: "Fall" },
 
               // Dr. Smith has workload 3, delta -1 = target 2, but assigned to way more -- WORKLOAD_EXCEEDED
               // (A001, A002, A003, A005, A006, A007, A008 all count for inst-1)

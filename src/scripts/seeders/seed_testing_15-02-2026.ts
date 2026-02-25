@@ -48,7 +48,6 @@ async function main() {
             assignments: [
               {
                 id: "A001",
-                degree: "BSc",
                 instructor_id: "I001",
                 section_id: "SEC001",
                 course_code: "CISC101",
@@ -56,7 +55,6 @@ async function main() {
               },
               {
                 id: "A002",
-                degree: "BSc",
                 instructor_id: "I002",
                 section_id: "SEC003",
                 course_code: "CISC235",
@@ -73,7 +71,6 @@ async function main() {
             assignments: [
               {
                 id: "A003",
-                degree: "BSc",
                 instructor_id: "I001",
                 section_id: "SEC002",
                 course_code: "CISC101",

@@ -27,7 +27,6 @@ const seedFaculty = {
           assignments: [
             {
               id: "A001",
-              degree: "BSc",
               instructor_id: "I001",
               section_id: "SEC001",
               course_code: "CISC101",

@@ -82,7 +82,6 @@ function makeSchedule(assignments: Assignment[]): Schedule {
 
 function makeAssignment(overrides: Partial<Assignment> & { id: string }): Assignment {
   return {
-    degree: "Valid",
     instructor_id: "inst-1",
     section_id: "s-1",
     course_code: "CISC101",

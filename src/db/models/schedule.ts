@@ -5,7 +5,6 @@ import { Assignment, Schedule } from '../../types/schedule'
 const assignmentSchema = new mongoose.Schema<Assignment>(
     {
         id : {type : String, required: true},
-        degree : {type: String, required : true},
         instructor_id : {type : String, required: true},
         section_id : {type : String, required: true},
         course_code : {type : String, required: true},
