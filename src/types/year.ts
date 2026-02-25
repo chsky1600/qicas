@@ -16,6 +16,8 @@ export interface InstructorRule {
   courses: string[];
   /** Courses this instructor has declined their right of refusal for */
   declined_courses: string[];
+  /** Whether this instructor is dropped/inactive for this academic year */
+  dropped: boolean;
 }
 
 export interface CourseRule {

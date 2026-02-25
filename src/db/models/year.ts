@@ -13,6 +13,7 @@ const instructorRuleSchema = new mongoose.Schema<InstructorRule>(
         workload_delta: {type: Number, required: true},
         courses: {type: [String], required: true},
         declined_courses: {type: [String], required: true},
+        dropped: {type: Boolean, required: true},
     }
 )
 

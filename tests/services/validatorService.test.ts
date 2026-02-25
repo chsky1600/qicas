@@ -25,7 +25,7 @@ const mockCtx: AcademicYear = {
     { id: "inst-7", name: "D. Xu", workload: 2, email: "xu@queensu.ca", rank: "ExchangeFellow", prev_taught: [], notes: [] },
   ],
   instructor_rules: [
-    { id: "ir-5", instructor_id: "inst-5", designations: [], workload_delta: 0, courses: ["CISC101", "CISC490"], declined_courses: [] },
+    { id: "ir-5", instructor_id: "inst-5", designations: [], workload_delta: 0, courses: ["CISC101", "CISC490"], declined_courses: [], dropped: false },
   ],
   course_rules: [
     {
@@ -82,7 +82,6 @@ function makeSchedule(assignments: Assignment[]): Schedule {
 
 function makeAssignment(overrides: Partial<Assignment> & { id: string }): Assignment {
   return {
-    degree: "Valid",
     instructor_id: "inst-1",
     section_id: "s-1",
     course_code: "CISC101",
@@ -495,7 +494,7 @@ describe("checkInstructorRules", () => {
       const declinedCtx = {
         ...mockCtx,
         instructor_rules: [
-          { ...mockCtx.instructor_rules[0]!, declined_courses: ["CISC101"] },
+          { ...mockCtx.instructor_rules[0]!, declined_courses: ["CISC101"], dropped: false },
         ],
       };
       const a = makeAssignment({ id: "a-1", instructor_id: "inst-6", course_code: "CISC101", section_id: "s-1", term: "Fall" });
@@ -933,7 +932,7 @@ describe("checkScheduleRules", () => {
           { id: "inst-1", name: "Dr. A", workload: 2, email: "a@q.ca", rank: "FullProfessor", prev_taught: [], notes: [] },
         ],
         instructor_rules: [
-          { id: "ir-1", instructor_id: "inst-1", designations: [], workload_delta: -1, courses: [], declined_courses: [] },
+          { id: "ir-1", instructor_id: "inst-1", designations: [], workload_delta: -1, courses: [], declined_courses: [], dropped: false },
         ],
         course_rules: [
           { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false },

@@ -1,10 +1,8 @@
-import type { AssignmentDegree, Term } from "./enums";
+import type { Term } from "./enums";
 
 export interface Assignment {
   /** Unique identifier for this assignment */
   id: string;
-  /** Validation degree (computed, not persisted) */
-  degree: AssignmentDegree;
   /** Reference to the instructor being assigned */
   instructor_id: string;
   /** Reference to the section being assigned */

@@ -11,6 +11,7 @@ const newYearId = "Y2027";
 
 const seedFaculty = {
   id: facultyId,
+  name: "School of Computing",
   users: [],
   academic_years: [
     {
@@ -26,7 +27,6 @@ const seedFaculty = {
           assignments: [
             {
               id: "A001",
-              degree: "BSc",
               instructor_id: "I001",
               section_id: "SEC001",
               course_code: "CISC101",

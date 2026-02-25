@@ -19,5 +19,3 @@ export type CourseLevel =
   | "undergrad4"
   | "literature"
   | "graduate";
-
-export type AssignmentDegree = "Valid" | "Info" | "Warning" | "Error";

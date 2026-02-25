@@ -7,6 +7,7 @@ import { academicYearSchema } from './year'
 const facultySchema = new mongoose.Schema<Faculty>(
     {
         id : {type : String, required: true},
+        name : {type : String, required: true},
         users : {type : [userSchema], required : true},
         academic_years: {type : [academicYearSchema], required: true},
     }
