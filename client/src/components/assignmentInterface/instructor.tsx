@@ -128,7 +128,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
         <div className="flex flex-wrap gap-1 justify-center">
           {Array.from(instructor.fall_assigned).map((sectionId) => {
             const section = sectionState.byId[sectionId];
-            return section ? (
+            return (section && !section.dropped) ? (
               <AssignedChip key={section.id+"_chip"} {...section}/>
             ) : null;
           })}
@@ -140,7 +140,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
         <div className="flex flex-wrap gap-1 justify-center">
           {Array.from(instructor.wint_assigned).map((sectionId) => {
             const section = sectionState.byId[sectionId];
-            return section ? (
+            return (section && !section.dropped) ? (
               <AssignedChip key={section.id+"_chip"} {...section}/>
             ) : null;
           })}

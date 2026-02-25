@@ -19,7 +19,9 @@ interface InstructorsPanelProps {
 
 function InstructorsPanel({instructorState, sectionState}: InstructorsPanelProps)  {
   //TODO functionality to sort instructors, separate into distinct instructors
-  const instructorsList: InstructorType[] = instructorState.allIds.map(id => instructorState.byId[id]) 
+  const instructorsList: InstructorType[] = instructorState.allIds
+  .map(id => instructorState.byId[id])
+  .filter(instructor => !instructor.dropped) // only show active instructors
 
   return (
     <div className="flex-1 bg-white p-4 overflow-y-auto">
