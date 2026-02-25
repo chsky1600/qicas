@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
-import { fetchAssignment } from './assignment.api'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { fetchAssignment, saveScheduleToBackend } from './assignment.api'
 //import type { SectionId, Section, SectionState, InstructorId, Instructor, InstructorState } from "./assignment.types";
 import * as assignmentType from "./assignment.types";
+
 
 
 export interface UseAssignmentResult {
@@ -14,6 +15,8 @@ export interface UseAssignmentResult {
   updateInstructor: (updatedInstructor: assignmentType.Instructor) => void;  
   makeAssignment: (assignedSectionId: assignmentType.SectionId, nextInstructorId: assignmentType.InstructorId, assignmentLocation: assignmentType.SectionAvailability, prevInstructorId: assignmentType.InstructorId | null) => void;  
   removeAssignment: (unassignedSectionId: assignmentType.SectionId, prevInstructorId: assignmentType.InstructorId) => void;
+  loadState: (sectionState: assignmentType.SectionState, instructorState: assignmentType.InstructorState) => void;
+  activeSchedule: { id: string; name:string; year_id: string; date_created: string; is_rc: boolean } | null;
 }
 
 function stateObjectExists(state: assignmentType.InstructorState | assignmentType.SectionState, id: assignmentType.InstructorId | assignmentType.SectionId): boolean {
@@ -45,6 +48,33 @@ export function useAssignment(): UseAssignmentResult {
   const [instructorState, setInstructorState] = useState<assignmentType.InstructorState>(assignmentType.instructorStateEmpty);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeSchedule, setActiveSchedule] = useState<{ id: string; name: string; year_id: string; date_created: string; is_rc: boolean } | null>(null)
+
+  const sectionStateRef = useRef(sectionState)
+  const instructorStateRef = useRef(instructorState)
+  const activeScheduleRef = useRef(activeSchedule)
+  useEffect(() => { sectionStateRef.current = sectionState }, [sectionState])
+  useEffect(() => { instructorStateRef.current = instructorState }, [instructorState])
+  useEffect(() => { activeScheduleRef.current = activeSchedule }, [activeSchedule])
+
+  const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const abortController = useRef<AbortController | null>(null)
+
+  const triggerAutoSave = useCallback(() => {
+    if (saveTimeout.current) clearTimeout(saveTimeout.current)
+    if (abortController.current) abortController.current.abort()
+    saveTimeout.current = setTimeout(async () => {
+      if (!activeScheduleRef.current) return
+      const controller = new AbortController()
+      abortController.current = controller
+      try {
+        await saveScheduleToBackend("Y2026", activeScheduleRef.current, sectionStateRef.current, instructorStateRef.current, controller.signal)
+      } catch (e) {
+        if ((e as Error).name !== "AbortError") console.error("Auto-save failed", e)
+      }
+    }, 1000)
+  }, [])
+
 
   const fetchData = useCallback(async () => {
     try {
@@ -65,10 +95,11 @@ export function useAssignment(): UseAssignmentResult {
       const instructorsData = await instructorsRes.json();
       */
 
-      const assignment = fetchAssignment()
+      const assignment = await fetchAssignment("Y2026")
 
       setSectionState(assignment.sectionState);
       setInstructorState(assignment.instructorState);
+      setActiveSchedule(assignment.activeSchedule)
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -238,6 +269,7 @@ export function useAssignment(): UseAssignmentResult {
         [nextInstructorId]: modifiableNextInstructor
       }
     }))
+    triggerAutoSave()
   };
 
   const removeAssignment = (unassignedSectionId: assignmentType.SectionId, 
@@ -295,8 +327,13 @@ export function useAssignment(): UseAssignmentResult {
         [unassignedSectionId]: modifiableAssignedSection
       }
     }))
-    
+    triggerAutoSave()
   };
+  // loadState is used to load a new state, such as when loading a snapshot. It replaces the current section and instructor states with the provided states.
+  const loadState = (newSectionState: assignmentType.SectionState, newInstructorState: assignmentType.InstructorState) => {
+    setSectionState(newSectionState);
+    setInstructorState(newInstructorState);
+  }
 
   return {
     sectionState,
@@ -307,6 +344,8 @@ export function useAssignment(): UseAssignmentResult {
     updateSection,
     updateInstructor,
     makeAssignment,
-    removeAssignment
+    removeAssignment,
+    loadState,
+    activeSchedule,
   }
 }

@@ -11,4 +11,13 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      "/auth": "http://localhost:3000",
+      "/courses": "http://localhost:3000",
+      "/instructors": "http://localhost:3000",
+      "/schedule": "http://localhost:3000",
+      "/year": "http://localhost:3000",
+    },
+  },  
 })
