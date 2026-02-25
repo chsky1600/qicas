@@ -149,8 +149,24 @@ export default function PropertiesDialog({
   // When dropping or renewing, we want to update the "dropped" status in the parent state
   const setDroppedFromSelected = (nextDropped: boolean) => {
     if (mode === "instructors" && instructorEdit) {
-      const updated = { ...instructorEdit, dropped: nextDropped }
-      onUpdateInstructor(updated)
+      // When Dropping an instructor
+      if (nextDropped) {
+        // If dropping, also clear all assignments by setting assigned sections to empty sets
+        const allAssigned = new Set([...instructorEdit.fall_assigned, ...instructorEdit.wint_assigned])
+        allAssigned.forEach((sectionId) => {
+          const section = sectionState.byId[sectionId]
+          if (section) {
+            onUpdateSection({ ...section, assigned_to: null })
+          }
+        })
+        // Clear both fall and winter assigned sets
+        const updated = { ...instructorEdit, dropped: true, fall_assigned: new Set<string>(), wint_assigned: new Set<string>() }
+        onUpdateInstructor(updated)
+      } // When Renewing an instructor
+      else {
+        const updated = { ...instructorEdit, dropped: false }
+        onUpdateInstructor(updated)
+      }
     } else if (mode === "courses" && sectionEdit) {
       const updated = { ...sectionEdit, dropped: nextDropped }
       onUpdateSection(updated)
