@@ -4,44 +4,18 @@ import { SectionAvailability as SA } from "./assignment.types"
 
 // ─── Backend Response Shapes ──────────────────────────────────────────────────
 // These interfaces describe the raw JSON shapes returned by the backend API.
-// They are intentionally minimal — only the fields the frontend actually needs.
-
-// A single section (one offering) of a course
-interface BSection { id: string; number: number }
-
-// A note attached to a course or instructor
-interface BNote { content: string }
-
-// A course as returned by GET /courses/:year
-interface BCourse {
-  id: string; name: string; code: string; year_introduced: string;
-  sections: BSection[]; notes: BNote[];
-}
-
-// An instructor as returned by GET /instructors/:year
-interface BInstructor {
-  id: string; name: string; workload: number; email: string;
-  rank: string; notes: BNote[];
-}
-
-// A single assignment entry inside a schedule (links one instructor to one section for one term)
-interface BAssignment {
-  instructor_id: string; section_id: string; course_code: string; term: "Fall" | "Winter";
-}
-
-// A schedule as returned by GET /schedule/:year — contains the list of assignments
-interface BSchedule { id: string; assignments: BAssignment[] }
-
-// A course rule as returned by GET /year/:year/rules/courses
-// Defines availability terms, workload value, and whether the course spans the full year
-interface BCourseRule {
-  course_code: string; terms_offered: ("Fall" | "Winter")[];
-  workload_fulfillment: number; is_full_year: boolean;
-}
-
-// An instructor rule as returned by GET /year/:year/rules/instructors
-// Stores workload adjustments and whether the instructor has been dropped
-interface BInstructorRule { id: string; instructor_id: string; workload_delta: number; dropped: boolean }
+// renamed to B{type} to reduce confusion with 
+// API should be the only file which imports these types
+import type {
+  Schedule as BSchedule, 
+  Assignment as BAssignment, 
+  Course as BCourse, 
+  Section as BSection, 
+  Instructor as BInstructor, 
+  CourseRule as BCourseRule,
+  InstructorRule as BInstructorRule, 
+  Note as BNote,
+} from "../../../../src/types";
 
 
 // ─── Mapping Helpers ──────────────────────────────────────────────────────────
