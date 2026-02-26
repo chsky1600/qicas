@@ -23,7 +23,7 @@ export default function AssignedChip(section : Section)  {
 
   return (
     <span ref={setNodeRef} style={style} {...listeners} {...attributes} className={`${chipColor} text-white px-2 py-1 rounded text-sm`}>
-        {section.course_code}
+        {section.course_code}-{section.section_num}
     </span>
   )
 }
