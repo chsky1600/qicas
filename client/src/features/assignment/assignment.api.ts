@@ -16,14 +16,6 @@ import {mapScheduletoState} from "./assignment.mapper";
 // API should be the only file which imports these types
 
 import type {
-  //Schedule as BSchedule, 
-  //Assignment as BAssignment, 
-  //Course as BCourse, 
-  //Section as BSection, 
-  //Instructor as BInstructor, 
-  //CourseRule as BCourseRule,
-  //InstructorRule as BInstructorRule, 
-  //Note as BNote,
   Violation as BViolation
 } from "../../../../src/types";
 
