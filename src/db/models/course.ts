@@ -7,6 +7,7 @@ export const sectionSchema = new mongoose.Schema<Section>(
     {
         id : {type : String, required: true},
         number: {type : Number, required: true},
+        capacity: {type: Number, required: true, default: 0},
     }
 )
 
@@ -22,6 +23,7 @@ export const courseSchema = new mongoose.Schema<Course>(
         year_introduced: {type : String, required: true},
         notes: {type : [noteSchema], required: true},
         sections: {type : [sectionSchema], required: true},
+        capacity: {type: Number, required: true, default: 0},
     }
 );
 

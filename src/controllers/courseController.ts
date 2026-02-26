@@ -2,6 +2,20 @@ import { Request, Response } from "express";
 import { FacultyModel } from "../db/models/faculty";
 import { Course } from "../types/course";
 
+function normalizeCourseCapacity(course: Course, ensureDefaultSection: boolean): Course {
+    const sections = Array.isArray(course.sections) ? course.sections : [];
+    if (sections.length === 0) {
+        course.sections = ensureDefaultSection ? [{ id: "SEC001", number: 1, capacity: 0 }] : [];
+    } else {
+        course.sections = sections.map((s) => ({
+            ...s,
+            capacity: typeof s.capacity === "number" ? s.capacity : 0,
+        }));
+    }
+    course.capacity = course.sections.reduce((sum, s) => sum + (s.capacity ?? 0), 0);
+    return course;
+}
+
 // returns all courses in the department 
 // optionally filtered by academic year or term
 // router.get("/courses/:year", getAllCourses);
@@ -55,7 +69,7 @@ export const getCourseByID = async (req : Request, res : Response) => {
 export const createCourse = async (req : Request, res : Response) => {
     const year_id : string = req.params.year as string;
     const faculty_id : string = req.body.faculty_id;
-    const course : Course = req.body.course as Course;
+    const course : Course = normalizeCourseCapacity(req.body.course as Course, true);
 
     const result = await FacultyModel.updateOne(
         {
@@ -82,7 +96,7 @@ export const updateCourse = async (req : Request, res : Response) => {
 
     const year_id : string = req.params.year as string;
     const faculty_id : string = req.body.faculty_id;
-    const updatedCourse : Course = req.body.course as Course;
+    const updatedCourse : Course = normalizeCourseCapacity(req.body.course as Course, false);
 
     const result = await FacultyModel.updateOne(
         {
@@ -126,5 +140,3 @@ export const getCourseAssignmentsbyID = async (req : Request, res : Response) =>
     ]);
     res.json(result ?? [])
 }
-
-

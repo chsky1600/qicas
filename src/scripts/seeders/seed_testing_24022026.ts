@@ -82,20 +82,20 @@ async function main() {
         ],
 
         courses: [
-          { id: "c-1", name: "Intro to Computing", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [{ id: "s-1", number: 1 }, { id: "s-2", number: 2 }, { id: "s-3", number: 3 }] },
-          { id: "c-2", name: "Intro to Computer Science", code: "CISC121", level: "undergrad1", year_introduced: "2000", notes: [], sections: [{ id: "s-4", number: 1 }] },
-          { id: "c-3", name: "Intro to CS II", code: "CISC124", level: "undergrad1", year_introduced: "2000", notes: [], sections: [{ id: "s-5", number: 1 }] },
-          { id: "c-4", name: "Data Structures", code: "CISC203", level: "undergrad2", year_introduced: "2000", notes: [], sections: [{ id: "s-6", number: 1 }] },
-          { id: "c-5", name: "Logic for Computing", code: "CISC204", level: "undergrad2", year_introduced: "2000", notes: [], sections: [{ id: "s-7", number: 1 }] },
-          { id: "c-6", name: "Senior Thesis", code: "CISC490", level: "undergrad4", year_introduced: "2010", notes: [], sections: [{ id: "s-8", number: 1 }] },
-          { id: "c-7", name: "Advanced Topics in AI", code: "CISC890", level: "graduate", year_introduced: "2015", notes: [], sections: [{ id: "s-9", number: 1 }] },
-          { id: "c-8", name: "Calculus I", code: "MATH110", level: "undergrad1", year_introduced: "1990", notes: [], sections: [{ id: "s-10", number: 1 }] },
+          { id: "c-1", name: "Intro to Computing", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [{ id: "s-1", number: 1, capacity: 0 }, { id: "s-2", number: 2, capacity: 0 }, { id: "s-3", number: 3, capacity: 0 }], capacity: 0 },
+          { id: "c-2", name: "Intro to Computer Science", code: "CISC121", level: "undergrad1", year_introduced: "2000", notes: [], sections: [{ id: "s-4", number: 1, capacity: 0 }], capacity: 0 },
+          { id: "c-3", name: "Intro to CS II", code: "CISC124", level: "undergrad1", year_introduced: "2000", notes: [], sections: [{ id: "s-5", number: 1, capacity: 0 }], capacity: 0 },
+          { id: "c-4", name: "Data Structures", code: "CISC203", level: "undergrad2", year_introduced: "2000", notes: [], sections: [{ id: "s-6", number: 1, capacity: 0 }], capacity: 0 },
+          { id: "c-5", name: "Logic for Computing", code: "CISC204", level: "undergrad2", year_introduced: "2000", notes: [], sections: [{ id: "s-7", number: 1, capacity: 0 }], capacity: 0 },
+          { id: "c-6", name: "Senior Thesis", code: "CISC490", level: "undergrad4", year_introduced: "2010", notes: [], sections: [{ id: "s-8", number: 1, capacity: 0 }], capacity: 0 },
+          { id: "c-7", name: "Advanced Topics in AI", code: "CISC890", level: "graduate", year_introduced: "2015", notes: [], sections: [{ id: "s-9", number: 1, capacity: 0 }], capacity: 0 },
+          { id: "c-8", name: "Calculus I", code: "MATH110", level: "undergrad1", year_introduced: "1990", notes: [], sections: [{ id: "s-10", number: 1, capacity: 0 }], capacity: 0 },
         ],
 
         instructors: [
           { id: "inst-1", name: "Dr. Smith", workload: 3, email: "smith@queensu.ca", rank: "FullProfessor", prev_taught: [
-            { id: "c-1", name: "Intro to Computing", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [] },
-            { id: "c-5", name: "Logic for Computing", code: "CISC204", level: "undergrad2", year_introduced: "2000", notes: [], sections: [] },
+            { id: "c-1", name: "Intro to Computing", code: "CISC101", level: "undergrad1", year_introduced: "2000", notes: [], sections: [], capacity: 0 },
+            { id: "c-5", name: "Logic for Computing", code: "CISC204", level: "undergrad2", year_introduced: "2000", notes: [], sections: [], capacity: 0 },
           ], notes: [] },
           { id: "inst-4", name: "A. Taylor", workload: 2, email: "taylor@queensu.ca", rank: "TeachingFellow", prev_taught: [], notes: [] },
           { id: "inst-5", name: "B. Adams", workload: 2, email: "adams@queensu.ca", rank: "TermAdjunctSRoR", prev_taught: [], notes: [] },

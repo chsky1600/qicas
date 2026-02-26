@@ -100,9 +100,10 @@ async function main() {
               },
             ],
             sections: [
-              { id: "SEC001", number: 1 },
-              { id: "SEC002", number: 2 },
+              { id: "SEC001", number: 1, capacity: 0 },
+              { id: "SEC002", number: 2, capacity: 0 },
             ],
+            capacity: 0,
           },
           {
             id: "C002",
@@ -117,7 +118,8 @@ async function main() {
                 date_created: "2026-01-11",
               },
             ],
-            sections: [{ id: "SEC003", number: 1 }],
+            sections: [{ id: "SEC003", number: 1, capacity: 0 }],
+            capacity: 0,
           },
         ],
 
@@ -143,9 +145,10 @@ async function main() {
                   },
                 ],
                 sections: [
-                  { id: "SEC001", number: 1 },
-                  { id: "SEC002", number: 2 },
+                  { id: "SEC001", number: 1, capacity: 0 },
+                  { id: "SEC002", number: 2, capacity: 0 },
                 ],
+                capacity: 0,
               },
             ],
             notes: [
@@ -176,7 +179,8 @@ async function main() {
                     date_created: "2024-01-05",
                   },
                 ],
-                sections: [{ id: "SEC003", number: 1 }],
+                sections: [{ id: "SEC003", number: 1, capacity: 0 }],
+                capacity: 0,
               },
             ],
             notes: [
