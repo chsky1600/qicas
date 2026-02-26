@@ -101,7 +101,7 @@ export default function PropertiesDialog({
     })
     .map((id) => {
       const section = sectionState.byId[id]
-      return { id, label: `${section.dept} ${section.code} - ${section.name}` }
+      return { id, label: `${section.course_code} - ${section.name}` }
     })
   }, [mode, status, sectionState, instructorState])
 
@@ -174,7 +174,6 @@ export default function PropertiesDialog({
       const updated = { ...sectionEdit, dropped: nextDropped }
       onUpdateSection(updated)
     }
-    setStatus(nextDropped ? "dropped" : "current")
     setSelectedIndex(0)
   }
   const handleDrop = () => setDroppedFromSelected(true)
@@ -416,21 +415,13 @@ export default function PropertiesDialog({
                   </FormRow>
                 </div>
 
-                {/* Row 2: Dept / Code / Capacity / Workload */}
+                {/* Row 2: Course Code / Capacity / Workload */}
                 <div className="flex items-center gap-6 mb-4">
-                  <FormRow label="Dept." labelClassName="w-auto">
+                  <FormRow label="Course Code" labelClassName="w-auto">
                     <input
-                      className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center"
-                      value={sectionEdit.dept}
-                      onChange={(e) => setSectionEdit({ ...sectionEdit, dept: e.target.value })}
-                    />
-                  </FormRow>
-
-                  <FormRow label="Code" labelClassName="w-auto">
-                    <input
-                      className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center"
-                      value={sectionEdit.code}
-                      onChange={(e) => setSectionEdit({ ...sectionEdit, code: e.target.value })}
+                      className="w-24 border border-black rounded-md px-2 py-1 bg-white text-center focus:outline-none"
+                      value={sectionEdit.course_code}
+                      readOnly
                     />
                   </FormRow>
 

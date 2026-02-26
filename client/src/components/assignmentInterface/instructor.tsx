@@ -126,24 +126,38 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
       {/* Fall Term */}
       <TableCell ref={setNodeRefFall} style={styleFall}  className="text-center bg-orange-50 w-200 max-w-200">
         <div className="flex flex-wrap gap-1 justify-center">
-          {Array.from(instructor.fall_assigned).map((sectionId) => {
-            const section = sectionState.byId[sectionId];
-            return (section && !section.dropped) ? (
-              <AssignedChip key={section.id+"_chip"} {...section}/>
-            ) : null;
-          })}
+          {Array.from(instructor.fall_assigned)
+            .sort((a,b) => {
+              const sA = sectionState.byId[a];
+              const sB = sectionState.byId[b];
+              if (!sA || !sB) return 0;
+              return sA.course_code.localeCompare(sB.course_code)
+            })
+            .map((sectionId) => {
+              const section = sectionState.byId[sectionId];
+              return (section && !section.dropped) ? (
+                <AssignedChip key={section.id+"_chip"} {...section}/>
+              ) : null;
+            })}
         </div>
       </TableCell>
 
       {/* Winter Term */}
       <TableCell ref={setNodeRefWint} style={styleWint} className="text-center bg-cyan-50 w-200 max-w-200">
         <div className="flex flex-wrap gap-1 justify-center">
-          {Array.from(instructor.wint_assigned).map((sectionId) => {
-            const section = sectionState.byId[sectionId];
-            return (section && !section.dropped) ? (
-              <AssignedChip key={section.id+"_chip"} {...section}/>
-            ) : null;
-          })}
+          {Array.from(instructor.wint_assigned)
+            .sort((a,b) => {
+              const sA = sectionState.byId[a];
+              const sB = sectionState.byId[b];
+              if (!sA || !sB) return 0;
+              return sA.course_code.localeCompare(sB.course_code)
+            })
+            .map((sectionId) => {
+              const section = sectionState.byId[sectionId];
+              return (section && !section.dropped) ? (
+                <AssignedChip key={section.id+"_chip"} {...section}/>
+              ) : null;
+            })}
         </div>
       </TableCell>
     </TableRow>
