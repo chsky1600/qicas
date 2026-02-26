@@ -1,4 +1,4 @@
-import type { Assignment, Course, Section, Instructor, CourseRule, AssignmentDegree, InstructorRule, Note} from "../../../../src/types";
+import type {Schedule, Assignment, Course, Section, Instructor, CourseRule, AssignmentDegree, InstructorRule, Note} from "../../../../src/types";
 
 //--------------------Section-UI--------------------------------
 
@@ -14,9 +14,10 @@ export interface SectionUI {
   id: SectionId,
   course: Course,
   section: Section,
-  courseRule: CourseRule,
+  courseRule: CourseRule | undefined, // courseRule is only undefined duing mapping, it should not ever be unassigned during process
   assignment: Assignment | null, 
   dropped: boolean, // confirm w/ backend how dropped will work
+  in_violation: Violation | null,
 }
 
 export const getSectionID = (sectionUI:SectionUI): SectionId => {
@@ -42,16 +43,27 @@ export const getSectionNum = (sectionUI:SectionUI): number => {
 }
 
 export const getSectionWorkloadFulfillment = (sectionUI:SectionUI) => {
-  return sectionUI.courseRule.workload_fulfillment
+  if (!sectionUI.courseRule){
+    return -1 //this is an error
+  }
+  return sectionUI.courseRule?.workload_fulfillment
 }
 
 // TODO: verify that this is how we want availability to work
 export const getSectionAvailability = (sectionUI:SectionUI) => {
-  if (sectionUI.courseRule.is_full_year) {
+  let terms_offered = []
+  if (sectionUI.courseRule){
+    terms_offered = sectionUI.courseRule.terms_offered
+  }
+  else{
+    terms_offered = ["Fall"] // this is an error
+  }
+  
+  if (sectionUI.courseRule?.is_full_year) {
     return SectionAvailability.FandW
   }
-  if ("W" in sectionUI.courseRule.terms_offered){
-    if ("F" in sectionUI.courseRule.terms_offered){
+  if ("Winter" in terms_offered){
+    if ("Fall" in terms_offered){
       return SectionAvailability.ForW
     }
     return SectionAvailability.W
@@ -70,26 +82,19 @@ export const getSectionCapacity = (sectionUI:SectionUI) => {
 
 
 export const getSectionAssignedTo = (sectionUI:SectionUI) => {
-    return sectionUI.assignment?.instructor_id ?? null
+  return sectionUI.assignment?.instructor_id ?? null
 }
-
-export const getSectionInViolation = (sectionUI:SectionUI) => {
-    if(sectionUI.assignment){
-        if (sectionUI.assignment.degree == "Valid") return null
-        return sectionUI.assignment.degree
-    }
-    return null
-}
-
 
 export interface SectionState {
   byId: Record<SectionId, SectionUI>;
   allIds: SectionId[];
+  courseToSection: Record<string, Set<SectionId>>; // way to get the list of constructed sectionId's tied to each courseId
 }
 
 export const sectionStateEmpty: SectionState = {
   byId: {},
   allIds: [],
+  courseToSection: {},
 };
 
 export enum SectionAvailability {
@@ -135,7 +140,7 @@ export type InstructorId = string;
 export interface InstructorUI {
   id: InstructorId,
   instructor: Instructor,
-  instructorRule: InstructorRule,
+  instructorRule: InstructorRule | undefined,
   assigned: Assignment[],
 
   fall_assigned: Set<SectionId>,
@@ -189,7 +194,7 @@ export const getInstructorWorkload = (instructorUI:InstructorUI): number => {
 }
 
 export const getInstructorWorkloadDelta = (instructorUI:InstructorUI): number => {
-  return instructorUI.instructorRule.workload_delta
+  return instructorUI.instructorRule?.workload_delta ?? 0.0 // this is an error, instructorRule must never be undefined outside of mapping
 }
 
 export const getInstructorNotes = (instructorUI:InstructorUI): Note[] => {
@@ -210,4 +215,127 @@ export const populateInstructorAssignments = (instructorUI:InstructorUI): {fall_
   });
 
   return {fall_assigned, wint_assigned}
+}
+
+export interface InstructorState {
+  byId: Record<InstructorId, InstructorUI>;
+  allIds: InstructorId[];
+}
+
+export const instructorStateEmpty: InstructorState = {
+  byId: {},
+  allIds: [],
+};
+
+//------------------MAPPER----------------------
+
+
+export function mapScheduletoState(schedule: Schedule, instructors: Instructor[], instructorRules: InstructorRule[], courses: Course[], courseRules: CourseRule[]){
+  const newSectionState: SectionState = {
+    byId: {},
+    allIds: [],
+    courseToSection: {},
+  }
+
+  const newInstructorState: InstructorState = {
+    byId: {},
+    allIds: [],
+  }; 
+
+  instructors.forEach((instructor) => {
+    // craft instructor
+    const newInstructor: InstructorUI = {
+      id: instructor.id,
+      instructor:instructor,
+      instructorRule: undefined,
+      assigned: [],
+      fall_assigned: new Set<string>(),
+      wint_assigned: new Set<string>(),
+      violations: {
+        details_col_violations: [],
+        fall_col_violations: [],
+        wint_col_violations: [],
+      },
+      dropped: false //TODO determine how this should be mapped
+    }
+    // Add to state
+    newInstructorState.byId[newInstructor.id] = newInstructor
+    newInstructorState.allIds.push(newInstructor.id)
+  })
+
+  instructorRules.forEach((instructorRule) => {
+    // attempt to add each instructor rule to its corresponding instructor in the state
+    try{
+      newInstructorState.byId[instructorRule.instructor_id].instructorRule = instructorRule
+    }
+    catch (error){
+      //TODO error processing
+      console.log(`ERROR: Instructor rule ${instructorRule.id} is tied to instructor ${instructorRule.instructor_id} which is not mapped.`)
+      console.log(`ERROR: ${error}`)
+    }
+  })
+
+  courses.forEach((course) => {    
+    if (course.sections.length == 0){
+      course.sections = [{id:"section1",number:1}]
+    }
+
+    course.sections.forEach((section) => { 
+      const newSection: SectionUI = {
+        id: "", // placeholder
+        course: course,
+        section: section,
+        courseRule: undefined,
+        assignment: null, // initially unnassigned
+        dropped: false, 
+        in_violation: null,
+      }      
+
+      // populate id
+      newSection.id = getSectionID(newSection)
+
+      // Add to state
+      newSectionState.byId[newSection.id] = newSection
+      newSectionState.allIds.push(newSection.id)
+      newSectionState.courseToSection[course.code].add(newSection.id)
+    })
+  })
+
+  courseRules.forEach((courseRule) => {
+    // attempt to add each instructor rule to its corresponding instructor in the state
+
+    const sectionIDs = newSectionState.courseToSection[courseRule.course_code]
+
+    // attempt to add each course rule to a corresponding section in the state
+    sectionIDs.forEach((sectionID) => {
+      try{
+        newSectionState.byId[sectionID].courseRule = courseRule
+      }
+      catch (error){
+        //TODO error processing
+        console.log(`ERROR: Course rule ${courseRule.id} is tied to course ${courseRule.course_code} and section ${sectionID} which is not mapped.`)
+        console.log(`ERROR: ${error}`)
+      }
+    })
+  })
+
+  schedule.assignments.forEach((assignment) => {
+    // attempt to add each instructor rule to its corresponding instructor in the state
+    const sectionID = assignment.course_code + assignment.section_id
+
+    try{
+      newSectionState.byId[sectionID].assignment = assignment
+      newInstructorState.byId[assignment.instructor_id].assigned.push(assignment)
+    }
+    catch (error){
+      //TODO error processing
+      console.log(`ERROR: Assignment ${assignment.id} is tied to an instructor ${assignment.instructor_id} or course+section ${sectionID} which is not mapped.`)
+      console.log(`ERROR: ${error}`)
+    }    
+  })
+
+  return {
+    sectionState: newSectionState,
+    instructorState: newInstructorState
+  }
 }
