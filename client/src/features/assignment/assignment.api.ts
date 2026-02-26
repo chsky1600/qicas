@@ -1,4 +1,5 @@
-import type { SectionState, InstructorState, Section, Instructor, SectionAvailability } from "./assignment.types";
+import type { SectionState, InstructorState, SectionUI, InstructorUI, SectionAvailability } from "./assignment.mapper";
+import {mapScheduletoState} from "./assignment.mapper";
 import { SectionAvailability as SA } from "./assignment.types"
 
 
@@ -15,6 +16,7 @@ import type {
   CourseRule as BCourseRule,
   InstructorRule as BInstructorRule, 
   Note as BNote,
+  Violation as BViolation
 } from "../../../../src/types";
 
 
@@ -237,6 +239,40 @@ export async function fetchAssignment(year: string): Promise<{
 }
 
 /**
+ * Fetches all data needed to populate the assignment interface for the given schedule/academic year.
+ * Fires 5 requests in parallel, then passes the results through mapToFrontendState.
+ *
+ * Returns:
+ *  - sectionState: all sections for the year, normalised
+ *  - instructorState: all instructors for the year, normalised
+ *  - activeSchedule: metadata for the first (active) schedule, or null if none exists
+ */
+export async function fetchSchedule(year: string): Promise<{
+  sectionState: SectionState;
+  instructorState: InstructorState;
+  activeSchedule: { id: string; name: string; year_id: string; date_created: string; is_rc: boolean } | null;
+}> {
+  const [courses, instructors, schedules, courseRules, instructorRules] = await Promise.all([
+    fetch(`${API_BASE}/courses/${year}`).then(r => r.json()),
+    fetch(`${API_BASE}/instructors/${year}`).then(r => r.json()),
+    fetch(`${API_BASE}/schedule/${year}`).then(r => r.json()),
+    fetch(`${API_BASE}/year/${year}/rules/courses`).then(r => r.json()),
+    fetch(`${API_BASE}/year/${year}/rules/instructors`).then(r => r.json()),
+  ])
+
+  const { sectionState, instructorState } = mapScheduletoState(schedules[0] ?? undefined, instructors, instructorRules, courses, courseRules)
+
+  // The first schedule in the list is treated as the active working schedule
+  const first = schedules[0] ?? null
+  const activeSchedule = first ? {
+    id: first.id, name: first.name, year_id: first.year_id,
+    date_created: first.date_created, is_rc: first.is_rc ?? false,
+  } : null
+
+  return { sectionState, instructorState, activeSchedule }
+}
+
+/**
  * Serialises the current frontend state back into the backend schedule format and
  * sends it to the backend via PUT /schedule/:year.
  *
@@ -294,16 +330,6 @@ export async function saveDropped(year: string, rule_id: string, dropped: boolea
 }
 
 // ─── Violations ───────────────────────────────────────────────────────────────
-
-// Shape of a single violation returned by POST /schedule/:year/:schedule_id/validate
-export interface BViolation {
-  id: string
-  type: "Course" | "Instructor" | "Schedule"  // what kind of entity is in violation
-  offending_id: string                         // course_code for Course, instructor_id for Instructor
-  code: string                                 // short violation code identifier
-  message: string                              // human-readable description
-  degree: "Info" | "Warning" | "Error"         // severity level
-}
 
 /**
  * Triggers a full schedule validation on the backend and returns the list of violations.

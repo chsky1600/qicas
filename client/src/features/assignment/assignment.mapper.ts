@@ -74,10 +74,10 @@ export const getSectionAvailability = (sectionUI:SectionUI) => {
 
 
 export const getSectionCapacity = (sectionUI:SectionUI) => {
-    // TODO request capacity info added to DB
-    //return sectionUI.section.capacity
-    if (sectionUI) return 200
-    return 0
+  // TODO request capacity info added to DB
+  //return sectionUI.section.capacity
+  if (sectionUI) return 200
+  return 0
 }
 
 
@@ -98,17 +98,17 @@ export const sectionStateEmpty: SectionState = {
 };
 
 export enum SectionAvailability {
-    F = "Fall",
-    W = "Winter",
-    FandW = "Full Year",
-    ForW = "Fall/Wint.",
+  F = "Fall",
+  W = "Winter",
+  FandW = "Full Year",
+  ForW = "Fall/Wint.",
 }
 
 
 export enum ViolationDegree {
-    I = "INFO",
-    W = "WARNING",
-    E = "ERROR",
+  I = "INFO",
+  W = "WARNING",
+  E = "ERROR",
 }
 
 // returns coresponding tailwind background color class depending on provided ViolationDegree
@@ -319,7 +319,9 @@ export function mapScheduletoState(schedule: Schedule, instructors: Instructor[]
     })
   })
 
-  schedule.assignments.forEach((assignment) => {
+  const assignments = schedule?.assignments ?? []
+
+  assignments.forEach((assignment) => {
     // attempt to add each instructor rule to its corresponding instructor in the state
     const sectionID = assignment.course_code + assignment.section_id
 
