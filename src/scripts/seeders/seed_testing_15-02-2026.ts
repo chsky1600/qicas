@@ -221,6 +221,7 @@ async function main() {
             is_full_year: false,
             sections_available: ["SEC001", "SEC002"],
             is_external: false,
+            dropped: false,
           },
           {
             id: "CR002",
@@ -230,6 +231,7 @@ async function main() {
             is_full_year: false,
             sections_available: ["SEC003"],
             is_external: false,
+            dropped: false,
           },
         ],
       },

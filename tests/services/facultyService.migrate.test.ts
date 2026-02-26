@@ -77,6 +77,7 @@ const seedFaculty = {
           is_full_year: false,
           sections_available: ["SEC001"],
           is_external: false,
+          dropped: false,
         },
       ],
     },
