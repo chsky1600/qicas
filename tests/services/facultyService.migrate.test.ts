@@ -43,7 +43,8 @@ const seedFaculty = {
           level: "Undergraduate",
           year_introduced: "2020",
           notes: [],
-          sections: [{ id: "SEC001", number: 1 }],
+          sections: [{ id: "SEC001", number: 1, capacity: 0 }],
+          capacity: 0,
         },
       ],
       instructors: [
