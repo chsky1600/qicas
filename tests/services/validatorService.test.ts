@@ -36,6 +36,7 @@ const mockCtx: AcademicYear = {
       is_full_year: false,
       sections_available: ["001", "002"],
       is_external: false,
+      dropped: false,
     },
     {
       id: "cr-2",
@@ -45,6 +46,7 @@ const mockCtx: AcademicYear = {
       is_full_year: false,
       sections_available: ["001"],
       is_external: false,
+      dropped: false,
     },
     {
       id: "cr-4",
@@ -54,6 +56,7 @@ const mockCtx: AcademicYear = {
       is_full_year: false,
       sections_available: ["001"],
       is_external: false,
+      dropped: false,
     },
     {
       id: "cr-3",
@@ -63,6 +66,7 @@ const mockCtx: AcademicYear = {
       is_full_year: true,
       sections_available: ["001"],
       is_external: false,
+      dropped: false,
     },
   ],
 };
@@ -670,7 +674,7 @@ describe("checkInstructorRules", () => {
       ],
       instructor_rules: [],
       course_rules: [
-        { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false },
+        { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false, dropped: false },
       ],
     };
 
@@ -691,7 +695,7 @@ describe("checkInstructorRules", () => {
       const twoSectionCtx: AcademicYear = {
         ...insuffCtx,
         course_rules: [
-          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1", "s-2"], is_external: false },
+          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1", "s-2"], is_external: false, dropped: false },
         ],
       };
       const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
@@ -706,7 +710,7 @@ describe("checkInstructorRules", () => {
       const metCtx: AcademicYear = {
         ...insuffCtx,
         course_rules: [
-          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall", "Winter"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false },
+          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall", "Winter"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false, dropped: false },
         ],
       };
       const a1 = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
@@ -723,8 +727,8 @@ describe("checkInstructorRules", () => {
       const externalCtx: AcademicYear = {
         ...insuffCtx,
         course_rules: [
-          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false },
-          { id: "cr-ext", course_code: "MATH110", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-ext"], is_external: true },
+          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false, dropped: false },
+          { id: "cr-ext", course_code: "MATH110", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-ext"], is_external: true, dropped: false },
         ],
       };
       const a = makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" });
@@ -810,6 +814,7 @@ describe("checkScheduleRules", () => {
         is_full_year: false,
         sections_available: ["s-1", "s-2"],
         is_external: false,
+        dropped: false,
       },
       {
         id: "cr-ext",
@@ -819,6 +824,7 @@ describe("checkScheduleRules", () => {
         is_full_year: false,
         sections_available: ["s-ext"],
         is_external: true,
+        dropped: false,
       },
     ],
   };
@@ -897,7 +903,7 @@ describe("checkScheduleRules", () => {
         ],
         instructor_rules: [],
         course_rules: [
-          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false },
+          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false, dropped: false },
         ],
       };
       const schedule = makeSchedule([]);
@@ -935,7 +941,7 @@ describe("checkScheduleRules", () => {
           { id: "ir-1", instructor_id: "inst-1", designations: [], workload_delta: -1, courses: [], declined_courses: [], dropped: false },
         ],
         course_rules: [
-          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false },
+          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1"], is_external: false, dropped: false },
         ],
       };
       // 1 section, workload 2 + delta of -1 = 1, balanced
