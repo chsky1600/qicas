@@ -30,7 +30,7 @@ async function main() {
         role: "scheduler",
       },
     ],
-
+    current_working_schedule_id : "SCH001",
     academic_years: [
       {
         id: "Y2026",
