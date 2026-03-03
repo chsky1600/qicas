@@ -29,6 +29,7 @@ const courseRuleSchema = new mongoose.Schema<CourseRule>(
         is_full_year : {type : Boolean, required: true},
         sections_available: {type: [String], required: true},
         is_external: {type: Boolean, required: true},
+        dropped: {type: Boolean, required: true},
     }
 )
 

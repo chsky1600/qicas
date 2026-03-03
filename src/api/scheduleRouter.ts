@@ -6,6 +6,8 @@ import {
     setWorkingSchedule,
     createSnapshot,
     getSchedules,
+    addAssignment,
+    removeAssignment,
     validateSchedule
 } from "../controllers/scheduleController";
 
@@ -13,10 +15,13 @@ const router = express.Router();
 
 router.get("/schedule/:year/:schedule_id",getScheduleByID)
 router.put("/schedule/:year/:schedule_id",setWorkingSchedule)
- 
+
 router.get("/schedule/:year",getSchedules)
 router.put("/schedule/:year",saveSchedule)
 router.post("/schedule/:year", createSnapshot)
+
+router.post("/schedule/:year/:schedule_id/assignments", addAssignment)
+router.delete("/schedule/:year/:schedule_id/assignments/:assignment_id", removeAssignment)
 
 router.post("/schedule/:year/:schedule_id/validate",validateSchedule)
 

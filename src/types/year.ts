@@ -35,6 +35,8 @@ export interface CourseRule {
   sections_available: string[];
   /** Whether this course is offered by an external faculty */
   is_external: boolean;
+  /** Whether this course is dropped/inactive for this academic year */
+  dropped: boolean;
 }
 
 export interface AcademicYear {

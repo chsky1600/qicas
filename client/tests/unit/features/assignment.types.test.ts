@@ -10,8 +10,8 @@ describe('Assignment Types', () => {
   it('has correct section availability enum values', () => {
     expect(SectionAvailability.F).toBe('Fall')
     expect(SectionAvailability.W).toBe('Winter')
-    expect(SectionAvailability.FandW).toBe('Fall/Wint.')
-    expect(SectionAvailability.ForW).toBe('Full Year')
+    expect(SectionAvailability.FandW).toBe('Full Year')
+    expect(SectionAvailability.ForW).toBe('Fall/Wint.')
   })
 
   // Test that the empty section state constant is properly initialized with empty byId and allIds

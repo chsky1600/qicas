@@ -43,7 +43,8 @@ const seedFaculty = {
           level: "Undergraduate",
           year_introduced: "2020",
           notes: [],
-          sections: [{ id: "SEC001", number: 1 }],
+          sections: [{ id: "SEC001", number: 1, capacity: 0 }],
+          capacity: 0,
         },
       ],
       instructors: [
@@ -65,6 +66,7 @@ const seedFaculty = {
           workload_delta: 0,
           courses: ["CISC101"],
           declined_courses: [],
+          dropped: false,
         },
       ],
       course_rules: [
@@ -76,6 +78,7 @@ const seedFaculty = {
           is_full_year: false,
           sections_available: ["SEC001"],
           is_external: false,
+          dropped: false,
         },
       ],
     },
