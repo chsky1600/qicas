@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchAssignment, saveScheduleToBackend, saveDropped, fetchViolations } from './assignment.api'
-import type {Assignment, Violation as BViolation} from "../../../../src/types";
+import type {Assignment as BAssignment, Violation as BViolation} from "../../../../src/types";
 import * as assignmentType from "./assignment.types";
 
 
@@ -307,7 +307,9 @@ export function useAssignment(): UseAssignmentResult {
     assignmentLocation: assignmentType.SectionAvailability,
     prevInstructorId: assignmentType.InstructorId | null = null
   ) => {
+    return
 
+    /*    
     // ForW means "fall OR winter" — the user must pick one explicitly
     if (assignmentLocation === assignmentType.SectionAvailability.ForW) {
       console.log("WARN: cannot assign course to 'fall or winter', must assign to 'fall', 'winter', or both")
@@ -328,14 +330,23 @@ export function useAssignment(): UseAssignmentResult {
 
     // If no previous instructor was provided, check if the section already has one
     if (!prevInstructorId) {
-      prevInstructorId = sectionState.byId[assignedSectionId].assignment?.instructor_id ?? null
+      prevInstructorId = assignmentType.getSectionAssignedTo(sectionState.byId[assignedSectionId])
     }
 
     // Remove the section from the previous instructor's term sets
     if (prevInstructorId) {
-      const modifiablePrevInstructor: assignmentType.Instructor = { ...instructorState.byId[prevInstructorId] }
+      const modifiablePrevInstructor: assignmentType.InstructorUI = { ...instructorState.byId[prevInstructorId] }
       modifiablePrevInstructor.fall_assigned.delete(assignedSectionId)
       modifiablePrevInstructor.wint_assigned.delete(assignedSectionId)
+
+
+      const index = modifiablePrevInstructor.assigned.findIndex(
+        assignment => (assignment.course_code+assignedSectionId) === assignedSectionId
+      );
+
+      if (index !== -1) {
+        modifiablePrevInstructor.assigned.splice(index, 1);
+      }
 
       setInstructorState(prev => ({
         ...prev,
@@ -345,10 +356,21 @@ export function useAssignment(): UseAssignmentResult {
         }
       }))
     }
+    // add new assignment to API (dependant on term)
+
 
     // Update the section's assigned_to pointer
-    const modifiableAssignedSection: assignmentType.Section = { ...sectionState.byId[assignedSectionId] }
+    const modifiableAssignedSection: assignmentType.SectionUI = { ...sectionState.byId[assignedSectionId] }
     modifiableAssignedSection.assigned_to = nextInstructorId
+
+    // make new assignment
+    const newAssignment: BAssignment = {
+      id: Math.floor(Math.random() * 1000).toString(),
+      instructor_id: nextInstructorId,
+      section_id: modifiableAssignedSection.section.id,
+      course_code: modifiableAssignedSection.course.id,
+      term: "Fall",
+    }
 
     // Add the section to the next instructor's appropriate term set(s)
     const modifiableNextInstructor: assignmentType.Instructor = { ...instructorState.byId[nextInstructorId] }
@@ -378,6 +400,7 @@ export function useAssignment(): UseAssignmentResult {
     }))
 
     triggerAutoSave()
+    */
   };
 
   /**
@@ -395,6 +418,8 @@ export function useAssignment(): UseAssignmentResult {
     unassignedSectionId: assignmentType.SectionId,
     prevInstructorId: assignmentType.InstructorId
   ) => {
+    return
+    /*
 
     if (!stateObjectExists(sectionState, unassignedSectionId)) {
       // TODO return error
@@ -434,6 +459,7 @@ export function useAssignment(): UseAssignmentResult {
     }))
 
     triggerAutoSave()
+    */
   };
 
   /**
