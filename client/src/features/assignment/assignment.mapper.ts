@@ -1,236 +1,41 @@
-import type {Schedule, Assignment, Course, Section, Instructor, CourseRule, AssignmentDegree, InstructorRule, Note} from "../../../../src/types";
+import type {
+  Schedule, 
+  Course, 
+  Instructor, 
+  CourseRule, 
+  InstructorRule
+} from "../../../../src/types";
 
-//--------------------Section-UI--------------------------------
+import type { 
+  SectionState,
+  InstructorState,
+  InstructorUI,
+  SectionUI 
+} from "./assignment.types";
 
-export type SectionId = string;
-
-export interface UI_course {
-  id: string,
-  course: Course,
-  courseRule: CourseRule,
-}
-
-export interface SectionUI {
-  id: SectionId,
-  course: Course,
-  section: Section,
-  courseRule: CourseRule | undefined, // courseRule is only undefined duing mapping, it should not ever be unassigned during process
-  assignment: Assignment | null, 
-  dropped: boolean, // confirm w/ backend how dropped will work
-  in_violation: Violation | null,
-}
-
-export const getSectionID = (sectionUI:SectionUI): SectionId => {
-  // TODO: have assignment refernce course ID instead of code
-  return sectionUI.course.code + sectionUI.section.id
-}
-
-export const getSectionName = (sectionUI:SectionUI): string => {
-  return sectionUI.course.name
-}
-
-// TODO Request split of Dept and code
-export const getSectionCode = (sectionUI:SectionUI): string => {
-  return sectionUI.course.code
-}
-
-export const getSectionYearIntroduced = (sectionUI:SectionUI): string => {
-  return sectionUI.course.year_introduced
-}
-
-export const getSectionNum = (sectionUI:SectionUI): number => {
-  return sectionUI.section.number
-}
-
-export const getSectionWorkloadFulfillment = (sectionUI:SectionUI) => {
-  if (!sectionUI.courseRule){
-    return -1 //this is an error
-  }
-  return sectionUI.courseRule?.workload_fulfillment
-}
-
-// TODO: verify that this is how we want availability to work
-export const getSectionAvailability = (sectionUI:SectionUI) => {
-  let terms_offered = []
-  if (sectionUI.courseRule){
-    terms_offered = sectionUI.courseRule.terms_offered
-  }
-  else{
-    terms_offered = ["Fall"] // this is an error
-  }
-  
-  if (sectionUI.courseRule?.is_full_year) {
-    return SectionAvailability.FandW
-  }
-  if ("Winter" in terms_offered){
-    if ("Fall" in terms_offered){
-      return SectionAvailability.ForW
-    }
-    return SectionAvailability.W
-  }
-  // Presumed defualt
-	return SectionAvailability.F
-}
-
-
-export const getSectionCapacity = (sectionUI:SectionUI) => {
-    // TODO request capacity info added to DB
-    //return sectionUI.section.capacity
-    if (sectionUI) return 200
-    return 0
-}
-
-
-export const getSectionAssignedTo = (sectionUI:SectionUI) => {
-  return sectionUI.assignment?.instructor_id ?? null
-}
-
-export interface SectionState {
-  byId: Record<SectionId, SectionUI>;
-  allIds: SectionId[];
-  courseToSection: Record<string, Set<SectionId>>; // way to get the list of constructed sectionId's tied to each courseId
-}
-
-export const sectionStateEmpty: SectionState = {
-  byId: {},
-  allIds: [],
-  courseToSection: {},
-};
-
-export enum SectionAvailability {
-    F = "Fall",
-    W = "Winter",
-    FandW = "Full Year",
-    ForW = "Fall/Wint.",
-}
-
-
-export enum ViolationDegree {
-    I = "INFO",
-    W = "WARNING",
-    E = "ERROR",
-}
-
-// returns coresponding tailwind background color class depending on provided ViolationDegree
-export const getDegreeColor = (degree: AssignmentDegree) => {
-  switch(degree) {
-    case "Valid":
-      return "bg-green-500";
-    case "Info":
-      return "bg-yellow-500";
-    case "Warning":
-      return "bg-orange-500";
-    case "Error":
-      return "bg-red-500";
-    default:
-      return "bg-gray-500";
-  }
-}
-
-export interface Violation {
-  msg: string,
-  degree: ViolationDegree,
-}
-
-//--------------------Instructor-UI--------------------------------
-
-export type InstructorId = string;
-
-
-export interface InstructorUI {
-  id: InstructorId,
-  instructor: Instructor,
-  instructorRule: InstructorRule | undefined,
-  assigned: Assignment[],
-
-  fall_assigned: Set<SectionId>,
-  wint_assigned: Set<SectionId>,
-  // violations are either in the instructor details column, the fall term column, or the winter term column
-  violations: {
-    details_col_violations: Violation[],
-    fall_col_violations: Violation[],
-    wint_col_violations: Violation[],
-  }
-  dropped: boolean, // confirm w/ backend how dropped will work
-}
-
-export const getInstructorID = (instructorUI:InstructorUI): InstructorId => {
-    return instructorUI.instructor.id
-}
-
-export const getInstructorName = (instructorUI:InstructorUI): string  => {
-    return instructorUI.instructor.name
-}
-
-const RANK_MAP: Record<string, { short: string; long: string }> = {
-  "AssistantProfessor":  { short: "Asst. Prof.", long: "Assistant Professor" },
-  "Assistant Professor": { short: "Asst. Prof.", long: "Assistant Professor" },
-  "AssociateProfessor":  { short: "Assoc. Prof.", long: "Associate Professor" },
-  "Associate Professor": { short: "Assoc. Prof.", long: "Associate Professor" },
-  "FullProfessor":       { short: "Prof.", long: "Professor" },
-  "Full Professor":      { short: "Prof.", long: "Professor" },
-  "ContinuingAdjunct":   { short: "Adj.", long: "Adjunct" },
-  "Continuing Adjunct":  { short: "Adj.", long: "Adjunct" },
-  "TermAdjunctBasic":    { short: "Adj.", long: "Adjunct" },
-  "TermAdjunctSRoR":     { short: "Adj.", long: "Adjunct" },
-  "TermAdjunctGRoR":     { short: "Adj.", long: "Adjunct" },
-  "TeachingFellow":      { short: "T.F.", long: "Teaching Fellow" },
-  "Teaching Fellow":     { short: "T.F.", long: "Teaching Fellow" },
-  "ExchangeFellow":      { short: "E.F.", long: "Exchange Fellow" },
-  "Exchange Fellow":     { short: "E.F.", long: "Exchange Fellow" },
-  "Other":               { short: "Other", long: "Other" },
-}
-
-export const getInstructorPosition = (instructorUI:InstructorUI): { short: string; long: string } => {
-  return RANK_MAP[instructorUI.instructor.rank]
-}
-
-export const getInstructorEmail = (instructorUI:InstructorUI) => {
-    return instructorUI.instructor.email
-}
-
-export const getInstructorWorkload = (instructorUI:InstructorUI): number => {
-  return instructorUI.instructor.workload
-}
-
-export const getInstructorWorkloadDelta = (instructorUI:InstructorUI): number => {
-  return instructorUI.instructorRule?.workload_delta ?? 0.0 // this is an error, instructorRule must never be undefined outside of mapping
-}
-
-export const getInstructorNotes = (instructorUI:InstructorUI): Note[] => {
-  return instructorUI.instructor.notes
-}
-
-export const populateInstructorAssignments = (instructorUI:InstructorUI): {fall_assigned: Set<SectionId>, wint_assigned: Set<SectionId>} => {
-  const fall_assigned = new Set<string>()
-  const wint_assigned = new Set<string>()
-  
-  instructorUI.assigned.forEach(assignment => {
-    if(assignment.term == "Fall"){
-      fall_assigned.add(assignment.course_code+assignment.section_id)
-    }
-    if(assignment.term == "Winter"){
-      wint_assigned.add(assignment.course_code+assignment.section_id)
-    }
-  });
-
-  return {fall_assigned, wint_assigned}
-}
-
-export interface InstructorState {
-  byId: Record<InstructorId, InstructorUI>;
-  allIds: InstructorId[];
-}
-
-export const instructorStateEmpty: InstructorState = {
-  byId: {},
-  allIds: [],
-};
+import { 
+  getSectionID 
+} from "./assignment.types";
 
 //------------------MAPPER----------------------
-
-
+/**
+ * Converts raw backend data from 5 endpoints into the normalised frontend state
+ * shapes (SectionState and InstructorState) that the rest of the app consumes.
+ *
+ * High-level steps:
+ *  0. create new Section and Instructor States
+ *  1. Insert each Instructor into the instructor state
+ *  2. Assign each Instructor rule with its coresponding Instructor. 
+ *     Assignments are preformed in O(1) using instructor.id lookup
+ *  3. For each course, insert each section into the instructor state
+ *     Also build a map between courses and sections for O(n) lookup
+ *  4. Assign each course rule with its coresponding section. 
+ *     use the map constructed in step 3 for quick assignment
+ *  5. Assign each assignment to its coresponding section and instructor
+ */
 export function mapScheduletoState(schedule: Schedule, instructors: Instructor[], instructorRules: InstructorRule[], courses: Course[], courseRules: CourseRule[]){
+  
+  // Step 0: create new Section and Instructor States
   const newSectionState: SectionState = {
     byId: {},
     allIds: [],
@@ -242,6 +47,7 @@ export function mapScheduletoState(schedule: Schedule, instructors: Instructor[]
     allIds: [],
   }; 
 
+  // Step 1: Insert each Instructor into the instructor state
   instructors.forEach((instructor) => {
     // craft instructor
     const newInstructor: InstructorUI = {
@@ -263,6 +69,7 @@ export function mapScheduletoState(schedule: Schedule, instructors: Instructor[]
     newInstructorState.allIds.push(newInstructor.id)
   })
 
+  // Step 2: Align each Instructor rule with its coresponding Instructor 
   instructorRules.forEach((instructorRule) => {
     // attempt to add each instructor rule to its corresponding instructor in the state
     try{
@@ -275,6 +82,7 @@ export function mapScheduletoState(schedule: Schedule, instructors: Instructor[]
     }
   })
 
+  // Step 3: Insert each Course & Section into the section state
   courses.forEach((course) => {    
     if (course.sections.length == 0){
       course.sections = [{id:"section1",number:1}]
@@ -297,10 +105,16 @@ export function mapScheduletoState(schedule: Schedule, instructors: Instructor[]
       // Add to state
       newSectionState.byId[newSection.id] = newSection
       newSectionState.allIds.push(newSection.id)
+      // add to Course -> section mapper
+      if (!newSectionState.courseToSection[course.code]) {
+        newSectionState.courseToSection[course.code] = new Set<string>();
+      }
       newSectionState.courseToSection[course.code].add(newSection.id)
     })
   })
 
+  // Step 4: Align each Course rule with its coresponding section
+  // uses the constructed courseToSection map to find each section tied to a course
   courseRules.forEach((courseRule) => {
     // attempt to add each instructor rule to its corresponding instructor in the state
 
@@ -319,13 +133,23 @@ export function mapScheduletoState(schedule: Schedule, instructors: Instructor[]
     })
   })
 
-  schedule.assignments.forEach((assignment) => {
+  // if schedule undefined, assignments is null
+  const assignments = schedule?.assignments ?? []
+
+  //Step 5: Insert each Assignment into its coresponding 
+  assignments.forEach((assignment) => {
     // attempt to add each instructor rule to its corresponding instructor in the state
     const sectionID = assignment.course_code + assignment.section_id
 
     try{
       newSectionState.byId[sectionID].assignment = assignment
       newInstructorState.byId[assignment.instructor_id].assigned.push(assignment)
+      if (assignment.term == "Fall"){
+        newInstructorState.byId[assignment.instructor_id].fall_assigned.add(sectionID)
+      }
+      if (assignment.term == "Winter"){
+        newInstructorState.byId[assignment.instructor_id].wint_assigned.add(sectionID)
+      }
     }
     catch (error){
       //TODO error processing

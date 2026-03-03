@@ -36,7 +36,7 @@ export default function AssignmentInterface({
     console.log(`INFO: holding section id (${event.active.id})`)
     const sectionDrag = event.active.data.current
 
-    // if drop is not an instructor or drag is not a section, to not continue
+    // if drag is not a section, do not continue
     if (sectionDrag?.type !== "section"){
       console.log(`WARN: ${event.active.id} is not a section`)
       return

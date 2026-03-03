@@ -51,7 +51,7 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
         </button>
       </div>
 
-      <PropertiesDialog
+      {/*<PropertiesDialog
         isOpen={isPropertiesOpen}
         onClose={() => setIsPropertiesOpen(false)}
         sectionState={sectionState}
@@ -59,7 +59,7 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
         onUpdateSection={updateSection}
         onUpdateInstructor={updateInstructor}
         onDropInstructor={dropInstructor}
-      />
+      />*/}
       <SnapshotsDialog
         isOpen={isSnapshotsOpen}
         onClose={() => setIsSnapshotsOpen(false)}
