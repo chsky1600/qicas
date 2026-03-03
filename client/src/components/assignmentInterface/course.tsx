@@ -1,4 +1,9 @@
-import type { Section } from "@/features/assignment/assignment.types"
+import { 
+  getSectionCode,
+  getSectionNum,
+  getSectionCapacity,
+  getSectionAssignedTo, type SectionUI, 
+  getSectionAvailability} from "@/features/assignment/assignment.types"
 import {
   TableCell,
   TableRow,
@@ -6,14 +11,14 @@ import {
 import { useDraggable } from "@dnd-kit/core"
 
 
-export default function Course(section : Section)  {
+export default function Course(section : SectionUI)  {
   const {attributes, listeners, setNodeRef, isDragging} = useDraggable({
     id: `section-${section.id}-row`,     
     data: {
       type: "section",
       source: "panel",
       sectionId: section.id,
-      prevInstructorId: section.assigned_to,
+      prevInstructorId: getSectionAssignedTo(section),
     }
   });
 
@@ -24,10 +29,10 @@ export default function Course(section : Section)  {
 
   return (
     <TableRow ref={setNodeRef} style={style} {...listeners} {...attributes}>
-      <TableCell key="course_code_column" className="text-center font-medium">{section.course_code}</TableCell>              
-      <TableCell key="section_column" className="text-center">{section.section_num}</TableCell>
-      <TableCell key="avail_column" className="text-center">{section.availability}</TableCell>
-      <TableCell key="capacity_column" className="text-center">{section.capacity}</TableCell>
+      <TableCell key="course_code_column" className="text-center font-medium">{getSectionCode(section)}</TableCell>              
+      <TableCell key="section_column" className="text-center">{getSectionNum(section)}</TableCell>
+      <TableCell key="avail_column" className="text-center">{getSectionAvailability(section)}</TableCell>
+      <TableCell key="capacity_column" className="text-center">{getSectionCapacity(section)}</TableCell>
       {/*TODO: dropdown menuing */}
     </TableRow>
   )

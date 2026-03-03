@@ -1,4 +1,13 @@
-import { ViolationDegree, getDegreeColor, type Instructor as InstructorType, type SectionState, SectionAvailability } from "@/features/assignment/assignment.types"
+import {
+  getInstructorPosition,
+  getInstructorName,
+  getInstructorWorkloadTotal,
+  getDegreeColor, 
+  type InstructorUI as InstructorType, 
+  type SectionState, 
+  SectionAvailability,
+  getSectionCode
+} from "@/features/assignment/assignment.types"
 import { TableCell, TableRow } from "@/components/ui/table"
 import { useDroppable } from "@dnd-kit/core";
 import AssignedChip from "./assignedChip";
@@ -52,13 +61,13 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
     // Count the types of violations
     violations.forEach((violation) => {
       switch(violation.degree) {
-        case ViolationDegree.I:
+        case "Info":
           numInfo++
           break
-        case ViolationDegree.W:
+        case "Warning":
           numWarn++
           break
-        case ViolationDegree.E:
+        case "Error":
           numErr++
           break
         default:
@@ -82,11 +91,11 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
       <TableCell className="text-center font-medium flex flex-col">
 
         <div>
-          {instructor.position.short + " " + instructor.name}
+          {getInstructorPosition(instructor).short + " " + getInstructorName(instructor)}
         </div>
 
         <div>
-          <b>Workload: </b>{(instructor.fall_assigned.size + instructor.wint_assigned.size) + "/" + instructor.workload_total}
+          <b>Workload: </b>{(instructor.fall_assigned.size + instructor.wint_assigned.size) + "/" + getInstructorWorkloadTotal(instructor)}
         </div>
 
         {numViolations > 0 ? // 
@@ -131,7 +140,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
               const sA = sectionState.byId[a];
               const sB = sectionState.byId[b];
               if (!sA || !sB) return 0;
-              return sA.course_code.localeCompare(sB.course_code)
+              return getSectionCode(sA).localeCompare(getSectionCode(sB))
             })
             .map((sectionId) => {
               const section = sectionState.byId[sectionId];
@@ -150,7 +159,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
               const sA = sectionState.byId[a];
               const sB = sectionState.byId[b];
               if (!sA || !sB) return 0;
-              return sA.course_code.localeCompare(sB.course_code)
+              return getSectionCode(sA).localeCompare(getSectionCode(sB))
             })
             .map((sectionId) => {
               const section = sectionState.byId[sectionId];
@@ -168,7 +177,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
         <div className="flex flex-col gap-1 justify-left">
           {instructor.violations.details_col_violations.map((violation) => (
             <span className={`${getDegreeColor(violation.degree)} text-white px-2 py-1 rounded text-sm text-left text-wrap`}>
-              <b>{violation.degree}</b> - {violation.msg}
+              <b>{violation.degree}</b> - {violation.message}
             </span>
           ))}
         </div>
@@ -179,7 +188,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
         <div className="flex flex-col gap-1 justify-left align-top">
           {instructor.violations.fall_col_violations.map((violation) => (
             <span className={`${getDegreeColor(violation.degree)} text-white px-2 py-1 rounded text-sm text-left text-wrap`}>
-              <b>{violation.degree}</b> - {violation.msg}
+              <b>{violation.degree}</b> - {violation.message}
             </span>
           ))}
         </div>
@@ -190,7 +199,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
         <div className="flex flex-col gap-1 justify-left">
           {instructor.violations.wint_col_violations.map((violation) => (
             <span className={`${getDegreeColor(violation.degree)} text-white px-2 py-1 rounded text-sm text-left text-wrap`}>
-              <b>{violation.degree}</b> - {violation.msg}
+              <b>{violation.degree}</b> - {violation.message}
             </span>
           ))}
         </div>

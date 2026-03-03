@@ -105,6 +105,10 @@ export function mapScheduletoState(schedule: Schedule, instructors: Instructor[]
       // Add to state
       newSectionState.byId[newSection.id] = newSection
       newSectionState.allIds.push(newSection.id)
+      // add to Course -> section mapper
+      if (!newSectionState.courseToSection[course.code]) {
+        newSectionState.courseToSection[course.code] = new Set<string>();
+      }
       newSectionState.courseToSection[course.code].add(newSection.id)
     })
   })
@@ -140,6 +144,12 @@ export function mapScheduletoState(schedule: Schedule, instructors: Instructor[]
     try{
       newSectionState.byId[sectionID].assignment = assignment
       newInstructorState.byId[assignment.instructor_id].assigned.push(assignment)
+      if (assignment.term == "Fall"){
+        newInstructorState.byId[assignment.instructor_id].fall_assigned.add(sectionID)
+      }
+      if (assignment.term == "Winter"){
+        newInstructorState.byId[assignment.instructor_id].wint_assigned.add(sectionID)
+      }
     }
     catch (error){
       //TODO error processing

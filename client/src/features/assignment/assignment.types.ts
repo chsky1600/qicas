@@ -83,6 +83,10 @@ export const getSectionNum = (sectionUI:SectionUI): number => {
   return sectionUI.section.number
 }
 
+export const getSectionViolationDegree = (sectionUI:SectionUI): string | null => {
+  return sectionUI.in_violation?.degree ?? null
+}
+
 export const getSectionWorkloadFulfillment = (sectionUI:SectionUI) => {
   if (!sectionUI.courseRule){
     return -1 //this is an error
@@ -207,6 +211,11 @@ export const getInstructorWorkload = (instructorUI:InstructorUI): number => {
 
 export const getInstructorWorkloadDelta = (instructorUI:InstructorUI): number => {
   return instructorUI.instructorRule?.workload_delta ?? 0.0 // this is an error, instructorRule must never be undefined outside of mapping
+}
+
+// return the completed total workload
+export const getInstructorWorkloadTotal = (instructorUI:InstructorUI): number => {
+  return getInstructorWorkload(instructorUI) + getInstructorWorkloadDelta(instructorUI)
 }
 
 export const getInstructorNotes = (instructorUI:InstructorUI): Note[] => {
