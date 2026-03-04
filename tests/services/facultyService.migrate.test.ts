@@ -67,6 +67,7 @@ const seedFaculty = {
           workload_delta: 0,
           courses: ["CISC101"],
           declined_courses: [],
+          dropped: false,
         },
       ],
       course_rules: [
