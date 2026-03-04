@@ -16,7 +16,9 @@ import {mapScheduletoState} from "./assignment.mapper";
 // API should be the only file which imports these types
 
 import type {
-  Violation as BViolation
+  Assignment as BAssignment,
+  Violation as BViolation,
+  Term as BTerm
 } from "../../../../src/types";
 
 
@@ -136,4 +138,41 @@ export async function fetchViolations(year: string, schedule_id: string): Promis
   if (!res.ok) return []
   const data: { validationResult: { violations: BViolation[] } } = await res.json()
   return data.validationResult.violations ?? []
+}
+
+export async function addAssignment(year: string, schedule_id: string, instructor_id: string, section_id: string , course_code: string, term: BTerm) {
+  const newAssignment: BAssignment = {
+    id: crypto.randomUUID(), // needs to be replaced with Wholly unique UUID generation
+    instructor_id: instructor_id,
+    section_id: section_id,
+    course_code: course_code,
+    term: term
+  }
+
+  const res = await fetch(`${API_BASE}/schedule/${year}/${schedule_id}/assignments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      assignment: newAssignment
+    }),    
+  })
+
+  if (!res.ok) return null
+  const data: BAssignment = await res.json()
+  return data
+}
+
+export async function removeAssignment(year: string, schedule_id: string,  assignment_id: string) {
+  const res = await fetch(`${API_BASE}/schedule/${year}/${schedule_id}/assignments/${assignment_id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({}),    
+  })
+
+  if (!res.ok) return null
+  return true
 }

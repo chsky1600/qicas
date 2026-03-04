@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchAssignment, saveScheduleToBackend, saveDropped, fetchViolations } from './assignment.api'
+import * as api from './assignment.api'
 import type {Assignment as BAssignment, Violation as BViolation} from "../../../../src/types";
 import * as assignmentType from "./assignment.types";
 
@@ -170,7 +170,7 @@ export function useAssignment(): UseAssignmentResult {
       abortController.current = controller
 
       try {
-        await saveScheduleToBackend(
+        await api.saveScheduleToBackend(
           yearRef.current,
           activeScheduleRef.current,
           sectionStateRef.current,
@@ -179,7 +179,7 @@ export function useAssignment(): UseAssignmentResult {
         )
 
         // After saving, re-fetch violations and apply them to the state
-        const violations = await fetchViolations(yearRef.current, activeScheduleRef.current.id)
+        const violations = await api.fetchViolations(yearRef.current, activeScheduleRef.current.id)
         const { sectionState: newSS, instructorState: newIS } = applyViolations(
           violations,
           sectionStateRef.current,
@@ -192,7 +192,7 @@ export function useAssignment(): UseAssignmentResult {
         // Ignore AbortError — it just means a newer save superseded this one
         if ((e as Error).name !== "AbortError") console.error("Auto-save failed", e)
       }
-    }, 1000)
+    }, 25)
   }, [])
 
 
@@ -207,14 +207,14 @@ export function useAssignment(): UseAssignmentResult {
       setLoading(true);
       setError(null);
 
-      const assignment = await fetchAssignment(yearRef.current);
+      const assignment = await api.fetchAssignment(yearRef.current);
 
       let finalSectionState = assignment.sectionState
       let finalInstructorState = assignment.instructorState
 
       // If there is an active schedule, apply any existing violations on initial load
       if (assignment.activeSchedule) {
-        const violations = await fetchViolations(
+        const violations = await api.fetchViolations(
           assignment.activeSchedule.year_id,
           assignment.activeSchedule.id
         )
@@ -233,6 +233,7 @@ export function useAssignment(): UseAssignmentResult {
     } catch (err) {
       setError((err as Error).message);
     } finally {
+      console.log("fecthfinished")
       setLoading(false);
     }
   }, []);
@@ -305,11 +306,10 @@ export function useAssignment(): UseAssignmentResult {
     assignedSectionId: assignmentType.SectionId,
     nextInstructorId: assignmentType.InstructorId,
     assignmentLocation: assignmentType.SectionAvailability,
-    prevInstructorId: assignmentType.InstructorId | null = null
+    prevAssignmentId: string | null = null
   ) => {
-    return
+    if (!activeScheduleRef.current) return
 
-    /*    
     // ForW means "fall OR winter" — the user must pick one explicitly
     if (assignmentLocation === assignmentType.SectionAvailability.ForW) {
       console.log("WARN: cannot assign course to 'fall or winter', must assign to 'fall', 'winter', or both")
@@ -329,78 +329,28 @@ export function useAssignment(): UseAssignmentResult {
     }
 
     // If no previous instructor was provided, check if the section already has one
-    if (!prevInstructorId) {
-      prevInstructorId = assignmentType.getSectionAssignedTo(sectionState.byId[assignedSectionId])
+    if (!prevAssignmentId) {
+      prevAssignmentId = sectionState.byId[assignedSectionId].assignment?.id ?? null
     }
 
-    // Remove the section from the previous instructor's term sets
-    if (prevInstructorId) {
-      const modifiablePrevInstructor: assignmentType.InstructorUI = { ...instructorState.byId[prevInstructorId] }
-      modifiablePrevInstructor.fall_assigned.delete(assignedSectionId)
-      modifiablePrevInstructor.wint_assigned.delete(assignedSectionId)
-
-
-      const index = modifiablePrevInstructor.assigned.findIndex(
-        assignment => (assignment.course_code+assignedSectionId) === assignedSectionId
-      );
-
-      if (index !== -1) {
-        modifiablePrevInstructor.assigned.splice(index, 1);
-      }
-
-      setInstructorState(prev => ({
-        ...prev,
-        byId: {
-          ...prev.byId,
-          [prevInstructorId]: modifiablePrevInstructor
-        }
-      }))
-    }
-    // add new assignment to API (dependant on term)
-
-
-    // Update the section's assigned_to pointer
-    const modifiableAssignedSection: assignmentType.SectionUI = { ...sectionState.byId[assignedSectionId] }
-    modifiableAssignedSection.assigned_to = nextInstructorId
-
-    // make new assignment
-    const newAssignment: BAssignment = {
-      id: Math.floor(Math.random() * 1000).toString(),
-      instructor_id: nextInstructorId,
-      section_id: modifiableAssignedSection.section.id,
-      course_code: modifiableAssignedSection.course.id,
-      term: "Fall",
+    if (prevAssignmentId) {
+      api.removeAssignment(yearRef.current, activeScheduleRef.current.id, prevAssignmentId)
     }
 
-    // Add the section to the next instructor's appropriate term set(s)
-    const modifiableNextInstructor: assignmentType.Instructor = { ...instructorState.byId[nextInstructorId] }
-    const isFullYear = (modifiableAssignedSection.availability === assignmentType.SectionAvailability.FandW)
+    const assignedSection = sectionState.byId[assignedSectionId]       
 
-    if (isFullYear || assignmentLocation === assignmentType.SectionAvailability.F) {
-      modifiableNextInstructor.fall_assigned.add(assignedSectionId)
+    if (assignmentLocation == assignmentType.SectionAvailability.F){      
+      api.addAssignment(yearRef.current, activeScheduleRef.current.id, nextInstructorId, assignedSection.section.id, assignedSection.course.code, "Fall")
     }
-    if (isFullYear || assignmentLocation === assignmentType.SectionAvailability.W) {
-      modifiableNextInstructor.wint_assigned.add(assignedSectionId)
+    else if (assignmentLocation == assignmentType.SectionAvailability.W){
+      api.addAssignment(yearRef.current, activeScheduleRef.current.id, nextInstructorId, assignedSection.section.id, assignedSection.course.code, "Winter")
     }
-
-    setSectionState(prev => ({
-      ...prev,
-      byId: {
-        ...prev.byId,
-        [assignedSectionId]: modifiableAssignedSection
-      }
-    }))
-
-    setInstructorState(prev => ({
-      ...prev,
-      byId: {
-        ...prev.byId,
-        [nextInstructorId]: modifiableNextInstructor
-      }
-    }))
-
-    triggerAutoSave()
-    */
+    else if (assignmentLocation == assignmentType.SectionAvailability.FandW){
+      api.addAssignment(yearRef.current, activeScheduleRef.current.id, nextInstructorId, assignedSection.section.id, assignedSection.course.code, "Fall")
+      api.addAssignment(yearRef.current, activeScheduleRef.current.id, nextInstructorId, assignedSection.section.id, assignedSection.course.code, "Winter")
+    }
+    //TODO Speciallized fetch/validate if neccisary 
+    fetchData()
   };
 
   /**
@@ -414,52 +364,16 @@ export function useAssignment(): UseAssignmentResult {
    *  - Sets the section's `assigned_to` to null
    *  - Triggers a debounced auto-save after the state update
    */
+  
   const removeAssignment = (
-    unassignedSectionId: assignmentType.SectionId,
-    prevInstructorId: assignmentType.InstructorId
+    prevAssignmentId: string,
+    refresh: boolean = true
   ) => {
+    if (!activeScheduleRef.current) return
+    api.removeAssignment(yearRef.current, activeScheduleRef.current.id, prevAssignmentId)
+    
+    if (refresh) fetchData()
     return
-    /*
-
-    if (!stateObjectExists(sectionState, unassignedSectionId)) {
-      // TODO return error
-      console.log(`WARN: section with id ${unassignedSectionId} does not exist`)
-      return
-    }
-
-    if (!stateObjectExists(instructorState, prevInstructorId)) {
-      // TODO return error
-      console.log(`WARN: instructor with id ${prevInstructorId} does not exist`)
-      return
-    }
-
-    // Remove the section from both term sets on the previous instructor
-    const modifiablePrevInstructor: assignmentType.Instructor = { ...instructorState.byId[prevInstructorId] }
-    modifiablePrevInstructor.fall_assigned.delete(unassignedSectionId)
-    modifiablePrevInstructor.wint_assigned.delete(unassignedSectionId)
-
-    setInstructorState(prev => ({
-      ...prev,
-      byId: {
-        ...prev.byId,
-        [prevInstructorId]: modifiablePrevInstructor
-      }
-    }))
-
-    // Clear the section's assigned_to field
-    const modifiableAssignedSection: assignmentType.Section = { ...sectionState.byId[unassignedSectionId] }
-    modifiableAssignedSection.assigned_to = null
-
-    setSectionState(prev => ({
-      ...prev,
-      byId: {
-        ...prev.byId,
-        [unassignedSectionId]: modifiableAssignedSection
-      }
-    }))
-
-    triggerAutoSave()
-    */
   };
 
   /**
@@ -485,7 +399,7 @@ export function useAssignment(): UseAssignmentResult {
   const dropInstructor = async (instructorId: assignmentType.InstructorId, dropped: boolean) => {
     const instructor = instructorState.byId[instructorId]
     if (!instructor || !instructor.rule_id) return
-    await saveDropped(yearRef.current, instructor.rule_id, dropped)
+    await api.saveDropped(yearRef.current, instructor.rule_id, dropped)
     updateInstructor({ ...instructor, dropped })
   }
 

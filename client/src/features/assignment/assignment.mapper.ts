@@ -85,7 +85,7 @@ export function mapScheduletoState(schedule: Schedule, instructors: Instructor[]
   // Step 3: Insert each Course & Section into the section state
   courses.forEach((course) => {    
     if (course.sections.length == 0){
-      course.sections = [{id:"section1",number:1}]
+      course.sections = [{id:"section1",number:1,capacity:200}]
     }
 
     course.sections.forEach((section) => { 
