@@ -93,7 +93,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
           <div onClick={() => setShowViolations(!showViolations)} style={{cursor:'pointer'}} className="flex justify-center">
             {numInfo > 0 ? // 
               <>
-                <span className="text-yellow-500"> 
+                <span className="text-blue-400"> 
                   Info: {numInfo}      
                 </span>
                 {numWarn > 0 ? "," : ""}&#8194;
@@ -101,14 +101,14 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
             : null}
             {numWarn > 0 ? //
               <>
-                <span className="text-orange-500"> 
+                <span className="text-yellow-400"> 
                   Warnings: {numWarn}          
                 </span>
                 {numErr > 0 ? ",":""}&#8194;
               </>
             : null}
             {numErr > 0 ? // 
-              <span className="text-red-500">
+              <span className="text-red-400">
                 Errors: {numErr}      
               </span>
             : null}

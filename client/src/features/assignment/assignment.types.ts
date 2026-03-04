@@ -41,11 +41,11 @@ export enum ViolationDegree {
 export const getDegreeColor = (degree: ViolationDegree) => {
   switch(degree) {
     case ViolationDegree.I:
-      return "bg-yellow-500";
+      return "bg-blue-400";
     case ViolationDegree.W:
-      return "bg-orange-500";
+      return "bg-yellow-400";
     case ViolationDegree.E:
-      return "bg-red-500";
+      return "bg-red-400";
     default:
       return "bg-gray-500";
   }

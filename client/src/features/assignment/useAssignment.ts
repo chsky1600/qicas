@@ -104,11 +104,31 @@ function applyViolations(
       for (const id of sectionState.allIds) {
         const section = newSectionById[id]
         if (section.course_code === v.offending_id) {
+
+          // Update the chip colour - only escalate severity, never downgrade (e.g. E stays E even if there's a new W violation)
           const current = section.in_violation
           const incoming = mapDegree(v.degree)
           // Only apply if incoming severity is higher than what's already set
           if (!current || priority[incoming] > priority[current]) {
             newSectionById[id] = { ...section, in_violation: incoming }
+          }
+
+          // Route the violation to the instructor's term coloumn so it appears
+          // visually under the course chips when the vioaltion row is expanded,
+          // A section can be in both fall and winter (Full-year), so we check both.
+          const assignedTo = section.assigned_to
+          if (assignedTo && newInstructorById[assignedTo]) {
+            const inst = newInstructorById[assignedTo]
+            const inFall = inst.fall_assigned.has(section.id)
+            const inWint = inst.wint_assigned.has(section.id)
+            newInstructorById[assignedTo] = {
+              ...inst,
+              violations: {
+                ...inst.violations,
+                fall_col_violations: inFall ? [...inst.violations.fall_col_violations, frontendViolation] : inst.violations.fall_col_violations,
+                wint_col_violations: inWint ? [...inst.violations.wint_col_violations, frontendViolation] : inst.violations.wint_col_violations,
+              }
+            }
           }
         }
       }
@@ -209,7 +229,7 @@ export function useAssignment(): UseAssignmentResult {
         // Ignore AbortError — it just means a newer save superseded this one
         if ((e as Error).name !== "AbortError") console.error("Auto-save failed", e)
       }
-    }, 1000)
+    }, 20)
   }, [])
 
 
