@@ -13,6 +13,7 @@ const seedFaculty = {
   id: facultyId,
   name: "School of Computing",
   users: [],
+  current_working_schedule_id : "",
   academic_years: [
     {
       id: sourceYearId,

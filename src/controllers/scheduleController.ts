@@ -116,7 +116,8 @@ export const setWorkingSchedule = async (req : Request, res : Response) => {
         }
     );
 
-    res.json(getCurrentWorkingSchedule(faculty_id));
+    const currentSchedule = await getCurrentWorkingSchedule(faculty_id);
+    res.json(currentSchedule);
 }
 
 export async function getCurrentWorkingSchedule(
