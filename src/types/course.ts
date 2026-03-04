@@ -6,6 +6,8 @@ export interface Section {
     id: string;
     /** Section number */
     number: number;
+    /** Max enrollment capacity for this section */
+    capacity: number;
 }
 
 export interface Course {
@@ -23,4 +25,6 @@ export interface Course {
     notes: Note[];
     /** Sections offered for this course */
     sections: Section[];
+    /** Max enrollment capacity for this course (derived from sections) */
+    capacity: number;
 }
