@@ -1,16 +1,19 @@
-import type { SectionState, InstructorState, Section, Instructor } from '@/features/assignment/assignment.types';
+import type { SectionState, InstructorState, Section, Instructor, SectionAvailability } from '@/features/assignment/assignment.types';
 import { useState } from 'react';
 import PropertiesDialog from './propertiesDialog';
 import { useSnapshots } from '@/features/assignment/useSnapshots';
 import SnapshotsDialog from './snapshotsDialog';
 
-export default function Toolbar({sectionState, instructorState, updateSection, updateInstructor, loadState, dropInstructor}: {
+export default function Toolbar({sectionState, instructorState, updateSection, updateInstructor, loadState, dropInstructor, saveCourseSections, addSection, removeSection}: {
   sectionState: SectionState,
   instructorState: InstructorState,
   updateSection: (updatedSection: Section) => void,
   updateInstructor: (updatedInstructor: Instructor) => void,
   loadState: (sectionState: SectionState, instructorState: InstructorState) => void,
   dropInstructor: (instructorId: string, dropped: boolean) => void,
+  saveCourseSections: (courseId: string, sections: Array<{ id: string; capacity: number }>) => Promise<void>,
+  addSection: (courseId: string, course_code: string, courseName: string, year_introduced: string, workload: number, availability: SectionAvailability) => Promise<void>,
+  removeSection: (sectionId: string) => Promise<void>,
 }) {
 
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
@@ -59,6 +62,9 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
         onUpdateSection={updateSection}
         onUpdateInstructor={updateInstructor}
         onDropInstructor={dropInstructor}
+        onSaveCourseSections={saveCourseSections}
+        onAddSection={addSection}
+        onRemoveSection={removeSection}
       />
       <SnapshotsDialog
         isOpen={isSnapshotsOpen}
