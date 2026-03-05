@@ -2,6 +2,7 @@ export type SectionId = string;
 
 export interface Section {
   id: SectionId,
+  course_id: string,
   name: string,
   course_code: string,
   year_introduced: string,

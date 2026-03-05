@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchAssignment, saveScheduleToBackend, saveDropped, fetchViolations } from './assignment.api'
+import { fetchAssignment, saveScheduleToBackend, saveDropped, fetchViolations, 
+        saveCourseSections as saveCourseSectionsAPI, addCourseSection as addCourseSectionAPI, removeCourseSection as removeCourseSectionAPI } from './assignment.api'
 import type { BViolation } from './assignment.api'
 import * as assignmentType from "./assignment.types";
 
@@ -20,6 +21,9 @@ export interface UseAssignmentResult {
   loadState: (sectionState: assignmentType.SectionState, instructorState: assignmentType.InstructorState) => void;
   activeSchedule: { id: string; name: string; year_id: string; date_created: string; is_rc: boolean } | null;
   dropInstructor: (instructor_id: assignmentType.InstructorId, dropped: boolean) => void;
+  saveCourseSections: (courseId: string, sections: Array<{ id: string, capacity: number }>) => Promise<void>;
+  addSection: (courseId: string, course_code: string, courseName: string, year_introduced: string, workload: number, availability: assignmentType.SectionAvailability) => Promise<void>;
+  removeSection: (sectionId: string) => Promise<void>;
 }
 
 
@@ -500,6 +504,92 @@ export function useAssignment(): UseAssignmentResult {
     updateInstructor({ ...instructor, dropped })
   }
 
+  /**
+   * Updates section capacities in local state and persists to backend via PATCH.
+   */
+  const saveCourseSections = async (courseId: string, updatedSections: Array<{ id: string; capacity: number }>) => {
+    setSectionState(prev => {
+      const newById = { ...prev.byId }
+      for (const { id, capacity } of updatedSections) {
+        if (newById[id]) newById[id] = { ...newById[id], capacity }
+      }
+      return { ...prev, byId: newById }
+    })
+    try {
+      await saveCourseSectionsAPI(yearRef.current, courseId, updatedSections)
+    } catch (e) {
+      console.error('Failed to save section capacities', e)
+    }
+  }
+
+  /**
+   * Adds a new section to a course in the backend and inserts it into local sectionState.
+   */
+  const addSection = async (
+    courseId: string,
+    course_code: string,
+    courseName: string,
+    year_introduced: string,
+    workload: number,
+    availability: assignmentType.SectionAvailability
+  ) => {
+    try {
+      const result = await addCourseSectionAPI(yearRef.current, courseId)
+      if (!result) return
+      const newSection: assignmentType.Section = {
+        id: result.id,
+        course_id: courseId,
+        name: courseName,
+        course_code,
+        year_introduced,
+        section_num: result.number,
+        workload,
+        availability,
+        capacity: 0,
+        assigned_to: null,
+        dropped: false,
+        in_violation: null,
+      }
+      setSectionState(prev => ({
+        byId: { ...prev.byId, [newSection.id]: newSection },
+        allIds: [...prev.allIds, newSection.id],
+      }))
+    } catch (e) {
+      console.error('Failed to add section', e)
+    }
+  }
+
+  /**
+   * Removes a section from the course in the backend and from local sectionState.
+   * If the section is assigned to an instructor, the assignment is cleared first.
+   */
+  const removeSection = async (sectionId: string) => {
+    const section = sectionState.byId[sectionId]
+    if (!section) return
+
+    // Clear assignment if the section is currently assigned
+    if (section.assigned_to) {
+      removeAssignment(sectionId, section.assigned_to)
+    }
+
+    // Remove from local state
+    setSectionState(prev => {
+      const newById = { ...prev.byId }
+      delete newById[sectionId]
+      return {
+        byId: newById,
+        allIds: prev.allIds.filter(id => id !== sectionId),
+      }
+    })
+
+    try {
+      await removeCourseSectionAPI(yearRef.current, section.course_id, sectionId)
+    } catch (e) {
+      console.error('Failed to remove section', e)
+    }
+  }
+
+
 
   // ── Return ─────────────────────────────────────────────────────────────────
 
@@ -516,5 +606,8 @@ export function useAssignment(): UseAssignmentResult {
     loadState,
     activeSchedule,
     dropInstructor,
+    saveCourseSections,
+    addSection,
+    removeSection,
   }
 }

@@ -7,7 +7,7 @@ import { SectionAvailability as SA } from "./assignment.types"
 // They are intentionally minimal — only the fields the frontend actually needs.
 
 // A single section (one offering) of a course
-interface BSection { id: string; number: number }
+interface BSection { id: string; number: number; capacity: number }
 
 // A note attached to a course or instructor
 interface BNote { content: string }
@@ -170,13 +170,14 @@ function mapToFrontendState(
     for (const sec of course.sections) {
       sectionById[sec.id] = {
         id: sec.id,
+        course_id: course.id,
         name: course.name,
         course_code: course.code,           // e.g. "CISC101"
         year_introduced: course.year_introduced,
         section_num: sec.number,
         workload: rule?.workload_fulfillment ?? 1,   // defaults to 1 if no rule
         availability: mapAvailability(rule),          // defaults to ForW if no rule
-        capacity: 0,                        // not in backend yet
+        capacity: sec.capacity,                        // not in backend yet
         assigned_to: sectionAssignedTo.get(sec.id) ?? null,  // null = unassigned
         dropped: false,                     // frontend-only field, always starts false
         in_violation: null,                 // populated later by applyViolations
@@ -348,3 +349,77 @@ export async function fetchViolations(year: string, schedule_id: string): Promis
   const data: { validationResult: { violations: BViolation[] } } = await res.json()
   return data.validationResult.violations ?? []
 }
+
+// ─── Course Management ──────────────────────────────────────────────
+
+/**
+ * Persists updated section capacities for a course.
+ * GETs full course first to preserve fields not in frontend state (level, notes),
+ * then PATCHes with new capacities. Backend recalculates course.capacity as the sum.
+ */
+export async function saveCourseSections(
+  year: string,
+  course_id: string,
+  updatedSections: Array<{ id: string; capacity: number }>
+): Promise<void> {
+  const course = await fetch(`${API_BASE}/courses/${year}/${course_id}`).then(r => r.json())
+  if (!course) return
+  const sectionMap = new Map(updatedSections.map(s => [s.id, s.capacity]))
+  const updatedCourse = {
+    ...course,
+    sections: course.sections.map((s: { id: string; capacity: number }) => ({
+      ...s,
+      capacity: sectionMap.has(s.id) ? sectionMap.get(s.id) : s.capacity,
+    }))
+  }
+  await fetch(`${API_BASE}/courses/${year}/${course_id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ course: updatedCourse }),
+  })
+}
+
+/**
+ * Adds a new section to a course. GETs the full course, appends a new section
+ * with the next section number and capacity 0, then PATCHes.
+ * Returns the new section's ID so the caller can add it to frontend state.
+ */
+export async function addCourseSection(
+  year: string,
+  course_id: string
+): Promise<{ id: string; number: number } | null> {
+  const course = await fetch(`${API_BASE}/courses/${year}/${course_id}`).then(r => r.json())
+  if (!course) return null
+  const maxNum = course.sections.reduce((max: number, s: { number: number }) => Math.max(max, s.number), 0)
+  const newSection = { id: crypto.randomUUID(), number: maxNum + 1, capacity: 0 }
+  const updatedCourse = { ...course, sections: [...course.sections, newSection] }
+  await fetch(`${API_BASE}/courses/${year}/${course_id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ course: updatedCourse }),
+  })
+  return { id: newSection.id, number: newSection.number }
+}
+
+/**
+ * Removes a section from a course. GETs the full course, filters out the section,
+ * then PATCHes. The caller is responsible for clearing any assignments first.
+ */
+export async function removeCourseSection(
+  year: string,
+  course_id: string,
+  section_id: string
+): Promise<void> {
+  const course = await fetch(`${API_BASE}/courses/${year}/${course_id}`).then(r => r.json())
+  if (!course) return
+  const updatedCourse = {
+    ...course,
+    sections: course.sections.filter((s: { id: string }) => s.id !== section_id)
+  }
+  await fetch(`${API_BASE}/courses/${year}/${course_id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ course: updatedCourse }),
+  })
+}
+
