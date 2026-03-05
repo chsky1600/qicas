@@ -1,6 +1,8 @@
-import type { 
-  SectionState, 
-  InstructorState, 
+import { 
+  type SectionState, 
+  type InstructorState,
+  getSectionCode, 
+  getBSectionID
   //SectionUI, 
   //InstructorUI, 
   //SectionAvailability 
@@ -38,7 +40,7 @@ const API_BASE = ""
  *  - instructorState: all instructors for the year, normalised
  *  - activeSchedule: metadata for the first (active) schedule, or null if none exists
  */
-export async function fetchAssignment(year: string): Promise<{
+export async function fetchAllAssignmentData(year: string): Promise<{
   sectionState: SectionState;
   instructorState: InstructorState;
   activeSchedule: { id: string; name: string; year_id: string; date_created: string; is_rc: boolean } | null;
@@ -79,7 +81,7 @@ export async function saveScheduleToBackend(
   instructorState: InstructorState,
   signal?: AbortSignal
 ): Promise<void> {
-  const assignments = []
+  const assignments: BAssignment[] = []
 
   for (const instructorId of instructorState.allIds) {
     const instructor = instructorState.byId[instructorId]
@@ -88,14 +90,14 @@ export async function saveScheduleToBackend(
     for (const sectionId of instructor.fall_assigned) {
       const section = sectionState.byId[sectionId]
       if (!section) continue
-      assignments.push({ id: crypto.randomUUID(), instructor_id: instructorId, section_id: sectionId, course_code: section.course_code, term: "Fall" })
+      assignments.push({ id: crypto.randomUUID(), instructor_id: instructorId, section_id: getBSectionID(section), course_code: getSectionCode(section), term: "Fall" })
     }
 
     // Build one assignment entry per winter-assigned section
     for (const sectionId of instructor.wint_assigned) {
       const section = sectionState.byId[sectionId]
       if (!section) continue
-      assignments.push({ id: crypto.randomUUID(), instructor_id: instructorId, section_id: sectionId, course_code: section.course_code, term: "Winter" })
+      assignments.push({ id: crypto.randomUUID(), instructor_id: instructorId, section_id: getBSectionID(section), course_code: getSectionCode(section), term: "Winter" })
     }
   }
 
@@ -132,7 +134,7 @@ export async function saveDropped(year: string, rule_id: string, dropped: boolea
 export async function fetchViolations(year: string, schedule_id: string): Promise<BViolation[]> {
   const res = await fetch(`${API_BASE}/schedule/${year}/${schedule_id}/validate`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json"},
     body: JSON.stringify({}),
   })
   if (!res.ok) return []
@@ -140,7 +142,7 @@ export async function fetchViolations(year: string, schedule_id: string): Promis
   return data.validationResult.violations ?? []
 }
 
-export async function addAssignment(year: string, schedule_id: string, instructor_id: string, section_id: string , course_code: string, term: BTerm) {
+export async function addAssignment(year: string, schedule_id: string, instructor_id: string, section_id: string , course_code: string, term: BTerm): Promise<BAssignment | null> {
   const newAssignment: BAssignment = {
     id: crypto.randomUUID(), // needs to be replaced with Wholly unique UUID generation
     instructor_id: instructor_id,

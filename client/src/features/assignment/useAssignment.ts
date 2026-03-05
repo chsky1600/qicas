@@ -15,8 +15,8 @@ export interface UseAssignmentResult {
   refresh: () => Promise<void>;
   updateSection: (updatedSection: assignmentType.SectionUI) => void;
   updateInstructor: (updatedInstructor: assignmentType.InstructorUI) => void;
-  makeAssignment: (assignedSectionId: assignmentType.SectionId, nextInstructorId: assignmentType.InstructorId, assignmentLocation: assignmentType.SectionAvailability, prevInstructorId: assignmentType.InstructorId | null) => void;
-  removeAssignment: (unassignedSectionId: assignmentType.SectionId, prevInstructorId: assignmentType.InstructorId) => void;
+  makeAssignment: (assignedSectionId: assignmentType.SectionId, nextInstructorId: assignmentType.InstructorId, assignmentLocation: assignmentType.SectionAvailability, prevAssignmentId: string | null) => void;
+  removeAssignment: (prevAssignmentId: string, refresh: boolean) => void;
   loadState: (sectionState: assignmentType.SectionState, instructorState: assignmentType.InstructorState) => void;
   activeSchedule: { id: string; name: string; year_id: string; date_created: string; is_rc: boolean } | null;
   dropInstructor: (instructor_id: assignmentType.InstructorId, dropped: boolean) => void;
@@ -202,12 +202,12 @@ export function useAssignment(): UseAssignmentResult {
    * After loading, also fetches and applies any existing violations.
    * Called once on mount and exposed as `refresh` for manual reloads.
    */
-  const fetchData = useCallback(async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const assignment = await api.fetchAssignment(yearRef.current);
+      const assignment = await api.fetchAllAssignmentData(yearRef.current);
 
       let finalSectionState = assignment.sectionState
       let finalInstructorState = assignment.instructorState
@@ -236,12 +236,12 @@ export function useAssignment(): UseAssignmentResult {
       console.log("fecthfinished")
       setLoading(false);
     }
-  }, []);
+  }
 
   // Fetch data once when the hook is first mounted
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, []);
 
 
   // ── State Mutators ─────────────────────────────────────────────────────────
@@ -293,8 +293,8 @@ export function useAssignment(): UseAssignmentResult {
    * @param assignedSectionId   - The section being assigned
    * @param nextInstructorId    - The instructor receiving the assignment
    * @param assignmentLocation  - Which term to assign (F, W, or FandW — not ForW)
-   * @param prevInstructorId    - The instructor currently holding the section, if any.
-   *                              If null/omitted, the section's current `assigned_to` is used.
+   * @param prevAssignmentId    - The Id of the assignment object currently holding the section, if any.
+   *                              If null/omitted, the section is not currently assigned.
    *
    * Behaviour:
    *  - Removes the section from the previous instructor's fall/wint sets
@@ -302,7 +302,7 @@ export function useAssignment(): UseAssignmentResult {
    *  - Full-year sections (FandW) are added to both fall and winter automatically
    *  - Triggers a debounced auto-save after the state update
    */
-  const makeAssignment = (
+  const makeAssignment = async (
     assignedSectionId: assignmentType.SectionId,
     nextInstructorId: assignmentType.InstructorId,
     assignmentLocation: assignmentType.SectionAvailability,
@@ -328,27 +328,28 @@ export function useAssignment(): UseAssignmentResult {
       return
     }
 
+    const assignedSection = sectionState.byId[assignedSectionId] 
+
     // If no previous instructor was provided, check if the section already has one
     if (!prevAssignmentId) {
-      prevAssignmentId = sectionState.byId[assignedSectionId].assignment?.id ?? null
+      prevAssignmentId = assignmentType.getSectionAssignedId(assignedSection)
     }
 
     if (prevAssignmentId) {
-      api.removeAssignment(yearRef.current, activeScheduleRef.current.id, prevAssignmentId)
+      await api.removeAssignment(yearRef.current, activeScheduleRef.current.id, prevAssignmentId)
     }
 
-    const assignedSection = sectionState.byId[assignedSectionId]       
-
-    if (assignmentLocation == assignmentType.SectionAvailability.F){      
-      api.addAssignment(yearRef.current, activeScheduleRef.current.id, nextInstructorId, assignedSection.section.id, assignedSection.course.code, "Fall")
+    if (assignmentLocation == assignmentType.SectionAvailability.F){  
+      await api.addAssignment(yearRef.current, activeScheduleRef.current.id, nextInstructorId, assignedSection.section.id, assignedSection.course.code, "Fall")
     }
     else if (assignmentLocation == assignmentType.SectionAvailability.W){
-      api.addAssignment(yearRef.current, activeScheduleRef.current.id, nextInstructorId, assignedSection.section.id, assignedSection.course.code, "Winter")
+      await api.addAssignment(yearRef.current, activeScheduleRef.current.id, nextInstructorId, assignedSection.section.id, assignedSection.course.code, "Winter")
     }
     else if (assignmentLocation == assignmentType.SectionAvailability.FandW){
-      api.addAssignment(yearRef.current, activeScheduleRef.current.id, nextInstructorId, assignedSection.section.id, assignedSection.course.code, "Fall")
-      api.addAssignment(yearRef.current, activeScheduleRef.current.id, nextInstructorId, assignedSection.section.id, assignedSection.course.code, "Winter")
+      await api.addAssignment(yearRef.current, activeScheduleRef.current.id, nextInstructorId, assignedSection.section.id, assignedSection.course.code, "Fall")
+      await api.addAssignment(yearRef.current, activeScheduleRef.current.id, nextInstructorId, assignedSection.section.id, assignedSection.course.code, "Winter")
     }
+
     //TODO Speciallized fetch/validate if neccisary 
     fetchData()
   };
@@ -356,8 +357,8 @@ export function useAssignment(): UseAssignmentResult {
   /**
    * Removes a section from an instructor, setting the section back to unassigned.
    *
-   * @param unassignedSectionId - The section to unassign
-   * @param prevInstructorId    - The instructor currently holding the section
+   * @param prevAssignmentId    - The assignment id to unassign
+   * @param refresh             - refreshes state after removal if true, true by default
    *
    * Behaviour:
    *  - Removes the section from the instructor's fall and winter sets
@@ -365,12 +366,12 @@ export function useAssignment(): UseAssignmentResult {
    *  - Triggers a debounced auto-save after the state update
    */
   
-  const removeAssignment = (
+  const removeAssignment = async (
     prevAssignmentId: string,
     refresh: boolean = true
   ) => {
     if (!activeScheduleRef.current) return
-    api.removeAssignment(yearRef.current, activeScheduleRef.current.id, prevAssignmentId)
+    await api.removeAssignment(yearRef.current, activeScheduleRef.current.id, prevAssignmentId)
     
     if (refresh) fetchData()
     return

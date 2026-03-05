@@ -4,7 +4,7 @@ import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell
 } from "@/components/ui/table"
 import type { Snapshot, SectionState, InstructorState } from "@/features/assignment/assignment.types"
-import { getSectionAssignedTo } from "@/features/assignment/assignment.types"
+import { getSectionAssignedId } from "@/features/assignment/assignment.types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ function calcProgress(sectionState: SectionState): { assigned: number; total: nu
     const section = sectionState.byId[id]
     if (!section.dropped) {
       total++
-      if (getSectionAssignedTo(section) !== null) assigned++
+      if (getSectionAssignedId(section) !== null) assigned++
     }
   }
   return { assigned, total }

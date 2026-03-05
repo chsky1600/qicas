@@ -1,5 +1,11 @@
-import{ type SectionUI, getSectionCode, getSectionNum } from "@/features/assignment/assignment.types"
-import { getDegreeColor, getSectionAssignedTo } from "@/features/assignment/assignment.types"
+import{ 
+  type SectionUI, 
+  getSectionCode, 
+  getSectionNum,
+  getDegreeColor,
+  getSectionAssignedTo,
+  getSectionAssignedId
+} from "@/features/assignment/assignment.types"
 import { useDraggable } from "@dnd-kit/core"
 
 
@@ -10,6 +16,7 @@ export default function AssignedChip(section : SectionUI)  {
       type: "section",      
       source: "chip",
       sectionId: section.id,
+      prevAssignedId: getSectionAssignedId(section),
       prevInstructorId: getSectionAssignedTo(section),
     }
   });

@@ -61,9 +61,25 @@ export interface SectionUI {
   in_violation: Violation | null,  // null implies not in violation of any rules
 }
 
+/**
+ * Returns the id of the frontend section object, which is the concatination of the
+ * course code of the backend course object, and the id of the backend section object
+ * 
+ * @param sectionUI - the UI section object which contains these values
+ * @returns concatinated id
+ */
 export const getSectionID = (sectionUI:SectionUI): SectionId => {
-  // TODO: have assignment refernce course ID instead of code
   return sectionUI.course.code + sectionUI.section.id
+}
+
+/**
+ * Returns the id of the backend section object, aka SectionUI.section.id, NOT SectionUI.id
+ * 
+ * @param sectionUI - the UI section object which contains these values
+ * @returns concatinated id
+ */
+export const getBSectionID = (sectionUI:SectionUI): SectionId => {
+  return sectionUI.section.id
 }
 
 export const getSectionName = (sectionUI:SectionUI): string => {
@@ -125,6 +141,9 @@ export const getSectionCapacity = (sectionUI:SectionUI) => {
   return 0
 }
 
+export const getSectionAssignedId = (sectionUI:SectionUI) => {
+  return sectionUI.assignment?.id ?? null
+}
 
 export const getSectionAssignedTo = (sectionUI:SectionUI) => {
   return sectionUI.assignment?.instructor_id ?? null

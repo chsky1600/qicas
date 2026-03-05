@@ -2,7 +2,9 @@ import {
   getSectionCode,
   getSectionNum,
   getSectionCapacity,
-  getSectionAssignedTo, type SectionUI, 
+  getSectionAssignedTo, 
+  getSectionAssignedId,
+  type SectionUI, 
   getSectionAvailability} from "@/features/assignment/assignment.types"
 import {
   TableCell,
@@ -18,6 +20,7 @@ export default function Course(section : SectionUI)  {
       type: "section",
       source: "panel",
       sectionId: section.id,
+      prevAssignedId: getSectionAssignedId(section),
       prevInstructorId: getSectionAssignedTo(section),
     }
   });
