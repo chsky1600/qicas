@@ -45,6 +45,9 @@ interface PropertiesDialogProps {
   onUpdateInstructor: (updated: Instructor) => void
   onUpdateSection: (updated: Section) => void
   onDropInstructor: (instructorId: string, dropped: boolean) => void
+  onSaveCourseSections: (courseId: string, sections: Array<{ id: string; capacity: number }>) => Promise<void>
+  onAddSection: (courseId: string, course_code: string, courseName: string, year_introduced: string, workload: number, availability: SectionAvailability) => Promise<void>
+  onRemoveSection: (sectionId: string) => Promise<void>
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -57,6 +60,9 @@ export default function PropertiesDialog({
   onUpdateInstructor,
   onUpdateSection,
   onDropInstructor,
+  onSaveCourseSections,
+  onAddSection,
+  onRemoveSection,
 }: PropertiesDialogProps) {
 
   // ── Navigation state ──────────────────────────────────────────────────────
@@ -79,6 +85,12 @@ export default function PropertiesDialog({
   // Local working copy of the selected course.
   const [sectionEdit, setSectionEdit] = React.useState<Section | null>(null)
 
+  // Tracks edited capacities per section (keyed by section ID) before Save is clicked
+  const [sectionCapacities, setSectionCapacities] = React.useState<Record<string, number>>({})
+  // Holds the section pending removal confirmation (null = no prompt showing)
+  const [confirmRemove, setConfirmRemove] = React.useState<{ sectionId: string; instructorName: string } | null>(null)
+
+
   // ── Derived values ────────────────────────────────────────────────────────
 
   // Build the sidebar list labels from whichever mode is active
@@ -94,15 +106,22 @@ export default function PropertiesDialog({
         return { id, label: `${instructor.position.short} ${instructor.name}` }
       })
     }
+    const seen = new Set<string>()
     return sectionState.allIds
-    .filter((id) => {
-      const dropped = sectionState.byId[id].dropped
-      return status === "dropped" ? dropped : !dropped
-    })
-    .map((id) => {
-      const section = sectionState.byId[id]
-      return { id, label: `${section.course_code} - ${section.name}` }
-    })
+      .filter((id) => {
+        const dropped = sectionState.byId[id].dropped
+        return status === "dropped" ? dropped : !dropped
+      })
+      .filter((id) => {
+        const code = sectionState.byId[id].course_code
+        if (seen.has(code)) return false
+        seen.add(code)
+        return true
+      })
+      .map((id) => {
+        const section = sectionState.byId[id]
+        return { id, label: `${section.course_code} - ${section.name}` }
+      })
   }, [mode, status, sectionState, instructorState])
 
   const selectedLabel = items[selectedIndex]?.label ?? ""
@@ -134,6 +153,17 @@ export default function PropertiesDialog({
       const id = items[selectedIndex]?.id
       const section = id ? sectionState.byId[id] : null
       setSectionEdit(section ? { ...section } : null)
+      setConfirmRemove(null)  // Close any open delete confirmation when switching sections
+      if (section) {
+        const caps: Record<string, number> = {}
+        sectionState.allIds
+          .map((secId) => sectionState.byId[secId])
+          .filter(s => s.course_code === section.course_code)
+          .forEach((s) => caps[s.id] = s.capacity)
+        setSectionCapacities(caps)
+      } else {
+        setSectionCapacities({})
+      }
     }
   }, [mode, selectedIndex, instructorState, sectionState, items])
 
@@ -145,6 +175,14 @@ export default function PropertiesDialog({
       onUpdateInstructor(instructorEdit)
     } else if (mode === "courses" && sectionEdit) {
       onUpdateSection(sectionEdit)
+      const changed = sectionState.allIds
+        .map((id) => sectionState.byId[id])
+        .filter(s => s.course_code === sectionEdit.course_code)
+        .filter(s => sectionCapacities[s.id] !== undefined && sectionCapacities[s.id] !== s.capacity)
+        .map(s => ({ id: s.id, capacity: sectionCapacities[s.id] }))
+      if (changed.length > 0) {
+        onSaveCourseSections(sectionEdit.course_id, changed)
+      }
     }
   }
 
@@ -427,10 +465,10 @@ export default function PropertiesDialog({
 
                   <FormRow label="Total Cap." labelClassName="w-auto">
                     <input
-                      className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center"
+                      className="w-20 border border-black rounded-md px-2 py-1 bg-[#ececec] text-center text-gray-500 cursor-not-allowed"
                       type="number"
-                      value={sectionEdit.capacity}
-                      onChange={(e) => setSectionEdit({ ...sectionEdit, capacity: Number(e.target.value) })}
+                      value={sectionState.allIds.map(id => sectionState.byId[id]).filter(s => s.course_code === sectionEdit.course_code).reduce((sum, s) => sum + (sectionCapacities[s.id] ?? s.capacity), 0)}
+                      readOnly
                     />
                   </FormRow>
 
@@ -463,31 +501,82 @@ export default function PropertiesDialog({
                 </div>
 
                 {/* Row 4: Section capacity breakdown */}
-                <SectionBox
-                  title="Section"
-                  className="w-[360px] mb-5"
-                  action={<IconControlButton aria-label="Add section">+</IconControlButton>}
-                >
-                  {/* TODO: wire up per-section capacity list to data */}
-                  <div className="space-y-3 text-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="w-12 text-center">1</div>
-                      <input
-                        className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center"
-                        defaultValue="125"
-                      />
-                      <IconControlButton aria-label="Remove section 1">−</IconControlButton>
+                {(() => {
+                  const courseSections = sectionState.allIds
+                    .map(id => sectionState.byId[id])
+                    .filter(s => s.course_code === sectionEdit.course_code)
+                    .sort((a, b) => a.section_num - b.section_num)
+                  return (
+                    <div className="mb-5">
+
+                      <SectionBox
+                        title="Sections"
+                        className="w-full mb-2"
+                        action={
+                          <IconControlButton
+                            aria-label="Add section"
+                            onClick={() => onAddSection(sectionEdit.course_id, sectionEdit.course_code, sectionEdit.name, sectionEdit.year_introduced, sectionEdit.workload, sectionEdit.availability)}
+                          >+</IconControlButton>
+                        }
+                      >
+                        <div className="space-y-3 text-sm">
+                            {/* Column headers */}
+                            <div className="flex items-center justify-between gap-4 text-xs font-semibold text-gray-500 pb-1 border-b border-gray-300">
+                              <div className="w-8 text-center">#</div>
+                              <div className="w-16 text-center">Capacity</div>
+                              <div className="flex-1">Assigned To</div>
+                              <div className="w-6"></div>
+                            </div>
+                          {courseSections.map(s => {
+                            const instructor = s.assigned_to ? instructorState.byId[s.assigned_to] : null
+                            const instructorName = instructor ? `${instructor.position.short} ${instructor.name}` : "—"
+                            return (
+                              <div key={s.id}>
+                                <div className="flex items-center justify-between gap-4">
+                                  <div className="w-8 text-center font-medium">{s.section_num}</div>
+                                  <input
+                                    className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center"
+                                    type="number"
+                                    value={sectionCapacities[s.id] ?? s.capacity}
+                                    onChange={(e) => setSectionCapacities(prev => ({ ...prev, [s.id]: Number(e.target.value) }))}
+                                  />
+                                  <div className="flex-1 text-gray-600 text-xs">{instructorName}</div>
+                                  <IconControlButton
+                                    aria-label={`Remove section ${s.section_num}`}
+                                    onClick={() => {
+                                      if (instructor) {
+                                        setConfirmRemove({ sectionId: s.id, instructorName })
+                                      } else {
+                                        onRemoveSection(s.id)
+                                      }
+                                    }}
+                                  >−</IconControlButton>
+                                </div>
+                                {/* Inline confirmation prompt for assigned sections */}
+                                {confirmRemove?.sectionId === s.id && (
+                                  <div className="mt-1 p-2 bg-yellow-50 border border-yellow-400 rounded text-xs text-yellow-800">
+                                    Section {s.section_num} is assigned to {confirmRemove.instructorName}. Removing it will clear this assignment.
+                                    <div className="flex gap-2 mt-1">
+                                      <button
+                                        className="px-2 py-0.5 bg-red-600 text-white rounded text-xs"
+                                        onClick={() => { onRemoveSection(s.id); setConfirmRemove(null) }}
+                                      >Confirm</button>
+                                      <button
+                                        className="px-2 py-0.5 bg-gray-300 rounded text-xs"
+                                        onClick={() => setConfirmRemove(null)}
+                                      >Cancel</button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </SectionBox>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <div className="w-12 text-center">2</div>
-                      <input
-                        className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center"
-                        defaultValue="125"
-                      />
-                      <IconControlButton aria-label="Remove section 2">−</IconControlButton>
-                    </div>
-                  </div>
-                </SectionBox>
+                  )
+                })()}
+
 
                 {/* Row 5: Action buttons (status change + save) */}
                 <div className="flex items-center gap-4">
