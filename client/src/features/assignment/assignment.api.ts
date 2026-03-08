@@ -1,14 +1,13 @@
 import { 
   type SectionState, 
   type InstructorState,
+  type InstructorUI,
+  type SectionUI,
   getSectionCode, 
   getBSectionID
-  //SectionUI, 
-  //InstructorUI, 
-  //SectionAvailability 
 } from "./assignment.types";
 
-import {mapScheduletoState} from "./assignment.mapper";
+import {mapScheduletoState, mapInstructor, mapSection} from "./assignment.mapper";
 //import { SectionAvailability as SA } from "./assignment.types"
 
 
@@ -20,7 +19,9 @@ import {mapScheduletoState} from "./assignment.mapper";
 import type {
   Assignment as BAssignment,
   Violation as BViolation,
-  Term as BTerm
+  Term as BTerm,
+  InstructorRule as BInstructorRule,
+  CourseRule as BCourseRule,
 } from "../../../../src/types";
 
 
@@ -63,6 +64,55 @@ export async function fetchAllAssignmentData(year: string): Promise<{
   } : null
 
   return { sectionState, instructorState, activeSchedule }
+}
+
+/**
+ * Fetches all data needed to populate one instructor in the assignment interface for the given schedule/academic year.
+ * Uses mapper to convert that fetched data into a sectionUI object
+ * 
+ * Returns:
+ *  - instructor: the requested InstructorUI object, normalised
+ */
+export async function fetchSectionData(year: string, courseId: string, courseCode: string, bSectionId: string): Promise<SectionUI | null> {
+  const [course, assignments, courseRules] = await Promise.all([
+    fetch(`${API_BASE}/courses/${year}/${courseId}`).then(r => r.json()),
+    fetch(`${API_BASE}/courses/${year}/${courseCode}/assignments`).then(r => r.json()),
+    fetch(`${API_BASE}/year/${year}/rules/courses`).then(r => r.json()),
+  ])
+
+  // TODO: request courseRule Endpoint for finding by instructorID
+  const courseRule = courseRules.find(
+    (i: BCourseRule) => i.course_code === courseCode
+  );
+
+  const assignment = assignments.find(
+    (i: BAssignment) => i.section_id === bSectionId
+  );
+
+  return mapSection(course, bSectionId, assignment, courseRule)
+}
+
+/**
+ * Fetches all data needed to populate one instructor in the assignment interface for the given schedule/academic year.
+ *
+ * Returns:
+ *  - instructor: the requested Instructor, normalised
+ */
+export async function fetchInstructorData(year: string, instructorId: string): Promise<InstructorUI | null> {
+  const [instructor, assignments, instructorRules] = await Promise.all([
+    fetch(`${API_BASE}/instructors/${year}/${instructorId}`).then(r => r.json()),
+    fetch(`${API_BASE}/instructors/${year}/${instructorId}/assignments`).then(r => r.json()),
+    fetch(`${API_BASE}/year/${year}/rules/instructors`).then(r => r.json()),
+  ])
+
+  const formatedAssignments : BAssignment[] = assignments.map(a => a.assignment)
+
+  // TODO: request instructorRule Endpoint for finding by instructorID
+  const instructorRule = instructorRules.find(
+    (i: BInstructorRule) => i.instructor_id === instructorId
+  );
+  
+  return mapInstructor(instructor, formatedAssignments, instructorRule)
 }
 
 /**
@@ -142,11 +192,11 @@ export async function fetchViolations(year: string, schedule_id: string): Promis
   return data.validationResult.violations ?? []
 }
 
-export async function addAssignment(year: string, schedule_id: string, instructor_id: string, section_id: string , course_code: string, term: BTerm): Promise<BAssignment | null> {
+export async function addAssignment(year: string, schedule_id: string, instructor_id: string, bsection_id: string , course_code: string, term: BTerm): Promise<BAssignment | null> {
   const newAssignment: BAssignment = {
     id: crypto.randomUUID(), // needs to be replaced with Wholly unique UUID generation
     instructor_id: instructor_id,
-    section_id: section_id,
+    section_id: bsection_id,
     course_code: course_code,
     term: term
   }
@@ -177,4 +227,23 @@ export async function removeAssignment(year: string, schedule_id: string,  assig
 
   if (!res.ok) return null
   return true
+}
+
+// TODO - request ability to remove all assignments matching coursecode and sectionId
+export async function removeAllAssignmentsForSection(year: string, schedule_id: string, bsection_id: string, course_code: string,): Promise<Set<string>> {
+  const affectedInstructors = new Set<string>() // set prevents duplicate instructors being added
+  const  assignmentsToCourse : BAssignment[] = await fetch(`${API_BASE}/courses/${year}/${course_code}/assignments`).then(r => r.json())
+  if (!assignmentsToCourse) return affectedInstructors
+
+  const assignmentsToSection = assignmentsToCourse.filter(
+    (i: BAssignment) => i.section_id === bsection_id
+  ); 
+
+  assignmentsToSection.forEach(async (assignment) =>  {
+    const result = await removeAssignment(year, schedule_id,  assignment.id)
+    if (!result) console.log(`warn - assignment ${assignment.id} not removed`)
+    else affectedInstructors.add(assignment.instructor_id) 
+  })
+
+  return affectedInstructors
 }

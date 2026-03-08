@@ -3,14 +3,16 @@ import type {
   Course, 
   Instructor, 
   CourseRule, 
-  InstructorRule
+  InstructorRule,
+  Assignment,
+  Section
 } from "../../../../src/types";
 
 import type { 
   SectionState,
   InstructorState,
   InstructorUI,
-  SectionUI 
+  SectionUI
 } from "./assignment.types";
 
 import { 
@@ -162,4 +164,65 @@ export function mapScheduletoState(schedule: Schedule, instructors: Instructor[]
     sectionState: newSectionState,
     instructorState: newInstructorState
   }
+}
+
+export function mapInstructor(instructor: Instructor, assignments: Assignment[], instructorRule: InstructorRule | undefined){
+  const mappedInstructor: InstructorUI = {
+    id: instructor.id,
+    instructor: instructor,
+    instructorRule: instructorRule,
+    assigned: assignments,
+    fall_assigned: new Set<string>(),
+    wint_assigned: new Set<string>(),
+    violations: {
+        details_col_violations: [],
+        fall_col_violations: [],
+        wint_col_violations: [],
+    },
+    dropped: false //TODO determine how this should be mapped
+  }
+
+  //Insert each Assignment into its coresponding 
+  assignments.forEach((assignment) => {
+    const sectionID = assignment.course_code + assignment.section_id
+    if (assignment.term == "Fall"){
+      mappedInstructor.fall_assigned.add(sectionID)
+    }
+    if (assignment.term == "Winter"){
+      mappedInstructor.wint_assigned.add(sectionID)
+    }
+  })
+
+  return mappedInstructor
+}
+
+export function mapSection(course: Course, BSectionId: string, assignment: Assignment, courseRule: CourseRule | undefined){
+  
+  if (course.sections.length == 0){
+    course.sections = [{id:"section1",number:1,capacity:200}]
+  }
+
+  let section = course.sections.find(
+    (i: Section) => i.id === BSectionId
+  );
+
+  if(!section){ // TODO - this delibretly adds bad data, find workaround
+    console.log(`WARN - course ${course.code} has no section ${BSectionId}`)
+    section = {id:"section1",number:1,capacity:200}
+  }
+    
+  const mappedSection: SectionUI = {
+    id: "",
+    course: course,
+    section: section,
+    courseRule: courseRule,
+    assignment: assignment,
+    dropped: false,  //TODO determine how this should be mapped
+    in_violation: null
+  }
+
+  // set its id
+  mappedSection.id = getSectionID(mappedSection)
+
+  return mappedSection
 }

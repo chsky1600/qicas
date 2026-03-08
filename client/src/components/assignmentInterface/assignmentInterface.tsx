@@ -64,7 +64,7 @@ export default function AssignmentInterface({
     
     // drop location is an instructor, make new assignment
     if (dropLocation?.type == "instructor"){
-      makeAssignment(sectionDrag.sectionId, dropLocation.instructorId, dropLocation.term, sectionDrag.prevAssignedId)
+      makeAssignment(sectionDrag.sectionId, dropLocation.instructorId, dropLocation.term)
       return
     }
     // drop location is the instructor panel and the drag did not originate from the panel, remove assignment

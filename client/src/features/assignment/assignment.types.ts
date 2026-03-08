@@ -55,7 +55,7 @@ export interface SectionUI {
   id: SectionId,
   course: Course,
   section: Section,
-  courseRule: CourseRule | undefined, // courseRule is only undefined duing mapping, it should not ever be unassigned during process
+  courseRule: CourseRule | undefined, // a course may have no rule attached to it
   assignment: Assignment | null, 
   dropped: boolean,
   in_violation: Violation | null,  // null implies not in violation of any rules
@@ -76,11 +76,20 @@ export const getSectionID = (sectionUI:SectionUI): SectionId => {
  * Returns the id of the backend section object, aka SectionUI.section.id, NOT SectionUI.id
  * 
  * @param sectionUI - the UI section object which contains these values
- * @returns concatinated id
  */
 export const getBSectionID = (sectionUI:SectionUI): SectionId => {
   return sectionUI.section.id
 }
+
+/**
+ * Returns the id of the backend course object, aka SectionUI.course.id, NOT SectionUI.id
+ * 
+ * @param sectionUI - the UI section object which contains these values
+ */
+export const getCourseID = (sectionUI:SectionUI): SectionId => {
+  return sectionUI.course.id
+}
+
 
 export const getSectionName = (sectionUI:SectionUI): string => {
   return sectionUI.course.name
@@ -175,7 +184,7 @@ export const instructorStateEmpty: InstructorState = {
 export interface InstructorUI {
   id: InstructorId,
   instructor: Instructor,
-  instructorRule: InstructorRule | undefined,
+  instructorRule: InstructorRule | undefined,  // an instructor may have no rule attached to it
   assigned: Assignment[],
 
   fall_assigned: Set<SectionId>,
