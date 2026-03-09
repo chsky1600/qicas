@@ -18,9 +18,9 @@ export const getDegreeColor = (degree: ViolationDegree) => {
     case null:
       return "bg-green-500";
     case "Info":
-      return "bg-yellow-500";
+      return "bg-blue-400";
     case "Warning":
-      return "bg-orange-500";
+      return "bg-yellow-400";
     case "Error":
       return "bg-red-500";
     default:
@@ -115,7 +115,6 @@ export const getSectionViolationDegree = (sectionUI:SectionUI): string | null =>
 export const getSectionWorkloadFulfillment = (sectionUI:SectionUI) => {
   if (!sectionUI.courseRule){
     return -1 //this is an error
-  }
   return sectionUI.courseRule?.workload_fulfillment
 }
 
@@ -266,6 +265,16 @@ export const populateInstructorAssignments = (instructorUI:InstructorUI): {fall_
   return {fall_assigned, wint_assigned}
 }
 
+// Snapshot Types
+export interface Snapshot {
+  id: string,
+  name: string,
+  date: string // "YYYY-MM-DD",
+  sectionState: SectionState,
+  instructorState: InstructorState,
+}
+
+/* Mock Data --- IGNORE ---
 
 
 // Snapshot Types

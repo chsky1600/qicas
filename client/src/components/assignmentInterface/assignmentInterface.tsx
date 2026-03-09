@@ -29,6 +29,9 @@ export default function AssignmentInterface({
   removeAssignment,
   loadState,
   dropInstructor,
+  saveCourseSections,
+  addSection,
+  removeSection,
 }: UseAssignmentResult) {
   const [heldSection, setHeldSection] = useState<number | string | null>(null)
 
@@ -92,6 +95,9 @@ export default function AssignmentInterface({
         updateInstructor={updateInstructor}
         loadState={loadState}
         dropInstructor={dropInstructor}
+        saveCourseSections={saveCourseSections}
+        addSection={addSection}
+        removeSection={removeSection}
       />
 
       {/* Main content area - courses left, instructors right */}

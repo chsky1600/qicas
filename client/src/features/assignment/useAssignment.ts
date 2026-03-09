@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as api from './assignment.api'
 import type {Assignment as BAssignment, Violation as BViolation} from "../../../../src/types";
+//import { fetchAssignment, saveScheduleToBackend, saveDropped, fetchViolations, 
+//        saveCourseSections as saveCourseSectionsAPI, addCourseSection as addCourseSectionAPI, removeCourseSection as removeCourseSectionAPI } from './assignment.api'
+//import type { BViolation } from './assignment.api'
 import * as assignmentType from "./assignment.types";
 
 
@@ -14,12 +17,15 @@ export interface UseAssignmentResult {
   error: string | null;
   refresh: () => Promise<void>;
   updateSection: (sectionId: string) => Promise<void>;
-  updateInstructor: (instructorId: string) => Promise<void>;
+  updateInstructor: (instructorId: string) => Promise<void>;  
   makeAssignment: (assignedSectionId: assignmentType.SectionId, nextInstructorId: assignmentType.InstructorId, assignmentLocation: assignmentType.SectionAvailability) => Promise<void>;
-  removeAssignment: (prevAssignmentId: string, refresh: boolean) => void;
-  loadState: (sectionState: assignmentType.SectionState, instructorState: assignmentType.InstructorState) => void;
+  removeAssignment: (prevAssignmentId: string, refresh: boolean) => void;  
+  loadState: (sectionState: assignmentType.SectionState, instructorState: assignmentType.InstructorState) => void;  
   activeSchedule: { id: string; name: string; year_id: string; date_created: string; is_rc: boolean } | null;
   dropInstructor: (instructor_id: assignmentType.InstructorId, dropped: boolean) => void;
+  saveCourseSections: (courseId: string, sections: Array<{ id: string, capacity: number }>) => Promise<void>;
+  addSection: (courseId: string, course_code: string, courseName: string, year_introduced: string, workload: number, availability: assignmentType.SectionAvailability) => Promise<void>;
+  removeSection: (sectionId: string) => Promise<void>;
 }
 
 
@@ -84,17 +90,41 @@ function applyViolations(
 
   // Step 2: Apply each backend violation to the appropriate frontend entity
   for (const v of violations) {
+    const frontendViolation: assignmentType.Violation = { msg: v.message, degree: mapDegree(v.degree) }
+
     if (v.type === "Course") {
-      // Match sections by course code map: (e.g. "CISC101" could return: set("CISC1011", "CISC1012"))
-      
-      sectionState.courseToSection[v.offending_id].forEach((sectionID) => {     
-        const section = newSectionById[sectionID]
-        const current = section.in_violation?.degree
-        const incoming = v.degree
-        if (!current || priority[incoming] > priority[current]) {
-          newSectionById[sectionID] = { ...section, in_violation: v }
+      // Match sections by course code (e.g. "CISC101")
+      for (const id of sectionState.allIds) {
+        const section = newSectionById[id]
+        if (section.course_code === v.offending_id) {
+
+          // Update the chip colour - only escalate severity, never downgrade (e.g. E stays E even if there's a new W violation)
+          const current = section.in_violation
+          const incoming = mapDegree(v.degree)
+          // Only apply if incoming severity is higher than what's already set
+          if (!current || priority[incoming] > priority[current]) {
+            newSectionById[id] = { ...section, in_violation: incoming }
+          }
+
+          // Route the violation to the instructor's term coloumn so it appears
+          // visually under the course chips when the vioaltion row is expanded,
+          // A section can be in both fall and winter (Full-year), so we check both.
+          const assignedTo = section.assigned_to
+          if (assignedTo && newInstructorById[assignedTo]) {
+            const inst = newInstructorById[assignedTo]
+            const inFall = inst.fall_assigned.has(section.id)
+            const inWint = inst.wint_assigned.has(section.id)
+            newInstructorById[assignedTo] = {
+              ...inst,
+              violations: {
+                ...inst.violations,
+                fall_col_violations: inFall ? [...inst.violations.fall_col_violations, frontendViolation] : inst.violations.fall_col_violations,
+                wint_col_violations: inWint ? [...inst.violations.wint_col_violations, frontendViolation] : inst.violations.wint_col_violations,
+              }
+            }
+          }
         }
-      })
+      }
     } else if (v.type === "Instructor") {
       // Match instructors directly by ID
       const instructor = newInstructorById[v.offending_id]
@@ -103,7 +133,7 @@ function applyViolations(
           ...instructor,
           violations: {
             ...instructor.violations,
-            details_col_violations: [...instructor.violations.details_col_violations, v]
+            details_col_violations: [...instructor.violations.details_col_violations, frontendViolation]
           }
         }
       }
@@ -129,7 +159,7 @@ export function useAssignment(): UseAssignmentResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeSchedule, setActiveSchedule] = useState<{ id: string; name: string; year_id: string; date_created: string; is_rc: boolean } | null>(null)
-  const [year, setYear] = useState<string>("Y2026") //TODO change to be pulled
+  const [year, setYear] = useState<string>("Y2026")
 
   // ── Refs ───────────────────────────────────────────────────────────────────
   // Refs mirror the state values so async callbacks (triggerAutoSave) can always
@@ -192,7 +222,7 @@ export function useAssignment(): UseAssignmentResult {
         // Ignore AbortError — it just means a newer save superseded this one
         if ((e as Error).name !== "AbortError") console.error("Auto-save failed", e)
       }
-    }, 25)
+    }, 20)
   }, [])
 
 
@@ -250,7 +280,6 @@ export function useAssignment(): UseAssignmentResult {
         console.log(`WARN: section with id ${sectionId} does not exist`)
         return
       }
-
       setLoading(true);
       setError(null);
 
@@ -280,8 +309,8 @@ export function useAssignment(): UseAssignmentResult {
       setLoading(false);
     }
   }
-
-  /**
+  
+    /**
    * fetches data for a specific Instructor from the backend for the current year.
    * Called after assignment to isolate the sections which require updating
    * 
@@ -304,7 +333,7 @@ export function useAssignment(): UseAssignmentResult {
       if (!fetchedInstructor){
         return
       }
-
+      
       setInstructorState(prev => ({
         ...prev,
         byId: {
@@ -318,12 +347,11 @@ export function useAssignment(): UseAssignmentResult {
       setLoading(false);
     }
   }
-
+  
   // Fetch data once when the hook is first mounted
   useEffect(() => {
     updateAllData();
   }, []);
-
 
   // ── State Mutators ─────────────────────────────────────────────────────────
 
@@ -347,7 +375,7 @@ export function useAssignment(): UseAssignmentResult {
     nextInstructorId: assignmentType.InstructorId,
     assignmentLocation: assignmentType.SectionAvailability
   ) => {
-    if (!activeScheduleRef.current) return
+    if (!activeScheduleRef.current) return   
 
     // ForW means "fall OR winter" — the user must pick one explicitly
     if (assignmentLocation === assignmentType.SectionAvailability.ForW) {
@@ -360,13 +388,12 @@ export function useAssignment(): UseAssignmentResult {
       console.log(`WARN: instructor with id ${nextInstructorId} does not exist`)
       return
     }
-
+    
     if (!stateObjectExists(sectionState, assignedSectionId)) {
       // TODO return error
       console.log(`WARN: section with id ${assignedSectionId} does not exist`)
       return
     }
-
     const assignedSection = sectionState.byId[assignedSectionId] 
 
     const assignedCourseCode = assignmentType.getSectionCode(assignedSection)
@@ -394,6 +421,7 @@ export function useAssignment(): UseAssignmentResult {
     //TODO - reset validation
   };
 
+
   /**
    * Removes a section from an instructor, setting the section back to unassigned.
    *
@@ -404,8 +432,7 @@ export function useAssignment(): UseAssignmentResult {
    *  - Removes the section from the instructor's fall and winter sets
    *  - Sets the section's `assigned_to` to null
    *  - Triggers a debounced auto-save after the state update
-   */
-  
+   */  
   const removeAssignment = async (
     prevAssignmentId: string,
     refresh: boolean = true
@@ -416,6 +443,8 @@ export function useAssignment(): UseAssignmentResult {
     if (refresh) updateAllData()
     return
   };
+
+
 
   /**
    * Replaces the current sectionState and instructorState wholesale.
@@ -444,6 +473,92 @@ export function useAssignment(): UseAssignmentResult {
     updateInstructor({ ...instructor, dropped })
   }
 
+  /**
+   * Updates section capacities in local state and persists to backend via PATCH.
+   */
+  const saveCourseSections = async (courseId: string, updatedSections: Array<{ id: string; capacity: number }>) => {
+    setSectionState(prev => {
+      const newById = { ...prev.byId }
+      for (const { id, capacity } of updatedSections) {
+        if (newById[id]) newById[id] = { ...newById[id], capacity }
+      }
+      return { ...prev, byId: newById }
+    })
+    try {
+      await saveCourseSectionsAPI(yearRef.current, courseId, updatedSections)
+    } catch (e) {
+      console.error('Failed to save section capacities', e)
+    }
+  }
+
+  /**
+   * Adds a new section to a course in the backend and inserts it into local sectionState.
+   */
+  const addSection = async (
+    courseId: string,
+    course_code: string,
+    courseName: string,
+    year_introduced: string,
+    workload: number,
+    availability: assignmentType.SectionAvailability
+  ) => {
+    try {
+      const result = await addCourseSectionAPI(yearRef.current, courseId)
+      if (!result) return
+      const newSection: assignmentType.Section = {
+        id: result.id,
+        course_id: courseId,
+        name: courseName,
+        course_code,
+        year_introduced,
+        section_num: result.number,
+        workload,
+        availability,
+        capacity: 0,
+        assigned_to: null,
+        dropped: false,
+        in_violation: null,
+      }
+      setSectionState(prev => ({
+        byId: { ...prev.byId, [newSection.id]: newSection },
+        allIds: [...prev.allIds, newSection.id],
+      }))
+    } catch (e) {
+      console.error('Failed to add section', e)
+    }
+  }
+
+  /**
+   * Removes a section from the course in the backend and from local sectionState.
+   * If the section is assigned to an instructor, the assignment is cleared first.
+   */
+  const removeSection = async (sectionId: string) => {
+    const section = sectionState.byId[sectionId]
+    if (!section) return
+
+    // Clear assignment if the section is currently assigned
+    if (section.assigned_to) {
+      removeAssignment(sectionId, section.assigned_to)
+    }
+
+    // Remove from local state
+    setSectionState(prev => {
+      const newById = { ...prev.byId }
+      delete newById[sectionId]
+      return {
+        byId: newById,
+        allIds: prev.allIds.filter(id => id !== sectionId),
+      }
+    })
+
+    try {
+      await removeCourseSectionAPI(yearRef.current, section.course_id, sectionId)
+    } catch (e) {
+      console.error('Failed to remove section', e)
+    }
+  }
+
+
 
   // ── Return ─────────────────────────────────────────────────────────────────
 
@@ -460,5 +575,8 @@ export function useAssignment(): UseAssignmentResult {
     loadState,
     activeSchedule,
     dropInstructor,
+    saveCourseSections,
+    addSection,
+    removeSection,
   }
 }

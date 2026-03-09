@@ -247,3 +247,76 @@ export async function removeAllAssignmentsForSection(year: string, schedule_id: 
 
   return affectedInstructors
 }
+// ─── Course Management ──────────────────────────────────────────────
+
+/**
+ * Persists updated section capacities for a course.
+ * GETs full course first to preserve fields not in frontend state (level, notes),
+ * then PATCHes with new capacities. Backend recalculates course.capacity as the sum.
+ */
+export async function saveCourseSections(
+  year: string,
+  course_id: string,
+  updatedSections: Array<{ id: string; capacity: number }>
+): Promise<void> {
+  const course = await fetch(`${API_BASE}/courses/${year}/${course_id}`).then(r => r.json())
+  if (!course) return
+  const sectionMap = new Map(updatedSections.map(s => [s.id, s.capacity]))
+  const updatedCourse = {
+    ...course,
+    sections: course.sections.map((s: { id: string; capacity: number }) => ({
+      ...s,
+      capacity: sectionMap.has(s.id) ? sectionMap.get(s.id) : s.capacity,
+    }))
+  }
+  await fetch(`${API_BASE}/courses/${year}/${course_id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ course: updatedCourse }),
+  })
+}
+
+/**
+ * Adds a new section to a course. GETs the full course, appends a new section
+ * with the next section number and capacity 0, then PATCHes.
+ * Returns the new section's ID so the caller can add it to frontend state.
+ */
+export async function addCourseSection(
+  year: string,
+  course_id: string
+): Promise<{ id: string; number: number } | null> {
+  const course = await fetch(`${API_BASE}/courses/${year}/${course_id}`).then(r => r.json())
+  if (!course) return null
+  const maxNum = course.sections.reduce((max: number, s: { number: number }) => Math.max(max, s.number), 0)
+  const newSection = { id: crypto.randomUUID(), number: maxNum + 1, capacity: 0 }
+  const updatedCourse = { ...course, sections: [...course.sections, newSection] }
+  await fetch(`${API_BASE}/courses/${year}/${course_id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ course: updatedCourse }),
+  })
+  return { id: newSection.id, number: newSection.number }
+}
+
+/**
+ * Removes a section from a course. GETs the full course, filters out the section,
+ * then PATCHes. The caller is responsible for clearing any assignments first.
+ */
+export async function removeCourseSection(
+  year: string,
+  course_id: string,
+  section_id: string
+): Promise<void> {
+  const course = await fetch(`${API_BASE}/courses/${year}/${course_id}`).then(r => r.json())
+  if (!course) return
+  const updatedCourse = {
+    ...course,
+    sections: course.sections.filter((s: { id: string }) => s.id !== section_id)
+  }
+  await fetch(`${API_BASE}/courses/${year}/${course_id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ course: updatedCourse }),
+  })
+}
+
