@@ -1,4 +1,4 @@
-import type { Instructor as InstructorType, InstructorState, SectionState} from "@/features/assignment/assignment.types"
+import type { InstructorUI as InstructorType, InstructorState, SectionState} from "@/features/assignment/assignment.types"
 // TODO learn how to import sectionState
 
 import Instructor from "./instructor"

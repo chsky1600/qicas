@@ -4,7 +4,7 @@ import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell
 } from "@/components/ui/table"
 import type { Snapshot, SectionState, InstructorState } from "@/features/assignment/assignment.types"
-import { ViolationDegree } from "@/features/assignment/assignment.types"
+import { getSectionAssignedId } from "@/features/assignment/assignment.types"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ function calcProgress(sectionState: SectionState): { assigned: number; total: nu
     const section = sectionState.byId[id]
     if (!section.dropped) {
       total++
-      if (section.assigned_to !== null) assigned++
+      if (getSectionAssignedId(section) !== null) assigned++
     }
   }
   return { assigned, total }
@@ -43,13 +43,13 @@ function calcProgress(sectionState: SectionState): { assigned: number; total: nu
 function getHighestViolation(
   sectionState: SectionState,
   instructorState: InstructorState
-): ViolationDegree | null {
-  let highest: ViolationDegree | null = null
+): "Error" | "Warning" | "Info" | null {
+  let highest: "Error" | "Warning" | "Info" | null = null
 
   for (const id of sectionState.allIds) {
-    const v = sectionState.byId[id].in_violation
-    if (v === ViolationDegree.E) return ViolationDegree.E
-    if (v === ViolationDegree.W) highest = ViolationDegree.W
+    const v = sectionState.byId[id].in_violation?.degree
+    if (v === "Error") return "Error"
+    if (v === "Warning") highest = "Warning"
     else if (v && highest === null) highest = v
   }
 
@@ -57,8 +57,8 @@ function getHighestViolation(
     const { details_col_violations, fall_col_violations, wint_col_violations } =
       instructorState.byId[id].violations
     for (const v of [...details_col_violations, ...fall_col_violations, ...wint_col_violations]) {
-      if (v.degree === ViolationDegree.E) return ViolationDegree.E
-      if (v.degree === ViolationDegree.W) highest = ViolationDegree.W
+      if (v.degree === "Error") return "Error"
+      if (v.degree === "Warning") highest = "Warning"
       else if (highest === null) highest = v.degree
     }
   }
@@ -70,14 +70,14 @@ function getHighestViolation(
 
 function ViolationIcon({ snap }: { snap: Snapshot }) {
   const severity = getHighestViolation(snap.sectionState, snap.instructorState)
-  if (severity === ViolationDegree.E) {
+  if (severity === "Error") {
     return (
       <span title="Hard rule violation" className="text-red-600 text-sm font-bold leading-none">
         &#9888;
       </span>
     )
   }
-  if (severity === ViolationDegree.W) {
+  if (severity === "Warning") {
     return (
       <span title="Soft rule violation" className="text-orange-500 text-sm font-bold leading-none">
         &#9888;

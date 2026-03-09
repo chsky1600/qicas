@@ -1,4 +1,4 @@
-import type { Section, SectionState } from "@/features/assignment/assignment.types"
+import type { SectionUI, SectionState } from "@/features/assignment/assignment.types"
 import Course from "./course"
 import { useDroppable } from "@dnd-kit/core";
 
@@ -14,7 +14,7 @@ import {
 
 function CoursesPanel(sectionState : SectionState)  {
   //TODO functionality to sort sections, separate into distinct sections
-  const sectionsList: Section[] = sectionState.allIds
+  const sectionsList: SectionUI[] = sectionState.allIds
     .map(id => sectionState.byId[id])
     .filter(section => !section.dropped) // only show sections that are not dropped
     
@@ -53,15 +53,6 @@ function CoursesPanel(sectionState : SectionState)  {
           ))}
         </TableBody>
       </Table>
-
-      {/*
-      <ul>
-        {sectionsList?.map((section) => (
-          <Course {...section}/>
-        ))}
-      </ul>
-      */}
-
     </div>
   )
 }
