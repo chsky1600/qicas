@@ -54,6 +54,7 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
         </button>
       </div>
 
+      {/*
       <PropertiesDialog
         isOpen={isPropertiesOpen}
         onClose={() => setIsPropertiesOpen(false)}
@@ -65,7 +66,7 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
         onSaveCourseSections={saveCourseSections}
         onAddSection={addSection}
         onRemoveSection={removeSection}
-      />
+      />*/}
       <SnapshotsDialog
         isOpen={isSnapshotsOpen}
         onClose={() => setIsSnapshotsOpen(false)}

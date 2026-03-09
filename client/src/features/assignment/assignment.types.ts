@@ -115,6 +115,7 @@ export const getSectionViolationDegree = (sectionUI:SectionUI): string | null =>
 export const getSectionWorkloadFulfillment = (sectionUI:SectionUI) => {
   if (!sectionUI.courseRule){
     return -1 //this is an error
+  }
   return sectionUI.courseRule?.workload_fulfillment
 }
 
@@ -285,8 +286,6 @@ export interface Snapshot {
   sectionState: SectionState,
   instructorState: InstructorState,
 }
-
-/* Mock Data --- IGNORE ---
 
 export const sectionStateMock: SectionState = {
   byId: {

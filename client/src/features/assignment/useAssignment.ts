@@ -83,48 +83,52 @@ function applyViolations(
 
   // Used to ensure a section's violation only escalates (E > W > I), never downgrades
   const priority = {
-    ["Error"]: 3,
-    ["Warning"]: 2,
-    ["Info"]: 1,
+    "Error": 3,
+    "Warning": 2,
+    "Info": 1,
   }
 
   // Step 2: Apply each backend violation to the appropriate frontend entity
   for (const v of violations) {
-    const frontendViolation: assignmentType.Violation = { msg: v.message, degree: mapDegree(v.degree) }
-
     if (v.type === "Course") {
       // Match sections by course code (e.g. "CISC101")
-      for (const id of sectionState.allIds) {
-        const section = newSectionById[id]
-        if (section.course_code === v.offending_id) {
 
-          // Update the chip colour - only escalate severity, never downgrade (e.g. E stays E even if there's a new W violation)
-          const current = section.in_violation
-          const incoming = mapDegree(v.degree)
-          // Only apply if incoming severity is higher than what's already set
-          if (!current || priority[incoming] > priority[current]) {
-            newSectionById[id] = { ...section, in_violation: incoming }
-          }
+      // check that there are section objects tied to the offending_id course_code
+      if (!sectionState.courseToSection[v.offending_id]){
+        continue
+      }
 
-          // Route the violation to the instructor's term coloumn so it appears
-          // visually under the course chips when the vioaltion row is expanded,
-          // A section can be in both fall and winter (Full-year), so we check both.
-          const assignedTo = section.assigned_to
-          if (assignedTo && newInstructorById[assignedTo]) {
-            const inst = newInstructorById[assignedTo]
-            const inFall = inst.fall_assigned.has(section.id)
-            const inWint = inst.wint_assigned.has(section.id)
-            newInstructorById[assignedTo] = {
-              ...inst,
-              violations: {
-                ...inst.violations,
-                fall_col_violations: inFall ? [...inst.violations.fall_col_violations, frontendViolation] : inst.violations.fall_col_violations,
-                wint_col_violations: inWint ? [...inst.violations.wint_col_violations, frontendViolation] : inst.violations.wint_col_violations,
-              }
+      // for each SectionUI id tied to the course-code within the violation
+      sectionState.courseToSection[v.offending_id].forEach((sectionId: string) => {
+        const section = newSectionById[sectionId]
+
+        // Update the chip colour - only escalate severity, never downgrade (e.g. E stays E even if there's a new W violation)
+        const current = section.in_violation
+        const incoming = v
+        // Only apply if incoming severity is higher than what's already set
+        if (!current || priority[incoming.degree] > priority[current.degree]) {
+          newSectionById[sectionId] = { ...section, in_violation: incoming }
+        }
+
+        // Route the violation to the instructor's term coloumn so it appears
+        // visually under the course chips when the vioaltion row is expanded,
+        // A section can be in both fall and winter (Full-year), so we check both.
+        const assignedTo = assignmentType.getSectionAssignedTo(section)
+        if (assignedTo && newInstructorById[assignedTo]) {
+          const inst = newInstructorById[assignedTo]
+          const inFall = inst.fall_assigned.has(section.id)
+          const inWint = inst.wint_assigned.has(section.id)
+          newInstructorById[assignedTo] = {
+            ...inst,
+            violations: {
+              ...inst.violations,
+              fall_col_violations: inFall ? [...inst.violations.fall_col_violations, v] : inst.violations.fall_col_violations,
+              wint_col_violations: inWint ? [...inst.violations.wint_col_violations, v] : inst.violations.wint_col_violations,
             }
           }
         }
-      }
+
+      })
     } else if (v.type === "Instructor") {
       // Match instructors directly by ID
       const instructor = newInstructorById[v.offending_id]
@@ -133,7 +137,7 @@ function applyViolations(
           ...instructor,
           violations: {
             ...instructor.violations,
-            details_col_violations: [...instructor.violations.details_col_violations, frontendViolation]
+            details_col_violations: [...instructor.violations.details_col_violations, v]
           }
         }
       }
