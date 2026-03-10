@@ -489,7 +489,7 @@ export function useAssignment(): UseAssignmentResult {
       return { ...prev, byId: newById }
     })
     try {
-      await saveCourseSectionsAPI(yearRef.current, courseId, updatedSections)
+      await api.saveCourseSections(yearRef.current, courseId, updatedSections)
     } catch (e) {
       console.error('Failed to save section capacities', e)
     }
@@ -507,7 +507,7 @@ export function useAssignment(): UseAssignmentResult {
     availability: assignmentType.SectionAvailability
   ) => {
     try {
-      const result = await addCourseSectionAPI(yearRef.current, courseId)
+      const result = await api.addCourseSection(yearRef.current, courseId)
       if (!result) return
       const newSection: assignmentType.Section = {
         id: result.id,
@@ -541,8 +541,8 @@ export function useAssignment(): UseAssignmentResult {
     if (!section) return
 
     // Clear assignment if the section is currently assigned
-    if (section.assigned_to) {
-      removeAssignment(sectionId, section.assigned_to)
+    if (assignmentType.getSectionAssignedTo(section)) {
+      removeAssignment(sectionId)
     }
 
     // Remove from local state
@@ -552,11 +552,12 @@ export function useAssignment(): UseAssignmentResult {
       return {
         byId: newById,
         allIds: prev.allIds.filter(id => id !== sectionId),
+        courseToSection: 
       }
     })
 
     try {
-      await removeCourseSectionAPI(yearRef.current, section.course_id, sectionId)
+      await api.removeCourseSection(yearRef.current, section.course_id, sectionId)
     } catch (e) {
       console.error('Failed to remove section', e)
     }

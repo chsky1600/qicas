@@ -1,7 +1,22 @@
 import * as React from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
-import type { SectionState, InstructorState, Section, Instructor } from "@/features/assignment/assignment.types"
-import { SectionAvailability } from "@/features/assignment/assignment.types"
+import type { SectionState, InstructorState, SectionUI, InstructorUI } from "@/features/assignment/assignment.types"
+import {  
+  getInstructorName, setInstructorName,
+  getInstructorPosition,
+  getInstructorEmail, setInstructorEmail,
+  getInstructorWorkload, setInstructorWorkload,
+  getInstructorWorkloadDelta, setInstructorWorkloadDelta,
+  getSectionCode, 
+  getSectionName, setSectionName,
+  getSectionNum,
+  getSectionCapacity, 
+  getCourseID,
+  getSectionWorkloadFulfillment, 
+  getSectionAssignedTo,
+  SectionAvailability,
+  getSectionAvailability,
+} from "@/features/assignment/assignment.types"
 import { IconControlButton } from "@/components/ui/icon-control-button"
 import { FormRow } from "@/components/ui/form-row"
 import { SectionBox } from "@/components/ui/section-box"
@@ -42,8 +57,8 @@ interface PropertiesDialogProps {
   sectionState: SectionState
   instructorState: InstructorState
   // Callbacks that bubble the saved data back up to useAssignment
-  onUpdateInstructor: (updated: Instructor) => void
-  onUpdateSection: (updated: Section) => void
+  onUpdateInstructor: (updated: InstructorUI) => void
+  onUpdateSection: (updated: SectionUI) => void
   onDropInstructor: (instructorId: string, dropped: boolean) => void
   onSaveCourseSections: (courseId: string, sections: Array<{ id: string; capacity: number }>) => Promise<void>
   onAddSection: (courseId: string, course_code: string, courseName: string, year_introduced: string, workload: number, availability: SectionAvailability) => Promise<void>
@@ -80,10 +95,10 @@ export default function PropertiesDialog({
 
   // Local working copy of the selected instructor. We keep this as a copy so
   // edits don't mutate the parent state until the user clicks "Save Changes".
-  const [instructorEdit, setInstructorEdit] = React.useState<Instructor | null>(null)
+  const [instructorEdit, setInstructorEdit] = React.useState<InstructorUI | null>(null)
 
   // Local working copy of the selected course.
-  const [sectionEdit, setSectionEdit] = React.useState<Section | null>(null)
+  const [sectionEdit, setSectionEdit] = React.useState<SectionUI | null>(null)
 
   // Tracks edited capacities per section (keyed by section ID) before Save is clicked
   const [sectionCapacities, setSectionCapacities] = React.useState<Record<string, number>>({})
@@ -103,7 +118,7 @@ export default function PropertiesDialog({
       })
       .map((id) => {
         const instructor = instructorState.byId[id]
-        return { id, label: `${instructor.position.short} ${instructor.name}` }
+        return { id, label: `${getInstructorPosition(instructor).short} ${getInstructorName(instructor)}` }
       })
     }
     const seen = new Set<string>()
@@ -113,14 +128,14 @@ export default function PropertiesDialog({
         return status === "dropped" ? dropped : !dropped
       })
       .filter((id) => {
-        const code = sectionState.byId[id].course_code
+        const code = getSectionCode(sectionState.byId[id])
         if (seen.has(code)) return false
         seen.add(code)
         return true
       })
       .map((id) => {
         const section = sectionState.byId[id]
-        return { id, label: `${section.course_code} - ${section.name}` }
+        return { id, label: `${getSectionCode(section)} - ${getSectionName(section)}` }
       })
   }, [mode, status, sectionState, instructorState])
 
@@ -158,8 +173,8 @@ export default function PropertiesDialog({
         const caps: Record<string, number> = {}
         sectionState.allIds
           .map((secId) => sectionState.byId[secId])
-          .filter(s => s.course_code === section.course_code)
-          .forEach((s) => caps[s.id] = s.capacity)
+          .filter(s => getSectionCode(s) === getSectionCode(section))
+          .forEach((s) => caps[s.id] = getSectionCapacity(s))
         setSectionCapacities(caps)
       } else {
         setSectionCapacities({})
@@ -177,11 +192,11 @@ export default function PropertiesDialog({
       onUpdateSection(sectionEdit)
       const changed = sectionState.allIds
         .map((id) => sectionState.byId[id])
-        .filter(s => s.course_code === sectionEdit.course_code)
-        .filter(s => sectionCapacities[s.id] !== undefined && sectionCapacities[s.id] !== s.capacity)
+        .filter(s => getSectionCode(s) === getSectionCode(sectionEdit))
+        .filter(s => sectionCapacities[s.id] !== undefined && sectionCapacities[s.id] !== getSectionCapacity(s))
         .map(s => ({ id: s.id, capacity: sectionCapacities[s.id] }))
       if (changed.length > 0) {
-        onSaveCourseSections(sectionEdit.course_id, changed)
+        onSaveCourseSections(getCourseID(sectionEdit), changed)
       }
     }
   }
@@ -196,7 +211,7 @@ export default function PropertiesDialog({
         allAssigned.forEach((sectionId) => {
           const section = sectionState.byId[sectionId]
           if (section) {
-            onUpdateSection({ ...section, assigned_to: null })
+            onUpdateSection({ ...section, assignment: null })
           }
         })
         // Clear both fall and winter assigned sets
@@ -326,16 +341,16 @@ export default function PropertiesDialog({
                   <FormRow label="Name">
                     <input
                       className="flex-1 border border-black rounded-md px-3 py-1 bg-white"
-                      value={instructorEdit.name}
-                      onChange={(e) => setInstructorEdit({ ...instructorEdit, name: e.target.value })}
+                      value={getInstructorName(instructorEdit)}
+                      onChange={(e) => setInstructorEdit(setInstructorName(instructorEdit,e.target.value))}
                     />
                   </FormRow>
 
                   <FormRow label="Email">
                     <input
                       className="flex-1 border border-black rounded-md px-3 py-1 bg-white"
-                      value={instructorEdit.email}
-                      onChange={(e) => setInstructorEdit({ ...instructorEdit, email: e.target.value })}
+                      value={getInstructorEmail(instructorEdit)}
+                      onChange={(e) => setInstructorEdit(setInstructorEmail(instructorEdit,e.target.value))}
                     />
                   </FormRow>
                 </div>
@@ -346,10 +361,10 @@ export default function PropertiesDialog({
                     {/* Dropdown values come from the POSITIONS constant */}
                     <select
                       className="border border-black rounded-md px-3 py-1 bg-white"
-                      value={instructorEdit.position.short}
+                      value={getInstructorPosition(instructorEdit).short}
                       onChange={(e) => {
                         const match = POSITIONS.find(p => p.short === e.target.value)
-                        if (match) setInstructorEdit({ ...instructorEdit, position: match })
+                        if (match) setInstructorEdit({ ...instructorEdit, position: match }) //TODO Issue with position matching between types
                       }}
                     >
                       {POSITIONS.map((p) => (
@@ -362,8 +377,8 @@ export default function PropertiesDialog({
                     <input
                       className="w-12 border border-black rounded-md px-2 py-1 bg-white text-center"
                       type="number"
-                      value={instructorEdit.workload_total}
-                      onChange={(e) => setInstructorEdit({ ...instructorEdit, workload_total: Number(e.target.value) })}
+                      value={getInstructorWorkload(instructorEdit)}
+                      onChange={(e) => setInstructorEdit(setInstructorWorkload(instructorEdit, Number(e.target.value)))}
                     />
                   </FormRow>
 
@@ -371,8 +386,8 @@ export default function PropertiesDialog({
                     <input
                       className="w-12 border border-black rounded-md px-2 py-1 bg-white text-center"
                       type="number"
-                      value={instructorEdit.modifier}
-                      onChange={(e) => setInstructorEdit({ ...instructorEdit, modifier: Number(e.target.value) })}
+                      value={getInstructorWorkloadDelta(instructorEdit)}
+                      onChange={(e) => setInstructorEdit(setInstructorWorkloadDelta(instructorEdit, Number(e.target.value)))}
                     />
                   </FormRow>
                 </div>
@@ -398,6 +413,7 @@ export default function PropertiesDialog({
                   </SectionBox>
 
                   {/* Free-text notes field */}
+                  {/*
                   <SectionBox title="Notes" className="flex-1" bodyClassName="p-0">
                     <textarea
                       className="w-full h-32 p-3 text-sm outline-none resize-none"
@@ -406,6 +422,7 @@ export default function PropertiesDialog({
                       onChange={(e) => setInstructorEdit({ ...instructorEdit, notes: e.target.value })}
                     />
                   </SectionBox>
+                   */}
                 </div>
 
                 {/* Row 4: Action buttons (status change + save) */}
@@ -447,8 +464,8 @@ export default function PropertiesDialog({
                   <FormRow label="Name">
                     <input
                       className="flex-1 border border-black rounded-md px-3 py-1 bg-white"
-                      value={sectionEdit.name}
-                      onChange={(e) => setSectionEdit({ ...sectionEdit, name: e.target.value })}
+                      value={getSectionName(sectionEdit)}
+                      onChange={(e) => setSectionEdit(setSectionName(sectionEdit, e.target.value))}
                     />
                   </FormRow>
                 </div>
@@ -458,7 +475,7 @@ export default function PropertiesDialog({
                   <FormRow label="Course Code" labelClassName="w-auto">
                     <input
                       className="w-24 border border-black rounded-md px-2 py-1 bg-white text-center focus:outline-none"
-                      value={sectionEdit.course_code}
+                      value={getSectionCode(sectionEdit)}
                       readOnly
                     />
                   </FormRow>
@@ -467,7 +484,7 @@ export default function PropertiesDialog({
                     <input
                       className="w-20 border border-black rounded-md px-2 py-1 bg-[#ececec] text-center text-gray-500 cursor-not-allowed"
                       type="number"
-                      value={sectionState.allIds.map(id => sectionState.byId[id]).filter(s => s.course_code === sectionEdit.course_code).reduce((sum, s) => sum + (sectionCapacities[s.id] ?? s.capacity), 0)}
+                      value={sectionState.allIds.map(id => sectionState.byId[id]).filter(s => getSectionCode(s) === getSectionCode(sectionEdit)).reduce((sum, s) => sum + (sectionCapacities[s.id] ?? getSectionCapacity(s)), 0)}
                       readOnly
                     />
                   </FormRow>
@@ -478,7 +495,7 @@ export default function PropertiesDialog({
                       className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center"
                       type="number"
                       step="0.5"
-                      value={sectionEdit.workload}
+                      value={getSectionWorkloadFulfillment(sectionEdit)}
                       onChange={(e) => setSectionEdit({ ...sectionEdit, workload: Number(e.target.value) })}
                     />
                   </FormRow>
@@ -493,7 +510,7 @@ export default function PropertiesDialog({
                       <input
                         type="radio"
                         name="availability"
-                        checked={sectionEdit.availability === opt.value}
+                        checked={getSectionAvailability(sectionEdit) === opt.value}
                         onChange={() => setSectionEdit({ ...sectionEdit, availability: opt.value })}
                       />
                     </label>
@@ -504,8 +521,8 @@ export default function PropertiesDialog({
                 {(() => {
                   const courseSections = sectionState.allIds
                     .map(id => sectionState.byId[id])
-                    .filter(s => s.course_code === sectionEdit.course_code)
-                    .sort((a, b) => a.section_num - b.section_num)
+                    .filter(s => getSectionCode(s) === getSectionCode(sectionEdit))
+                    .sort((a, b) => getSectionNum(a) - getSectionNum(b))
                   return (
                     <div className="mb-5">
 
@@ -528,21 +545,22 @@ export default function PropertiesDialog({
                               <div className="w-6"></div>
                             </div>
                           {courseSections.map(s => {
-                            const instructor = s.assigned_to ? instructorState.byId[s.assigned_to] : null
-                            const instructorName = instructor ? `${instructor.position.short} ${instructor.name}` : "—"
+                            const assignedTo = getSectionAssignedTo(s)
+                            const instructor = assignedTo ? instructorState.byId[assignedTo] : null
+                            const instructorName = instructor ? `${getInstructorPosition(instructor).short} ${getInstructorName(instructor)}` : "—"
                             return (
                               <div key={s.id}>
                                 <div className="flex items-center justify-between gap-4">
-                                  <div className="w-8 text-center font-medium">{s.section_num}</div>
+                                  <div className="w-8 text-center font-medium">{getSectionNum(s)}</div>
                                   <input
                                     className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center"
                                     type="number"
-                                    value={sectionCapacities[s.id] ?? s.capacity}
+                                    value={sectionCapacities[s.id] ?? getSectionCapacity(s)}
                                     onChange={(e) => setSectionCapacities(prev => ({ ...prev, [s.id]: Number(e.target.value) }))}
                                   />
                                   <div className="flex-1 text-gray-600 text-xs">{instructorName}</div>
                                   <IconControlButton
-                                    aria-label={`Remove section ${s.section_num}`}
+                                    aria-label={`Remove section ${getSectionNum(s)}`}
                                     onClick={() => {
                                       if (instructor) {
                                         setConfirmRemove({ sectionId: s.id, instructorName })
@@ -555,7 +573,7 @@ export default function PropertiesDialog({
                                 {/* Inline confirmation prompt for assigned sections */}
                                 {confirmRemove?.sectionId === s.id && (
                                   <div className="mt-1 p-2 bg-yellow-50 border border-yellow-400 rounded text-xs text-yellow-800">
-                                    Section {s.section_num} is assigned to {confirmRemove.instructorName}. Removing it will clear this assignment.
+                                    Section {getSectionNum(s)} is assigned to {confirmRemove.instructorName}. Removing it will clear this assignment.
                                     <div className="flex gap-2 mt-1">
                                       <button
                                         className="px-2 py-0.5 bg-red-600 text-white rounded text-xs"

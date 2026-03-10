@@ -7,7 +7,8 @@ import type {
   InstructorRule, 
   Note,
   Violation,
-  ViolationDegree
+  ViolationDegree,
+  InstructorRank
 } from "../../../../src/types";
 
 // ----------------- Violation Types ------------------------
@@ -62,6 +63,34 @@ export interface SectionUI {
 }
 
 /**
+ * Returns an updated version of the passed sSctionUI object.
+ * Will preform this update: section.root.sub = value
+ * 
+ * @param section - SectionUI object to be updated
+ * @param root - top level property of SectionUI, eg course, section, courseRule...
+ * @param sub - sub level property of SectionUI, eg name...
+ * @param value - value to be set
+ * @returns 
+ */
+export function deepUpdateSection<K extends keyof SectionUI, S extends keyof NonNullable<SectionUI[K]>>(
+  section: SectionUI,
+  root: K,
+  sub: S,
+  value: NonNullable<SectionUI[K]>[S]
+) {
+  if (typeof section[root] !== "object" || !section[root]) {
+    return section
+  }
+  return {
+    ...section,
+    [root]: {
+      ...section[root],
+      [sub]: value
+    }
+  }   
+}
+
+/**
  * Returns the id of the frontend section object, which is the concatination of the
  * course code of the backend course object, and the id of the backend section object
  * 
@@ -93,6 +122,18 @@ export const getCourseID = (sectionUI:SectionUI): SectionId => {
 
 export const getSectionName = (sectionUI:SectionUI): string => {
   return sectionUI.course.name
+}
+
+/**
+ * Returns updated version of passed SectionUI object with modified name
+ * 
+ * @param sectionUI 
+ * @param newName
+ * @returns sectionUI, where sectionUI.course.name = newName
+ */
+export const setSectionName = (sectionUI:SectionUI, newName: string) => {
+  if (!sectionUI) return null
+  return deepUpdateSection(sectionUI, 'course', 'name', newName)
 }
 
 // TODO Request split of Dept and code
@@ -143,11 +184,23 @@ export const getSectionAvailability = (sectionUI:SectionUI) => {
 }
 
 
+/**
+ * Returns the individual capacity of the section, sectionUI.section.capacity
+ * 
+ * @param sectionUI - the UI section object which contains these values
+ */
 export const getSectionCapacity = (sectionUI:SectionUI) => {
-  // TODO request capacity info added to DB
-  //return sectionUI.section.capacity
-  if (sectionUI) return 200
-  return 0
+  return sectionUI.section.capacity
+}
+
+/**
+ * Returns the total capacity of the course, eg the sum of the capacities of all the sections
+ * sectionUI.course.capacity
+ * 
+ * @param sectionUI - the UI section object which contains these values
+ */
+export const getSectionTotalCapacity = (sectionUI:SectionUI) => {
+  return sectionUI.course.capacity
 }
 
 export const getSectionAssignedId = (sectionUI:SectionUI) => {
@@ -198,12 +251,72 @@ export interface InstructorUI {
   dropped: boolean, // confirm w/ backend how dropped will work
 }
 
+/**
+ * Returns an updated version of the passed instructorUI object.
+ * Will preform this update: instructor.root.sub = value
+ * 
+ * @param instructor - InstructorUI object to be updated
+ * @param root - top level property of InstructorUI, eg instructor, instructorRule, violations...
+ * @param sub - sub level property of InstructorUI, eg name, email, total workload, fall_col_violations...
+ * @param value - value to be set
+ * @returns 
+ */
+export function deepUpdateInstructor<K extends keyof InstructorUI, S extends keyof NonNullable<InstructorUI[K]>>(
+  instructor: InstructorUI,
+  root: K,
+  sub: S,
+  value: NonNullable<InstructorUI[K]>[S]
+) {
+  if (typeof instructor[root] !== "object" || !instructor[root]) {
+    return instructor
+  }
+  return {
+    ...instructor,
+    [root]: {
+      ...instructor[root],
+      [sub]: value
+    }
+  }   
+}
+
+/**
+ * Returns an updated version of the passed instructorUI object.
+ * Will preform this update: instructor.root.sub = value
+ * 
+ * @param instructor - InstructorUI object to be updated
+ * @param root - top level property of InstructorUI, eg fall_assigned, dropped...
+ * @param value - value to be set
+ * @returns 
+ */
+export function shallowUpdateInstructor<K extends keyof InstructorUI>(
+  instructor: InstructorUI,
+  root: K,
+  value: InstructorUI[K]
+) {
+  return {
+    ...instructor,
+    [root]: value
+  }   
+}
+
 export const getInstructorID = (instructorUI:InstructorUI): InstructorId => {
     return instructorUI.instructor.id
 }
 
 export const getInstructorName = (instructorUI:InstructorUI): string  => {
     return instructorUI.instructor.name
+}
+
+/**
+ * Returns updated version of passed instructorUI object with modified name
+ * 
+ * @param instructorUI 
+ * @param newName
+ * @returns instructorUI, where instructorUI.instructor.name = newName
+ */
+export const setInstructorName = (instructorUI:InstructorUI, newName:string)  => {
+  if (!instructorUI) return null
+  return deepUpdateInstructor(instructorUI, 'instructor', 'name', newName)
 }
 
 const RANK_MAP: Record<string, { short: string; long: string }> = {
@@ -229,16 +342,65 @@ export const getInstructorPosition = (instructorUI:InstructorUI): { short: strin
   return RANK_MAP[instructorUI.instructor.rank]
 }
 
+/**
+ * Returns updated version of passed instructorUI object with modified email
+ * 
+ * @param instructorUI 
+ * @param newEmail 
+ * @returns instructorUI, where instructorUI.instructor.email = newEmail
+ */
+export const setInstructorPosition = (instructorUI:InstructorUI, newRank:InstructorRank)  => {
+  if (!instructorUI) return null
+  return deepUpdateInstructor(instructorUI, 'instructor', 'rank', newRank)
+}
+
 export const getInstructorEmail = (instructorUI:InstructorUI) => {
     return instructorUI.instructor.email
+}
+
+/**
+ * Returns updated version of passed instructorUI object with modified email
+ * 
+ * @param instructorUI 
+ * @param newEmail 
+ * @returns instructorUI, where instructorUI.instructor.email = newEmail
+ */
+export const setInstructorEmail = (instructorUI:InstructorUI, newEmail:string)  => {
+  if (!instructorUI) return null
+  return deepUpdateInstructor(instructorUI, 'instructor', 'email', newEmail)
 }
 
 export const getInstructorWorkload = (instructorUI:InstructorUI): number => {
   return instructorUI.instructor.workload
 }
 
+/**
+ * Returns updated version of passed instructorUI object with modified email
+ * 
+ * @param instructorUI 
+ * @param newWorkload
+ * @returns instructorUI, where instructorUI.instructor.email = newEmail
+ */
+export const setInstructorWorkload = (instructorUI:InstructorUI, newWorkload:number)  => {
+  if (!instructorUI) return null
+  return deepUpdateInstructor(instructorUI, 'instructor', 'workload', newWorkload)
+}
+
 export const getInstructorWorkloadDelta = (instructorUI:InstructorUI): number => {
   return instructorUI.instructorRule?.workload_delta ?? 0.0 // this is an error, instructorRule must never be undefined outside of mapping
+}
+
+/**
+ * Returns updated version of passed instructorUI object with modified email
+ * 
+ * @param instructorUI 
+ * @param newWorkloadDelta
+ * @returns instructorUI, where instructorUI.instructor.email = newEmail
+ */
+export const setInstructorWorkloadDelta = (instructorUI:InstructorUI, newWorkloadDelta:number)  => {
+  if (!instructorUI) return null
+  if (!instructorUI.instructorRule) return instructorUI
+  return deepUpdateInstructor(instructorUI, 'instructorRule', 'workload_delta', newWorkloadDelta)
 }
 
 // return the completed total workload
@@ -274,142 +436,3 @@ export interface Snapshot {
   sectionState: SectionState,
   instructorState: InstructorState,
 }
-
-/* Mock Data --- IGNORE ---
-
-
-// Snapshot Types
-export interface Snapshot {
-  id: string,
-  name: string,
-  date: string // "YYYY-MM-DD",
-  sectionState: SectionState,
-  instructorState: InstructorState,
-}
-
-export const sectionStateMock: SectionState = {
-  byId: {
-    "0": {
-      id: "0",
-      name: "intro to french (1)",
-      dept: "FREN",
-      code: "101",
-      year_introduced: "xx",
-      section_num: 1,
-      workload: 1,
-      availability: SectionAvailability.F,
-      capacity: 200,
-      assigned_to: "0",
-      dropped: false,
-      in_violation: null,
-    },
-    "1": {
-      id: "1",
-      name: "intro to french (2)",
-      dept: "FREN",
-      code: "102",
-      year_introduced: "xx",
-      section_num: 2,
-      workload: 1,
-      availability: SectionAvailability.F,
-      capacity: 200,
-      assigned_to: "0",
-      dropped: false,
-      in_violation: ViolationDegree.I,
-    },
-    "2": {
-      id: "2",
-      name: "intro to french (3)",
-      dept: "FREN",
-      code: "103",
-      year_introduced: "xx",
-      section_num: 3,
-      workload: 1,
-      availability: SectionAvailability.F,
-      capacity: 200,
-      assigned_to: "0",
-      dropped: false,
-      in_violation: ViolationDegree.W,
-    },
-    "3": {
-      id: "3",
-      name: "intro to french (4)",
-      dept: "FREN",
-      code: "104",
-      year_introduced: "xx",
-      section_num: 4,
-      workload: 1,
-      availability: SectionAvailability.F,
-      capacity: 200,
-      assigned_to: "0",
-      dropped: false,
-      in_violation: null,
-    },
-    "4": {
-      id: "4",
-      name: "intro to french (5)",
-      dept: "FREN",
-      code: "105",
-      year_introduced: "xx",
-      section_num: 5,
-      workload: 1,
-      availability: SectionAvailability.FandW,
-      capacity: 200,
-      assigned_to: "0",
-      dropped: false,
-      in_violation: null,
-    },
-  },
-  allIds: ["0", "1", "2", "3", "4"],
-};
-
-export const instructorStateMock: InstructorState = {
-  byId: {
-    "0": {
-      id: "0",
-      name: "John Robbin",
-      position: {short: "Prof.", long: "Professor"},
-      email: "jr@queensu.ca",
-      workload_total: 4,
-      modifier: 0,
-      notes: "",
-      fall_assigned: new Set<string>(["0", "1", "2", "3","4"]),
-      wint_assigned: new Set<string>(["4"]),
-      dropped: false,
-      violations: {
-        details_col_violations: [
-          {msg: "This instructor has exceeded their workload", degree: ViolationDegree.W},
-        ],
-        fall_col_violations: [
-          {msg: "test Info message, tied to section id '1'", degree: ViolationDegree.I},
-          {msg: "test warning message, tied to section id '2'", degree: ViolationDegree.W},
-        ],
-        wint_col_violations: [
-        ],
-      }
-    },
-    "1": {
-      id: "1",
-      name: "Erin Erika",
-      position: {short: "T.F.", long: "Teaching Fellow"},
-      email: "ee@queensu.ca",
-      workload_total: 2,
-      modifier: 0,
-      notes: "",
-      fall_assigned: new Set<string>(),
-      wint_assigned: new Set<string>(),
-      dropped: false,
-      violations: {
-        details_col_violations: [
-        ],
-        fall_col_violations: [
-        ],
-        wint_col_violations: [
-          //{msg: "test10", degree: ViolationDegree.I},
-        ],
-      }
-    },
-  },
-  allIds: ["0", "1"],
-};
-*/
