@@ -552,7 +552,6 @@ export function useAssignment(): UseAssignmentResult {
       return {
         byId: newById,
         allIds: prev.allIds.filter(id => id !== sectionId),
-        courseToSection: 
       }
     })
 
