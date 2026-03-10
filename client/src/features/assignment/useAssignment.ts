@@ -16,8 +16,8 @@ export interface UseAssignmentResult {
   loading: boolean;
   error: string | null;
   refresh: () => Promise<void>;
-  updateSection: (sectionId: string) => Promise<void>;
-  updateInstructor: (instructorId: string) => Promise<void>;  
+  updateSection: (sectionStateLocal: assignmentType.SectionState, sectionId: string, updateHere:boolean) => Promise<assignmentType.SectionState>;
+  updateInstructor: (instructorStateLocal: assignmentType.InstructorState, instructorId: string, updateHere:boolean) => Promise<assignmentType.InstructorState>;
   makeAssignment: (assignedSectionId: assignmentType.SectionId, nextInstructorId: assignmentType.InstructorId, assignmentLocation: assignmentType.SectionAvailability) => Promise<void>;
   removeAssignment: (prevAssignmentId: string, refresh: boolean) => void;  
   loadState: (sectionState: assignmentType.SectionState, instructorState: assignmentType.InstructorState) => void;  
@@ -270,25 +270,74 @@ export function useAssignment(): UseAssignmentResult {
       setLoading(false);
     }
   }
+  
+  /**
+   * fetches data for Violation data from the backend for the current year.
+   * Returns copy of sectionState and instructorState with violation data fetched from DB
+   * 
+   * @param sectionStateLocal - A SectionState object which will be copied and updated (Default is global sectionState)
+   * @param sinstructorStateLocal - A InstructorState object which will be copied and updated (Default is global instructorState)
+   * @param updateHere - if true the global sectionState and global instructorState will updated as well (Default is true)
+   * 
+   * Note if passed no parameters, 
+   */
+  const updateViolations = async (
+    sectionStateLocal: assignmentType.SectionState = sectionState, 
+    instructorStateLocal: assignmentType.InstructorState = instructorState, 
+    updateHere:boolean = true): Promise<{sectionState: assignmentType.SectionState, instructorState: assignmentType.InstructorState}> => {
+    let updatedSectionState = sectionStateLocal
+    let updatedInstructorState = instructorStateLocal
+    console.log("in Validation")
+    console.log(updatedInstructorState.byId['inst-1'].assigned)
+    try {
+      if (!activeSchedule) return {sectionState: sectionStateLocal, instructorState: instructorStateLocal}
+
+      const violations = await api.fetchViolations(year, activeSchedule.id)
+
+      if (violations.length > 0) {
+        const applied = applyViolations(violations, sectionStateLocal, instructorStateLocal)
+        updatedSectionState = applied.sectionState
+        updatedInstructorState = applied.instructorState
+        
+        console.log("after apply")
+        console.log(updatedInstructorState.byId['inst-1'].assigned)
+
+        if(updateHere){
+          setSectionState(updatedSectionState);
+          setInstructorState(updatedInstructorState);
+        }
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+    console.log("after Validation")
+    console.log(updatedInstructorState.byId['inst-1'].assigned)
+    return {sectionState: updatedSectionState, instructorState: updatedInstructorState}
+  }
 
   /**
+   * Called after assignment to isolate the sections which require updating
    * fetches data for a specific section from the backend for the current year.
-   * Called after assignment to isolate the sections which require updating 
+   * Returns copy of sectionState with section data fetched from DB
    * 
-   * @param sectionId  - The id section being updated   * 
+   * @param sectionStateLocal - A SectionState object which will be copied and updated (Default is global sectionState)
+   * @param sectionId  - The id section being updatedd
+   * @param updateHere - if true the global sectionState will updated as well (Default is true)
    */
-  const updateSection = async (sectionId: string) => {
+  const updateSection = async (sectionStateLocal: assignmentType.SectionState = sectionState, sectionId: string, updateHere:boolean = true): Promise<assignmentType.SectionState> => {
+    let updatedSectionState = sectionStateLocal
     try {
-      if (!stateObjectExists(sectionState, sectionId)) {
-        // TODO return error
+      if (!stateObjectExists(sectionStateLocal, sectionId)) {
         console.log(`WARN: section with id ${sectionId} does not exist`)
-        return
+        return sectionStateLocal
       }
       setLoading(true);
       setError(null);
 
       // simplified get of neccisary section values
-      const s = sectionState.byId[sectionId]
+      const s = sectionStateLocal.byId[sectionId]
       const courseId = assignmentType.getCourseID(s)
       const courseCode = assignmentType.getSectionCode(s)
       const bSectionId = assignmentType.getBSectionID(s)
@@ -297,59 +346,72 @@ export function useAssignment(): UseAssignmentResult {
       const fetchedSection = await api.fetchSectionData(yearRef.current, courseId, courseCode, bSectionId );
 
       if (!fetchedSection){
-        return
+        return sectionStateLocal
       }
 
-      setSectionState(prev => ({
-        ...prev,
+      updatedSectionState = {
+        ...sectionStateLocal,
         byId: {
-          ...prev.byId,
-          sectionId: fetchedSection
+          ...sectionStateLocal.byId,
+          [sectionId]: fetchedSection
         }
-      }))
+      }
+
+      if(updateHere){
+        setSectionState(updatedSectionState)
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setLoading(false);
     }
+    return updatedSectionState
   }
   
-    /**
+  /**
+   * Called after assignment to isolate the instructors which require updating
    * fetches data for a specific Instructor from the backend for the current year.
-   * Called after assignment to isolate the sections which require updating
+   * Returns copy of instructorState with instructor data fetched from DB
    * 
-   * @param instructorId   - The id of instructor being updated
-   * 
+   * @param instructorStateLocal - A InstructorState object which will be copied and updated (Default is global instructorState)
+   * @param instructorId - The id of instructor being updated
+   * @param updateHere - if true the global instructorState will updated as well (Default is true)
    */
-  const updateInstructor = async (instructorId: string) => {
+  const updateInstructor = async (instructorStateLocal: assignmentType.InstructorState = instructorState, instructorId: string, updateHere:boolean = true): Promise<assignmentType.InstructorState> => {
+    let updatedInstructorState = instructorStateLocal
     try {
-      if (!stateObjectExists(instructorState, instructorId)) {
+      if (!stateObjectExists(instructorStateLocal, instructorId)) {
         // TODO return error
         console.log(`WARN: instructor with id ${instructorId} does not exist`)
-        return
+        return instructorStateLocal
       }
-
       setLoading(true);
       setError(null);
 
-      const fetchedInstructor = await api.fetchInstructorData(yearRef.current,instructorId);
 
-      if (!fetchedInstructor){
-        return
+      const fetchedInstructor = await api.fetchInstructorData(yearRef.current,instructorId);
+      if (!fetchedInstructor){     
+        return instructorStateLocal
       }
-      
-      setInstructorState(prev => ({
-        ...prev,
+
+      updatedInstructorState = {
+        ...instructorStateLocal,
         byId: {
-          ...prev.byId,
+          ...instructorStateLocal.byId,
           [instructorId]: fetchedInstructor
         }
-      }))
+      }
+      
+      if (updateHere) {
+        setInstructorState(updatedInstructorState)
+      }
+
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setLoading(false);
     }
+    return updatedInstructorState
   }
   
   // Fetch data once when the hook is first mounted
@@ -404,7 +466,7 @@ export function useAssignment(): UseAssignmentResult {
     const assignedBSectionId = assignmentType.getBSectionID(assignedSection)
 
     // remove all assignments made to course: assignedCourseCode & section: assignedBSectionId
-    const affectedInstructors: Set<string> = await api.removeAllAssignmentsForSection(yearRef.current, activeScheduleRef.current.id, assignedBSectionId, assignedCourseCode)
+    await api.removeAllAssignmentsForSection(yearRef.current, activeScheduleRef.current.id, assignedBSectionId, assignedCourseCode)
 
     if (assignmentLocation == assignmentType.SectionAvailability.F){  
       await api.addAssignment(yearRef.current, activeScheduleRef.current.id, nextInstructorId, assignedBSectionId, assignedCourseCode, "Fall")
@@ -417,12 +479,7 @@ export function useAssignment(): UseAssignmentResult {
       await api.addAssignment(yearRef.current, activeScheduleRef.current.id, nextInstructorId, assignedBSectionId, assignedCourseCode, "Winter")
     }
 
-    affectedInstructors.forEach((instructorId) => {
-      updateInstructor(instructorId)
-    })
-    updateInstructor(nextInstructorId)
-    updateSection(assignedSectionId)
-    //TODO - reset validation
+    updateAllData()
   };
 
 
@@ -470,7 +527,7 @@ export function useAssignment(): UseAssignmentResult {
    * @param instructorId - The instructor to update
    * @param dropped      - true to drop, false to reinstate
    */
-  const dropInstructor = async (instructorId: assignmentType.InstructorId, dropped: boolean) => {
+  const dropInstructor = async (instructorId: assignmentType.InstructorId, dropped: boolean) => {    
     const instructor = instructorState.byId[instructorId]
     if (!instructor || !instructor.rule_id) return
     await api.saveDropped(yearRef.current, instructor.rule_id, dropped)
