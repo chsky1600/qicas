@@ -68,6 +68,22 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
 
     return {numInfo, numWarn, numErr }
   }, [instructor.violations])
+
+  // Count total capacity, but only when instructor.violations updates
+  const totalAssignedCapacity = useMemo(() => {
+    let totalAssignedCapacity = 0
+    
+    // concat the three violation arrays
+    const sectionIds = [...instructor.fall_assigned, ...instructor.wint_assigned]
+  
+    // Count the types of violations
+    sectionIds.forEach((sectionId) => {      
+      totalAssignedCapacity += sectionState.byId[sectionId].capacity
+    })
+
+    return totalAssignedCapacity
+  }, [instructor.fall_assigned, instructor.wint_assigned, sectionState.byId])
+
   const numViolations = numInfo + numWarn + numErr
 
   // if # of violations > 0, and showViolations = true, show violations; otherwise hide violations tab
@@ -87,6 +103,10 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
 
         <div>
           <b>Workload: </b>{(instructor.fall_assigned.size + instructor.wint_assigned.size) + "/" + instructor.workload_total}
+        </div>
+
+        <div>
+          <b>Students: </b>{instructor.fall_assigned.size + instructor.wint_assigned.size > 0 ? totalAssignedCapacity : 0}
         </div>
 
         {numViolations > 0 ? // 
