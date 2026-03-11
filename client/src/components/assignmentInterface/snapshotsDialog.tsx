@@ -1,4 +1,5 @@
 import * as React from "react"
+import * as ReactDOM from "react-dom"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell
@@ -68,6 +69,8 @@ function getHighestViolation(
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
+// Shows a warning icon (⚠) if the snapshot has any rule violations.
+// Red = hard violation (E), orange = soft violation (W).
 function ViolationIcon({ snap }: { snap: Snapshot }) {
   const severity = getHighestViolation(snap.sectionState, snap.instructorState)
   if (severity === ViolationDegree.E) {
@@ -87,12 +90,13 @@ function ViolationIcon({ snap }: { snap: Snapshot }) {
   return null
 }
 
+// Renders a green fill bar showing assigned/total active sections for a snapshot.
 function ProgressBar({ snap }: { snap: Snapshot }) {
   const { assigned, total } = calcProgress(snap.sectionState)
   const pct = total === 0 ? 0 : Math.round((assigned / total) * 100)
   return (
     <div className="flex items-center gap-2">
-      <div className="w-28 h-3 bg-gray-300 rounded-full overflow-hidden">
+      <div className="w-28 h-3 bg-gray-300 rounded-full overflow-hidden border border-black">
         <div className="h-full bg-green-500 rounded-full" style={{ width: `${pct}%` }} />
       </div>
       <span className="text-xs text-gray-600 w-10">{assigned}/{total}</span>
@@ -100,6 +104,8 @@ function ProgressBar({ snap }: { snap: Snapshot }) {
   )
 }
 
+// Per-row 3-dot context menu. The dropdown is rendered via a React portal into
+// document.body so it escapes the table's overflow-hidden clipping.
 function ContextMenu({
   snapshotId,
   onRename,
@@ -112,28 +118,48 @@ function ContextMenu({
   onDelete: (id: string) => void
 }) {
   const [open, setOpen] = React.useState(false)
-  const ref = React.useRef<HTMLDivElement>(null)
+  const [menuPos, setMenuPos] = React.useState({ top: 0, right: 0 })
+  const btnRef = React.useRef<HTMLButtonElement>(null)
+  const menuRef = React.useRef<HTMLDivElement>(null)
 
-  // Close when clicking outside
+  // Close when clicking outside both the button and the floating menu
   React.useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        btnRef.current && !btnRef.current.contains(e.target as Node)
+      ) setOpen(false)
     }
     document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
   }, [open])
 
+  const handleToggle = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!open && btnRef.current) {
+      // Capture button position so the portal can align the menu below it
+      const r = btnRef.current.getBoundingClientRect()
+      setMenuPos({ top: r.bottom + 4, right: window.innerWidth - r.right })
+    }
+    setOpen((o) => !o)
+  }
+
   return (
-    <div ref={ref} className="relative">
+    <div>
       <button
-        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o) }}
+        ref={btnRef}
+        onClick={handleToggle}
         className="px-2 py-1 text-gray-500 hover:text-black rounded hover:bg-gray-200 font-bold"
       >
         •••
       </button>
-      {open && (
-        <div className="absolute right-0 top-8 bg-white border border-gray-300 rounded shadow-lg z-50 text-sm min-w-[100px]">
+      {open && ReactDOM.createPortal(
+        <div
+          ref={menuRef}
+          style={{ position: "fixed", top: menuPos.top, right: menuPos.right, pointerEvents: "auto" }}
+          className="bg-white border border-gray-300 rounded shadow-lg z-[9999] text-sm min-w-[100px]"
+        >
           <button
             onClick={(e) => { e.stopPropagation(); onRename(snapshotId); setOpen(false) }}
             className="!block !w-full !text-left !px-4 !py-2 hover:!bg-gray-100"
@@ -152,7 +178,8 @@ function ContextMenu({
           >
             Delete
           </button>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
@@ -179,6 +206,13 @@ export default function SnapshotsDialog({
   const [renameValue, setRenameValue] = React.useState("")
   const [savingMode, setSavingMode] = React.useState(false)
   const [saveName, setSaveName] = React.useState("")
+
+  // Reset saving state on close so re-opening the dialog starts fresh.
+  const handleClose = () => {
+    setSavingMode(false)
+    setSaveName("")
+    onClose()
+  }
 
   // Keep a counter so auto-names stay unique even after deletions
   const snapshotCounter = React.useRef(0)
@@ -221,11 +255,13 @@ export default function SnapshotsDialog({
     }
   }
 
+  // Deselect row if the deleted snapshot was selected.
   const handleDelete = (snapshotId: string) => {
     onDelete(snapshotId)
     if (selectedId === snapshotId) setSelectedId(null)
   }
 
+  // Swap the name cell to an inline text input pre-filled with the current name.
   const startRename = (snapshotId: string) => {
     const snap = snapshots.find((s) => s.id === snapshotId)
     if (snap) {
@@ -234,13 +270,14 @@ export default function SnapshotsDialog({
     }
   }
 
+  // Commit on Enter or blur; no-op if blank.
   const commitRename = (snapshotId: string) => {
     if (renameValue.trim()) onRename(snapshotId, renameValue.trim())
     setRenamingId(null)
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose() }}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose() }}>
       <DialogContent
         showCloseButton={false}
         className="w-[800px] h-[520px] p-0 gap-0 overflow-hidden border border-black rounded-md bg-[#f4f4f4] flex flex-col"
@@ -291,7 +328,7 @@ export default function SnapshotsDialog({
             )}
           </div>
 
-          <button onClick={onClose} className="text-lg leading-none hover:opacity-80 ml-auto">
+          <button onClick={handleClose} className="text-lg leading-none hover:opacity-80 ml-auto">
             ×
           </button>
         </div>
