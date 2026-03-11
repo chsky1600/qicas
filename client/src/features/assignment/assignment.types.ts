@@ -44,7 +44,7 @@ export const getDegreeColor = (degree: ViolationDegree) => {
     case ViolationDegree.I:
       return "bg-blue-400";
     case ViolationDegree.W:
-      return "bg-yellow-400";
+      return "bg-orange-400";
     case ViolationDegree.E:
       return "bg-red-400";
     default:

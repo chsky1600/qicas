@@ -299,16 +299,6 @@ export async function saveDropped(year: string, rule_id: string, dropped: boolea
 
 // ─── Violations ───────────────────────────────────────────────────────────────
 
-// Shape of a single violation returned by POST /schedule/:year/:schedule_id/validate
-export interface BViolation {
-  id: string
-  type: "Course" | "Instructor" | "Schedule"  // what kind of entity is in violation
-  offending_id: string                         // course_code for Course, instructor_id for Instructor
-  code: string                                 // short violation code identifier
-  message: string                              // human-readable description
-  degree: "Info" | "Warning" | "Error"         // severity level
-}
-
 /**
  * Triggers a full schedule validation on the backend and returns the list of violations.
  * Sends an empty POST body, which tells the backend to validate the entire saved schedule

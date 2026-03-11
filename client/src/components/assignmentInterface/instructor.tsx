@@ -70,6 +70,21 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
   }, [instructor.violations])
 
   // Count total capacity, but only when instructor.violations updates
+  const totalAssignedWorkload = useMemo(() => {
+    let totalAssignedWorkload = 0
+    
+    // concat the three violation arrays
+    const sectionIds = [...instructor.fall_assigned, ...instructor.wint_assigned]
+  
+    // Count the types of violations
+    sectionIds.forEach((sectionId) => {      
+      totalAssignedWorkload += sectionState.byId[sectionId].workload
+    })
+
+    return totalAssignedWorkload
+  }, [instructor.fall_assigned, instructor.wint_assigned, sectionState.byId])
+
+  // Count total capacity, but only when instructor.violations updates
   const totalAssignedCapacity = useMemo(() => {
     let totalAssignedCapacity = 0
     
@@ -101,8 +116,8 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
           {instructor.position.short + " " + instructor.name}
         </div>
 
-        <div>
-          <b>Workload: </b>{(instructor.fall_assigned.size + instructor.wint_assigned.size) + "/" + instructor.workload_total}
+        <div className={totalAssignedWorkload >  instructor.workload_total ? "text-orange-400" : ""}>
+          <b>Workload: </b>{totalAssignedWorkload + "/" + instructor.workload_total}
         </div>
 
         <div>
@@ -121,7 +136,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
             : null}
             {numWarn > 0 ? //
               <>
-                <span className="text-yellow-400"> 
+                <span className="text-orange-400"> 
                   Warnings: {numWarn}          
                 </span>
                 {numErr > 0 ? ",":""}&#8194;

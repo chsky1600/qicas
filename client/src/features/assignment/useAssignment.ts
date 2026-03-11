@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as api  from './assignment.api'
-import type { BViolation } from './assignment.api'
+import type { Violation as BViolation} from "../../../../src/types";
+
 import * as assignmentType from "./assignment.types";
 
 
