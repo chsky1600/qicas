@@ -1,4 +1,12 @@
-import type { SectionState, InstructorState, Section, Instructor, SectionAvailability } from '@/features/assignment/assignment.types';
+import { type SectionState, type InstructorState, 
+  type SectionUI, 
+  type InstructorUI, 
+  type SectionAvailability,
+  getSectionCode,
+  getSectionNum,
+  getInstructorName
+} from '@/features/assignment/assignment.types';
+
 import { useState } from 'react';
 import PropertiesDialog from './propertiesDialog';
 import { useSnapshots } from '@/features/assignment/useSnapshots';
@@ -19,6 +27,61 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
   const [isSnapshotsOpen, setIsSnapshotsOpen] = useState(false);
   const { snapshots, saveSnapshots, loadSnapshot, renameSnapshot, deleteSnapshot } = useSnapshots();
+
+  function sendToCSV() {
+    interface row {
+      data: string[]
+      fallAssign: string[]
+      wintAssign: string[]
+    }
+    const csvExport: row[] = [
+      {data: ["Schedule"], fallAssign: ["Fall"], wintAssign: ["Winter"]}
+    ]
+
+    let maxFallAssigned = 0
+    instructorState.allIds.forEach((instructorId) => {
+      
+      const instructor = instructorState.byId[instructorId]
+      const newRow: row = {
+        data: [getInstructorName(instructor)],
+        fallAssign: [],
+        wintAssign: [],
+      }
+
+      instructor.fall_assigned.forEach((sectionId) => {
+        const section = sectionState.byId[sectionId]
+        newRow.fallAssign.push(getSectionCode(section) + "-" + getSectionNum(section))
+      })
+
+      instructor.wint_assigned.forEach((sectionId) => {
+        const section = sectionState.byId[sectionId]
+        newRow.wintAssign.push(getSectionCode(section) + "-" + getSectionNum(section))
+      })
+
+      console.log(newRow)
+      csvExport.push(newRow)
+      
+      if (instructor.fall_assigned.size > maxFallAssigned) maxFallAssigned = instructor.fall_assigned.size
+    })
+
+    
+    let csvContent = "data:text/csv;charset=utf-8,";    
+    csvExport.forEach((rowExport) => {      
+      while (rowExport.fallAssign.length < maxFallAssigned) {
+        rowExport.fallAssign.push("")
+      }
+
+      const combinedRow = rowExport.data
+      combinedRow.push(...rowExport.fallAssign)
+      combinedRow.push(...rowExport.wintAssign)
+
+      const finalRow = combinedRow.join(",");
+      csvContent += finalRow + "\r\n";
+    });
+  
+    const encodedUri = encodeURI(csvContent);
+    window.open(encodedUri);
+  }
 
   return (
     <div className="flex justify-between items-center bg-[#1a1a1a] text-white px-8 py-4 border-b-2 border-[#2c2c2c]">
@@ -46,7 +109,7 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
         <button onClick={() => setIsSnapshotsOpen(true)} className="flex items-center gap-2 bg-transparent text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#2c2c2c] transition-colors">
           <span className="text-lg">📸</span>Snapshots
         </button>
-        <button className="flex items-center gap-2 bg-transparent text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#2c2c2c] transition-colors">
+        <button onClick={() => sendToCSV()} className="flex items-center gap-2 bg-transparent text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#2c2c2c] transition-colors">
           <span className="text-lg">📤</span>Export
         </button>
         <button className="flex items-center gap-2 bg-transparent text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#2c2c2c] transition-colors">
@@ -54,7 +117,7 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
         </button>
       </div>
 
-      {/*
+      
       <PropertiesDialog
         isOpen={isPropertiesOpen}
         onClose={() => setIsPropertiesOpen(false)}
@@ -66,7 +129,7 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
         onSaveCourseSections={saveCourseSections}
         onAddSection={addSection}
         onRemoveSection={removeSection}
-      />*/}
+      />
       <SnapshotsDialog
         isOpen={isSnapshotsOpen}
         onClose={() => setIsSnapshotsOpen(false)}
