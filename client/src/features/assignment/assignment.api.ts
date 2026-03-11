@@ -4,45 +4,21 @@ import { SectionAvailability as SA } from "./assignment.types"
 
 // ─── Backend Response Shapes ──────────────────────────────────────────────────
 // These interfaces describe the raw JSON shapes returned by the backend API.
-// They are intentionally minimal — only the fields the frontend actually needs.
+// renamed to B{type} to reduce confusion with 
+// API should be the only file which imports these types
 
-// A single section (one offering) of a course
-interface BSection { id: string; number: number; capacity: number }
-
-// A note attached to a course or instructor
-interface BNote { content: string }
-
-// A course as returned by GET /courses/:year
-interface BCourse {
-  id: string; name: string; code: string; year_introduced: string;
-  sections: BSection[]; notes: BNote[];
-}
-
-// An instructor as returned by GET /instructors/:year
-interface BInstructor {
-  id: string; name: string; workload: number; email: string;
-  rank: string; notes: BNote[];
-}
-
-// A single assignment entry inside a schedule (links one instructor to one section for one term)
-interface BAssignment {
-  instructor_id: string; section_id: string; course_code: string; term: "Fall" | "Winter";
-}
-
-// A schedule as returned by GET /schedule/:year — contains the list of assignments
-interface BSchedule { id: string; assignments: BAssignment[] }
-
-// A course rule as returned by GET /year/:year/rules/courses
-// Defines availability terms, workload value, and whether the course spans the full year
-interface BCourseRule {
-  course_code: string; terms_offered: ("Fall" | "Winter")[];
-  workload_fulfillment: number; is_full_year: boolean;
-}
-
-// An instructor rule as returned by GET /year/:year/rules/instructors
-// Stores workload adjustments and whether the instructor has been dropped
-interface BInstructorRule { id: string; instructor_id: string; workload_delta: number; dropped: boolean }
-
+import type {
+  Section as BSection,
+  Note as BNote,
+  Course as BCourse,
+  Instructor as BInstructor,
+  Assignment as BAssignment,
+  Schedule as BSchedule,  
+  CourseRule as BCourseRule,  
+  InstructorRule as BInstructorRule,
+  Violation as BViolation,
+  Term as BTerm,
+} from "../../../../src/types";
 
 // ─── Mapping Helpers ──────────────────────────────────────────────────────────
 
@@ -88,6 +64,7 @@ function mapAvailability(rule: BCourseRule | undefined): SectionAvailability {
   if (hasWint) return SA.W
   return SA.ForW
 }
+
 
 
 // ─── Core Mapper ──────────────────────────────────────────────────────────────
@@ -230,7 +207,7 @@ function mapToFrontendState(
 const API_BASE = ""
 
 /**
- * Fetches all data needed to populate the assignment interface for the given academic year.
+ * Fetches all data needed to populate the assignment interface for the given schedule/academic year.
  * Fires 5 requests in parallel, then passes the results through mapToFrontendState.
  *
  * Returns:
@@ -279,7 +256,7 @@ export async function saveScheduleToBackend(
   instructorState: InstructorState,
   signal?: AbortSignal
 ): Promise<void> {
-  const assignments = []
+  const assignments: BAssignment[] = []
 
   for (const instructorId of instructorState.allIds) {
     const instructor = instructorState.byId[instructorId]
@@ -350,6 +327,61 @@ export async function fetchViolations(year: string, schedule_id: string): Promis
   return data.validationResult.violations ?? []
 }
 
+export async function addAssignment(year: string, schedule_id: string, instructor_id: string, bsection_id: string , course_code: string, term: BTerm): Promise<BAssignment | null> {
+  const newAssignment: BAssignment = {
+    id: crypto.randomUUID(), // needs to be replaced with Wholly unique UUID generation
+    instructor_id: instructor_id,
+    section_id: bsection_id,
+    course_code: course_code,
+    term: term
+  }
+
+  const res = await fetch(`${API_BASE}/schedule/${year}/${schedule_id}/assignments`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      assignment: newAssignment
+    }),    
+  })
+
+  if (!res.ok) return null
+  const data: BAssignment = await res.json()
+  return data
+}
+
+export async function removeAssignment(year: string, schedule_id: string,  assignment_id: string) {
+  const res = await fetch(`${API_BASE}/schedule/${year}/${schedule_id}/assignments/${assignment_id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({}),    
+  })
+
+  if (!res.ok) return null
+  return true
+}
+
+// TODO - request ability to remove all assignments matching coursecode and sectionId
+export async function removeAllAssignmentsForSection(year: string, schedule_id: string, bsection_id: string, course_code: string,): Promise<Set<string>> {
+  const affectedInstructors = new Set<string>() // set prevents duplicate instructors being added
+  const  assignmentsToCourse : BAssignment[] = await fetch(`${API_BASE}/courses/${year}/${course_code}/assignments`).then(r => r.json())
+  if (!assignmentsToCourse) return affectedInstructors
+
+  const assignmentsToSection = assignmentsToCourse.filter(
+    (i: BAssignment) => i.section_id === bsection_id
+  ); 
+
+  assignmentsToSection.forEach(async (assignment) =>  {
+    const result = await removeAssignment(year, schedule_id,  assignment.id)
+    if (!result) console.log(`warn - assignment ${assignment.id} not removed`)
+    else affectedInstructors.add(assignment.instructor_id) 
+  })
+
+  return affectedInstructors
+}
 // ─── Course Management ──────────────────────────────────────────────
 
 /**
