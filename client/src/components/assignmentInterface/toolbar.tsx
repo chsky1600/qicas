@@ -20,6 +20,61 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
   const [isSnapshotsOpen, setIsSnapshotsOpen] = useState(false);
   const { snapshots, saveSnapshots, loadSnapshot, renameSnapshot, deleteSnapshot } = useSnapshots();
 
+  function sendToCSV() {
+    interface row {
+      data: string[]
+      fallAssign: string[]
+      wintAssign: string[]
+    }
+    const csvExport: row[] = [
+      {data: ["Schedule"], fallAssign: ["Fall"], wintAssign: ["Winter"]}
+    ]
+
+    let maxFallAssigned = 0
+    instructorState.allIds.forEach((instructorId) => {
+      
+      const instructor = instructorState.byId[instructorId]
+      const newRow: row = {
+        data: [instructor.name],
+        fallAssign: [],
+        wintAssign: [],
+      }
+
+      instructor.fall_assigned.forEach((sectionId) => {
+        const section = sectionState.byId[sectionId]
+        newRow.fallAssign.push(section.course_code + "-" + section.section_num)
+      })
+
+      instructor.wint_assigned.forEach((sectionId) => {
+        const section = sectionState.byId[sectionId]
+        newRow.wintAssign.push(section.course_code + "-" + section.section_num)
+      })
+
+      console.log(newRow)
+      csvExport.push(newRow)
+      
+      if (instructor.fall_assigned.size > maxFallAssigned) maxFallAssigned = instructor.fall_assigned.size
+    })
+
+    
+    let csvContent = "data:text/csv;charset=utf-8,";    
+    csvExport.forEach((rowExport) => {      
+      while (rowExport.fallAssign.length < maxFallAssigned) {
+        rowExport.fallAssign.push("")
+      }
+
+      const combinedRow = rowExport.data
+      combinedRow.push(...rowExport.fallAssign)
+      combinedRow.push(...rowExport.wintAssign)
+
+      const finalRow = combinedRow.join(",");
+      csvContent += finalRow + "\r\n";
+    });
+  
+    const encodedUri = encodeURI(csvContent);
+    window.open(encodedUri);
+  }
+
   return (
     <div className="flex justify-between items-center bg-[#1a1a1a] text-white px-8 py-4 border-b-2 border-[#2c2c2c]">
       {/* Left side - Logo and Schedule selector */}
@@ -46,7 +101,7 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
         <button onClick={() => setIsSnapshotsOpen(true)} className="flex items-center gap-2 bg-transparent text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#2c2c2c] transition-colors">
           <span className="text-lg">📸</span>Snapshots
         </button>
-        <button className="flex items-center gap-2 bg-transparent text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#2c2c2c] transition-colors">
+        <button onClick={() => sendToCSV()} className="flex items-center gap-2 bg-transparent text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#2c2c2c] transition-colors">
           <span className="text-lg">📤</span>Export
         </button>
         <button className="flex items-center gap-2 bg-transparent text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#2c2c2c] transition-colors">
