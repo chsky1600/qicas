@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchAssignment, saveScheduleToBackend, saveDropped, fetchViolations, 
-        saveCourseSections as saveCourseSectionsAPI, addCourseSection as addCourseSectionAPI, removeCourseSection as removeCourseSectionAPI } from './assignment.api'
+import * as api  from './assignment.api'
 import type { BViolation } from './assignment.api'
 import * as assignmentType from "./assignment.types";
 
@@ -211,7 +210,7 @@ export function useAssignment(): UseAssignmentResult {
       abortController.current = controller
 
       try {
-        await saveScheduleToBackend(
+        await api.saveScheduleToBackend(
           yearRef.current,
           activeScheduleRef.current,
           sectionStateRef.current,
@@ -220,7 +219,7 @@ export function useAssignment(): UseAssignmentResult {
         )
 
         // After saving, re-fetch violations and apply them to the state
-        const violations = await fetchViolations(yearRef.current, activeScheduleRef.current.id)
+        const violations = await api.fetchViolations(yearRef.current, activeScheduleRef.current.id)
         const { sectionState: newSS, instructorState: newIS } = applyViolations(
           violations,
           sectionStateRef.current,
@@ -248,14 +247,14 @@ export function useAssignment(): UseAssignmentResult {
       setLoading(true);
       setError(null);
 
-      const assignment = await fetchAssignment(yearRef.current);
+      const assignment = await api.fetchAssignment(yearRef.current);
 
       let finalSectionState = assignment.sectionState
       let finalInstructorState = assignment.instructorState
 
       // If there is an active schedule, apply any existing violations on initial load
       if (assignment.activeSchedule) {
-        const violations = await fetchViolations(
+        const violations = await api.fetchViolations(
           assignment.activeSchedule.year_id,
           assignment.activeSchedule.id
         )
@@ -500,7 +499,7 @@ export function useAssignment(): UseAssignmentResult {
   const dropInstructor = async (instructorId: assignmentType.InstructorId, dropped: boolean) => {
     const instructor = instructorState.byId[instructorId]
     if (!instructor || !instructor.rule_id) return
-    await saveDropped(yearRef.current, instructor.rule_id, dropped)
+    await api.saveDropped(yearRef.current, instructor.rule_id, dropped)
     updateInstructor({ ...instructor, dropped })
   }
 
@@ -516,7 +515,7 @@ export function useAssignment(): UseAssignmentResult {
       return { ...prev, byId: newById }
     })
     try {
-      await saveCourseSectionsAPI(yearRef.current, courseId, updatedSections)
+      await api.saveCourseSections(yearRef.current, courseId, updatedSections)
     } catch (e) {
       console.error('Failed to save section capacities', e)
     }
@@ -534,7 +533,7 @@ export function useAssignment(): UseAssignmentResult {
     availability: assignmentType.SectionAvailability
   ) => {
     try {
-      const result = await addCourseSectionAPI(yearRef.current, courseId)
+      const result = await api.addCourseSection(yearRef.current, courseId)
       if (!result) return
       const newSection: assignmentType.Section = {
         id: result.id,
@@ -583,7 +582,7 @@ export function useAssignment(): UseAssignmentResult {
     })
 
     try {
-      await removeCourseSectionAPI(yearRef.current, section.course_id, sectionId)
+      await api.removeCourseSection(yearRef.current, section.course_id, sectionId)
     } catch (e) {
       console.error('Failed to remove section', e)
     }
