@@ -12,6 +12,6 @@ export interface Faculty {
   /** Academic years managed by this faculty */
   academic_years: AcademicYear[];
 
-  current_working_schedule_id : string
+  current_working_schedule_id?: string
 
 }
