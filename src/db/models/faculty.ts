@@ -10,6 +10,7 @@ const facultySchema = new mongoose.Schema<Faculty>(
         name : {type : String, required: true},
         users : {type : [userSchema], required : true},
         academic_years: {type : [academicYearSchema], required: true},
+        current_working_schedule_id : {type : String, required: false},
     }
 );
 

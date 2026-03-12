@@ -33,6 +33,8 @@ async function main() {
       },
     ],
 
+    current_working_schedule_id : "SCH001",
+
     academic_years: [
       {
         id: "Y2026",
