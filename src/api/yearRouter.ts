@@ -9,11 +9,14 @@ import {
     getCourseRules, 
     getInstructorRuleByID, 
     getInstructorRules, 
+    getYears, 
     updateCourseRuleByID, 
     updateInstructorRuleByID 
 } from "../controllers/yearController";
 
 const router = express.Router();
+
+router.get("/year", getYears)
 
 router.get("/year/:year/rules/courses", getCourseRules)
 router.post("/year/:year/rules/courses", addCourseRule)
