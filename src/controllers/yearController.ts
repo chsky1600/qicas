@@ -13,6 +13,7 @@ import {
   updateCourseRuleByID as updateCourseRuleByIDSvc,
   updateInstructorRuleByID as updateInstructorRuleByIDSvc,
 } from "../services/yearRulesService";
+import { FacultyModel } from "../db/models/faculty";
 
 /**
  * Extract faculty_id from the request body (set by auth middleware).
@@ -313,6 +314,31 @@ export const deleteInstructorRuleByID = async (
       rule_id
     );
     res.json(removed);
+  } catch (err) {
+    handleError(err, res);
+  }
+};
+
+export const getYears = async (
+  req: Request<{ year: string; rule_id: string }>,
+  res: Response
+) => {
+  const faculty_id = requireFaculty(req, res);
+  if (!faculty_id) return;
+  try {
+    const faculty = await FacultyModel.findOne(
+      { id: faculty_id },
+      {
+        _id: 0,
+        academic_years: 1,
+      }
+    ).lean();
+
+    const years = faculty?.academic_years?.map((year: any) => ({
+      id: year.id,
+      name: year.name,
+    })) ?? []
+    res.json(years);
   } catch (err) {
     handleError(err, res);
   }
