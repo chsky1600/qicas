@@ -15,7 +15,7 @@ import {
 const router = express.Router();
 
 router.get("/schedule/:year/:schedule_id",getScheduleByID)
-router.put("/schedule/:year/:schedule_id",setWorkingSchedule)
+router.put("/schedule/:schedule_id",setWorkingSchedule)
 router.get("/schedule/", getWorkingSchedule)
 
 router.get("/schedule/:year",getSchedules)
