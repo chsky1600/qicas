@@ -9,7 +9,7 @@ async function main() {
 
   await FacultyModel.deleteMany({});
 
-  // await mongoose.connection.dropDatabase();
+  await mongoose.connection.dropDatabase();
 
   const faculty = {
     id: "F001",

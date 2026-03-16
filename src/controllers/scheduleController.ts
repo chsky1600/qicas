@@ -2,6 +2,15 @@ import { Request, Response } from "express";
 import { Assignment, Schedule } from "../types";
 import { validateAssignment, validateSchedule as validateScheduleService } from "../services";
 import { FacultyModel } from "../db/models/faculty";
+import { isYearRulesServiceError } from "../services/yearRulesService";
+
+const handleError = (err: unknown, res: Response) => {
+  if (isYearRulesServiceError(err)) {
+    res.status(err.status).json({ error: err.message });
+    return;
+  }
+  res.status(500).json({ error: "Internal server error" });
+};
 
 const fetchScheduleByFacultyIdScheduleIdAndYear = async (faculty_id : string, schedule_id : string, year_id : string): Promise<Schedule | undefined> => {
     try {
@@ -155,6 +164,16 @@ export async function getCurrentWorkingSchedule(
   ]);
 
   return result[0] ?? null;
+}
+
+export const getWorkingSchedule = async (req : Request, res : Response) => {
+    const faculty_id : string = req.body.faculty_id;
+    try {
+        const currentWorkingSchedule = await getCurrentWorkingSchedule(faculty_id)
+        res.json(currentWorkingSchedule);
+    } catch (err) {
+        handleError(err, res);
+    }
 }
 
 // duplicates the given schedule and gives it a new ID and sets it to the current schedule?
