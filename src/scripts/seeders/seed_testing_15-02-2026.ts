@@ -9,7 +9,7 @@ async function main() {
 
   await FacultyModel.deleteMany({});
 
-  // await mongoose.connection.dropDatabase();
+  await mongoose.connection.dropDatabase();
 
   const aliceHash = await Bun.password.hash("password123");
   const bobHash = await Bun.password.hash("password456");
