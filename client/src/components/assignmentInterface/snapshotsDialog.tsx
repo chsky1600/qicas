@@ -1,24 +1,20 @@
 import * as React from "react"
 import * as ReactDOM from "react-dom"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell
 } from "@/components/ui/table"
 import type { Snapshot, SectionState, InstructorState } from "@/features/assignment/assignment.types"
 import { ViolationDegree } from "@/features/assignment/assignment.types"
+import { useSnapshots } from "@/features/assignment/useSnapshots"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SnapshotsDialogProps {
   isOpen: boolean
   onClose: () => void
-  snapshots: Snapshot[]
   sectionState: SectionState
   instructorState: InstructorState
-  onSave: (name: string, sectionState: SectionState, instructorState: InstructorState) => void
-  onLoad: (snapshotId: string) => { sectionState: SectionState; instructorState: InstructorState } | null
-  onRename: (snapshotId: string, newName: string) => void
-  onDelete: (snapshotId: string) => void
   onApplyLoad: (sectionState: SectionState, instructorState: InstructorState) => void
 }
 
@@ -190,15 +186,12 @@ function ContextMenu({
 export default function SnapshotsDialog({
   isOpen,
   onClose,
-  snapshots,
   sectionState,
   instructorState,
-  onSave,
-  onLoad,
-  onRename,
-  onDelete,
   onApplyLoad,
 }: SnapshotsDialogProps) {
+
+  const { snapshots, saveSnapshots, loadSnapshot, renameSnapshot, deleteSnapshot } = useSnapshots();
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
   const [sortDirection, setSortDirection] = React.useState<SortDirection>("desc")
@@ -235,7 +228,7 @@ export default function SnapshotsDialog({
   // Confirm the save with the given name
   const confirmSave = () => {
     if (saveName.trim()) {
-      onSave(saveName.trim(), sectionState, instructorState)
+      saveSnapshots(saveName.trim(), sectionState, instructorState)
       setSavingMode(false)
     }
   }
@@ -248,7 +241,7 @@ export default function SnapshotsDialog({
 
   // Load from context menu or header button
   const handleLoad = (snapshotId: string) => {
-    const result = onLoad(snapshotId)
+    const result = loadSnapshot(snapshotId)
     if (result) {
       onApplyLoad(result.sectionState, result.instructorState)
       onClose()
@@ -257,7 +250,7 @@ export default function SnapshotsDialog({
 
   // Deselect row if the deleted snapshot was selected.
   const handleDelete = (snapshotId: string) => {
-    onDelete(snapshotId)
+    deleteSnapshot(snapshotId)
     if (selectedId === snapshotId) setSelectedId(null)
   }
 
@@ -272,7 +265,7 @@ export default function SnapshotsDialog({
 
   // Commit on Enter or blur; no-op if blank.
   const commitRename = (snapshotId: string) => {
-    if (renameValue.trim()) onRename(snapshotId, renameValue.trim())
+    if (renameValue.trim()) renameSnapshot(snapshotId, renameValue.trim())
     setRenamingId(null)
   }
 

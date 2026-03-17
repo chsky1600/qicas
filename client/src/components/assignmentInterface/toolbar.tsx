@@ -1,7 +1,6 @@
 import type { SectionState, InstructorState, Section, Instructor, SectionAvailability } from '@/features/assignment/assignment.types';
 import { useState } from 'react';
 import PropertiesDialog from './propertiesDialog';
-import { useSnapshots } from '@/features/assignment/useSnapshots';
 import SnapshotsDialog from './snapshotsDialog';
 
 export default function Toolbar({sectionState, instructorState, updateSection, updateInstructor, loadState, dropInstructor, saveCourseSections, addSection, removeSection}: {
@@ -18,7 +17,6 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
 
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
   const [isSnapshotsOpen, setIsSnapshotsOpen] = useState(false);
-  const { snapshots, saveSnapshots, loadSnapshot, renameSnapshot, deleteSnapshot } = useSnapshots();
 
   function sendToCSV() {
     interface row {
@@ -124,13 +122,8 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
       <SnapshotsDialog
         isOpen={isSnapshotsOpen}
         onClose={() => setIsSnapshotsOpen(false)}
-        snapshots={snapshots}
         sectionState={sectionState}
         instructorState={instructorState}
-        onSave={saveSnapshots}
-        onLoad={loadSnapshot}
-        onRename={renameSnapshot}
-        onDelete={deleteSnapshot}
         onApplyLoad={loadState}
       />
     </div>
