@@ -191,7 +191,7 @@ export default function SnapshotsDialog({
   onApplyLoad,
 }: SnapshotsDialogProps) {
 
-  const { snapshotState, updateActiveSnapshot, saveSnapshots, loadSnapshot, renameSnapshot, deleteSnapshot } = useSnapshots();
+  const { snapshotState, getSnapshots, updateActiveSnapshot, loadSnapshot, renameSnapshot, deleteSnapshot } = useSnapshots();
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
   const [sortDirection, setSortDirection] = React.useState<SortDirection>("desc")
@@ -199,11 +199,16 @@ export default function SnapshotsDialog({
   const [renameValue, setRenameValue] = React.useState("")
   const [savingMode, setSavingMode] = React.useState(false)
   const [saveName, setSaveName] = React.useState("")
+  
+  // Fetch snapshots once when the hook is first mounted
+  React.useEffect(() => {
+    getSnapshots();
+  }, [getSnapshots]);
 
   // When Snapshot menu switches to 'isOpen = true' update Active Snapshot with data from assignment interface
   React.useEffect(() => {
     if (isOpen) updateActiveSnapshot(sectionState, instructorState);
-  }, [isOpen, sectionState, instructorState, updateActiveSnapshot]);
+  }, [isOpen]);  
 
   // Reset saving state on close so re-opening the dialog starts fresh.
   const handleClose = () => {
@@ -232,6 +237,7 @@ export default function SnapshotsDialog({
 
   // Confirm the save with the given name
   const confirmSave = () => {
+      return
     if (saveName.trim()) {
       saveSnapshots(saveName.trim(), sectionState, instructorState)
       setSavingMode(false)
@@ -280,6 +286,7 @@ export default function SnapshotsDialog({
         showCloseButton={false}
         className="w-[800px] h-[520px] p-0 gap-0 overflow-hidden border border-black rounded-md bg-[#f4f4f4] flex flex-col"
       >
+        <DialogTitle>Example</DialogTitle>
         {/* ── Header bar ──────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between bg-black text-white h-13 px-4 gap-4">
           <div className="text-sm font-semibold opacity-80">Snapshots</div>

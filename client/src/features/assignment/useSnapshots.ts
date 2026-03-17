@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import type { SectionState, InstructorState, Snapshot, SnapshotState } from "./assignment.types";
+import type { SectionState, InstructorState, SnapshotState } from "./assignment.types";
 import { snapshotStateEmpty } from "./assignment.types";
 import { cloneInstructorState, cloneSectionState } from "./assignment.utils";
 import * as api  from './assignment.api'
@@ -8,7 +8,6 @@ export interface UseSnapshotsResults {
   snapshotState: SnapshotState;
   getSnapshots: () => Promise<void>
   updateActiveSnapshot: (sectionState: SectionState, instructorState: InstructorState) => void
-  saveSnapshots: (name: string, sectionState: SectionState, instructorState: InstructorState) => void;
   loadSnapshot: (snapshotId: string) => { sectionState: SectionState; instructorState: InstructorState } | null;
   renameSnapshot: (snapshotId: string, newName: string) => void;
   deleteSnapshot: (snapshotId: string) => void;
@@ -39,58 +38,87 @@ export function useSnapshots(): UseSnapshotsResults {
           ...prev.byId,
           [prev.activeId]: {
             ...active,
-            sectionState,
-            instructorState
+            sectionState: sectionState,
+            instructorState: instructorState
           }
         }
       }
     })
   }
 
-  // Fetch snapshots once when the hook is first mounted
-  useEffect(() => {
-    getSnapshots();
-  }, [getSnapshots]);
+  //const saveSnapshots = useCallback(
+  //  (name: string, sectionState: SectionState, instructorState: InstructorState) => {
+  //    const newSnapshot: Snapshot = {
+  //      id: crypto.randomUUID(),
+  //      name,
+  //      date: new Date().toISOString().slice(0,10), // ""YYYY-MM-DD" format
+  //      sectionState: cloneSectionState(sectionState),
+  //      instructorState: cloneInstructorState(instructorState),
+  //    };
+  //  setSnapshots((prev) => [...prev, newSnapshot]);
+  //}, []);
+  
+  const loadSnapshot = (snapshotId: string) => {
+    const selected = snapshotState.byId[snapshotId];
+    if (!selected) return null;
 
-  const saveSnapshots = useCallback(
-    (name: string, sectionState: SectionState, instructorState: InstructorState) => {
-      const newSnapshot: Snapshot = {
-        id: crypto.randomUUID(),
-        name,
-        date: new Date().toISOString().slice(0,10), // ""YYYY-MM-DD" format
-        sectionState: cloneSectionState(sectionState),
-        instructorState: cloneInstructorState(instructorState),
-      };
-    setSnapshots((prev) => [...prev, newSnapshot]);
-  }, []);
+    //TODO - set current here
+
+    setSnapshotState(prev => ({
+      ...prev,
+      activeId: snapshotId
+    }))      
+    
+    return {
+      sectionState: cloneSectionState(selected.sectionState),
+      instructorState: cloneInstructorState(selected.instructorState),
+    };
+  };
   
-  const loadSnapshot = useCallback(
-    (snapshotId: string) => {
-      const snapshot = snapshots.find(s => s.id === snapshotId);
-      if (!snapshot) return null;
+  const renameSnapshot = (snapshotId: string, newName: string) => {
+    if (!snapshotId) return;
+    const selected = snapshotState.byId[snapshotId];
+    if (!selected) return;
+
+    //TODO - update API here    
+
+    setSnapshotState(prev => ({
+        ...prev,
+        byId: {
+          ...prev.byId,
+          [selected.id]: {
+            ...selected,
+            name: newName,
+          }
+        }
+      })
+    )
+  };
+  
+  const deleteSnapshot = (snapshotId: string) => {
+    // if snapshotId is null or invalid, return
+    // if snapshotId belongs to active Snapshot, return as we cannot remove the current snapshot
+    if (!snapshotId || snapshotId == snapshotState.activeId) return;
+    const selected = snapshotState.byId[snapshotId];
+    if (!selected) return;
+
+    //TODO - update API here
+
+    setSnapshotState(prev => {
+      const { [snapshotId]: _, ...newById } = prev.byId;
+
       return {
-        sectionState: cloneSectionState(snapshot.sectionState),
-        instructorState: cloneInstructorState(snapshot.instructorState),
+        ...prev,
+        byId: newById,
+        allIds: prev.allIds.filter(id => id !== snapshotId),
       };
-    },
-    [snapshots]
-  );
-  
-  const renameSnapshot = useCallback((snapshotId: string, newName: string) => {
-    setSnapshots((prev) =>
-      prev.map((s => s.id === snapshotId ? { ...s, name: newName } : s))
-    );
-  }, []);
-  
-  const deleteSnapshot = useCallback((snapshotId: string) => {
-    setSnapshots((prev) => prev.filter(s => s.id !== snapshotId));
-  }, []);
+    });
+  }
 
   return {
     snapshotState,
     getSnapshots,
     updateActiveSnapshot,
-    saveSnapshots,
     loadSnapshot,
     renameSnapshot,
     deleteSnapshot,
