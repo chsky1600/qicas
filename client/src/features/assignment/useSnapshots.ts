@@ -1,9 +1,13 @@
-import { useState, useCallback } from "react";
-import type { SectionState, InstructorState, Snapshot } from "./assignment.types";
+import { useState, useEffect, useRef, useCallback } from "react";
+import type { SectionState, InstructorState, Snapshot, SnapshotState } from "./assignment.types";
+import { snapshotStateEmpty } from "./assignment.types";
 import { cloneInstructorState, cloneSectionState } from "./assignment.utils";
+import * as api  from './assignment.api'
 
 export interface UseSnapshotsResults {
-  snapshots: Snapshot[];
+  snapshotState: SnapshotState;
+  getSnapshots: () => Promise<void>
+  updateActiveSnapshot: (sectionState: SectionState, instructorState: InstructorState) => void
   saveSnapshots: (name: string, sectionState: SectionState, instructorState: InstructorState) => void;
   loadSnapshot: (snapshotId: string) => { sectionState: SectionState; instructorState: InstructorState } | null;
   renameSnapshot: (snapshotId: string, newName: string) => void;
@@ -11,8 +15,43 @@ export interface UseSnapshotsResults {
 }
 
 export function useSnapshots(): UseSnapshotsResults {
-  const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
-  
+  const [snapshotState, setSnapshotState] = useState<SnapshotState>(snapshotStateEmpty);
+
+  // API calls need reference to the year //TODO - integrate with year switch
+  const [year, setYear] = useState<string>("Y2026")
+  const yearRef = useRef(year)
+  useEffect(() => { yearRef.current = year }, [year])
+ 
+  const getSnapshots = useCallback(async () => {
+    setSnapshotState(await api.fetchSnapshots(yearRef.current))
+  }, []);
+
+  const updateActiveSnapshot = (sectionState: SectionState, instructorState: InstructorState) => {
+    setSnapshotState(prev => {
+      if (prev.activeId == null){
+        return prev
+      }
+
+      const active = prev.byId[prev.activeId]
+      return {
+        ...prev,
+        byId: {
+          ...prev.byId,
+          [prev.activeId]: {
+            ...active,
+            sectionState,
+            instructorState
+          }
+        }
+      }
+    })
+  }
+
+  // Fetch snapshots once when the hook is first mounted
+  useEffect(() => {
+    getSnapshots();
+  }, [getSnapshots]);
+
   const saveSnapshots = useCallback(
     (name: string, sectionState: SectionState, instructorState: InstructorState) => {
       const newSnapshot: Snapshot = {
@@ -48,7 +87,9 @@ export function useSnapshots(): UseSnapshotsResults {
   }, []);
 
   return {
-    snapshots,
+    snapshotState,
+    getSnapshots,
+    updateActiveSnapshot,
     saveSnapshots,
     loadSnapshot,
     renameSnapshot,

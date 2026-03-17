@@ -191,7 +191,7 @@ export default function SnapshotsDialog({
   onApplyLoad,
 }: SnapshotsDialogProps) {
 
-  const { snapshots, saveSnapshots, loadSnapshot, renameSnapshot, deleteSnapshot } = useSnapshots();
+  const { snapshotState, updateActiveSnapshot, saveSnapshots, loadSnapshot, renameSnapshot, deleteSnapshot } = useSnapshots();
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null)
   const [sortDirection, setSortDirection] = React.useState<SortDirection>("desc")
@@ -199,6 +199,11 @@ export default function SnapshotsDialog({
   const [renameValue, setRenameValue] = React.useState("")
   const [savingMode, setSavingMode] = React.useState(false)
   const [saveName, setSaveName] = React.useState("")
+
+  // When Snapshot menu switches to 'isOpen = true' update Active Snapshot with data from assignment interface
+  React.useEffect(() => {
+    if (isOpen) updateActiveSnapshot(sectionState, instructorState);
+  }, [isOpen, sectionState, instructorState, updateActiveSnapshot]);
 
   // Reset saving state on close so re-opening the dialog starts fresh.
   const handleClose = () => {
@@ -212,11 +217,11 @@ export default function SnapshotsDialog({
 
   // Sort snapshots by date
   const sortedSnapshots = React.useMemo(() => {
-    return [...snapshots].sort((a, b) => {
-      const cmp = a.date.localeCompare(b.date)
+    return [...snapshotState.allIds].sort((a, b) => {
+      const cmp = snapshotState.byId[a].date.localeCompare(snapshotState.byId[b].date)
       return sortDirection === "asc" ? cmp : -cmp
     })
-  }, [snapshots, sortDirection])
+  }, [snapshotState, sortDirection])
 
   // "Save Current as Snapshot" — auto-names with incrementing counter
   const handleSaveCurrent = () => {
@@ -256,7 +261,7 @@ export default function SnapshotsDialog({
 
   // Swap the name cell to an inline text input pre-filled with the current name.
   const startRename = (snapshotId: string) => {
-    const snap = snapshots.find((s) => s.id === snapshotId)
+    const snap = snapshotState.byId[snapshotId]
     if (snap) {
       setRenamingId(snapshotId)
       setRenameValue(snap.name)
@@ -352,46 +357,46 @@ export default function SnapshotsDialog({
                 </TableRow>
               )}
 
-              {sortedSnapshots.map((snap) => (
+              {sortedSnapshots.map((snapId) => (
                 <TableRow
-                  key={snap.id}
-                  onClick={() => setSelectedId(snap.id)}
-                  className={`cursor-pointer ${selectedId === snap.id ? "!bg-gray-300 hover:!bg-gray-300" : ""}`}
+                  key={snapId}
+                  onClick={() => setSelectedId(snapId)}
+                  className={`cursor-pointer ${selectedId === snapId ? "!bg-gray-300 hover:!bg-gray-300" : ""}`}
                 >
                   {/* Name cell */}
                   <TableCell className="max-w-[280px]">
-                    {renamingId === snap.id ? (
+                    {renamingId === snapId ? (
                       <input
                         autoFocus
                         value={renameValue}
                         onChange={(e) => setRenameValue(e.target.value)}
-                        onBlur={() => commitRename(snap.id)}
-                        onKeyDown={(e) => { if (e.key === "Enter") commitRename(snap.id) }}
+                        onBlur={() => commitRename(snapId)}
+                        onKeyDown={(e) => { if (e.key === "Enter") commitRename(snapId) }}
                         onClick={(e) => e.stopPropagation()}
                         className="border border-black rounded px-2 py-0.5 text-sm w-full"
                       />
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="truncate max-w-[220px] block" title={snap.name}>{snap.name}</span>
-                        <ViolationIcon snap={snap} />
+                        <span className="truncate max-w-[220px] block" title={snapshotState.byId[snapId].name}>{snapshotState.byId[snapId].name}</span>
+                        <ViolationIcon snap={snapshotState.byId[snapId]} />
                       </div>
                     )}
                   </TableCell>
 
                   {/* Progress cell */}
                   <TableCell>
-                    <ProgressBar snap={snap} />
+                    <ProgressBar snap={snapshotState.byId[snapId]} />
                   </TableCell>
 
                   {/* Date cell */}
                   <TableCell className="text-sm text-gray-700">
-                    {snap.date.replace(/-/g, "/")}
+                    {snapshotState.byId[snapId].date.replace(/-/g, "/")}
                   </TableCell>
 
                   {/* Context menu cell */}
                   <TableCell onClick={(e) => e.stopPropagation()}>
                     <ContextMenu
-                      snapshotId={snap.id}
+                      snapshotId={snapId}
                       onRename={startRename}
                       onLoad={handleLoad}
                       onDelete={handleDelete}

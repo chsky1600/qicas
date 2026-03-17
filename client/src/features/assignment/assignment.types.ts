@@ -90,7 +90,7 @@ export const instructorStateEmpty: InstructorState = {
   allIds: [],
 };
 
-export type SnapshotId = string | number;
+export type SnapshotId = string;
 
 // Snapshot Types
 export interface Snapshot {
