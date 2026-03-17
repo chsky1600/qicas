@@ -1,4 +1,4 @@
-import type { SectionState, InstructorState, Section, Instructor, Violation } from "./assignment.types";
+import type { SectionState, InstructorState, Section, Instructor, Snapshot, Violation, } from "./assignment.types";
 
 // Deep-clone 
 // These are needed because Instructor has Set objects which are
@@ -25,6 +25,14 @@ function cloneInstructor(instructor: Instructor): Instructor {
             fall_col_violations: cloneViolations(instructor.violations.fall_col_violations),
             wint_col_violations: cloneViolations(instructor.violations.wint_col_violations),
         }
+    }
+}
+
+export function cloneSnapshot(snapshot: Snapshot): Snapshot {
+    return {
+        ...snapshot,
+        sectionState: cloneSectionState(snapshot.sectionState),        
+        instructorState: cloneInstructorState(snapshot.instructorState),
     }
 }
 
