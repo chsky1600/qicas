@@ -11,6 +11,9 @@ async function main() {
 
   await mongoose.connection.dropDatabase();
 
+  const aliceHash = await Bun.password.hash("password123");
+  const bobHash = await Bun.password.hash("password456");
+
   const faculty = {
     id: "F001",
     name: "School of Computing",
@@ -20,7 +23,7 @@ async function main() {
         faculty_id: "F001",
         name: "Alice Johnson",
         email: "alice.johnson@university.edu",
-        password: "hashed_password_1",
+        password: aliceHash,
         role: "admin",
       },
       {
@@ -28,7 +31,7 @@ async function main() {
         faculty_id: "F001",
         name: "Bob Smith",
         email: "bob.smith@university.edu",
-        password: "hashed_password_2",
+        password: bobHash,
         role: "scheduler",
       },
     ],
