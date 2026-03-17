@@ -90,14 +90,28 @@ export const instructorStateEmpty: InstructorState = {
   allIds: [],
 };
 
+export type SnapshotId = string | number;
+
 // Snapshot Types
 export interface Snapshot {
-  id: string,
+  id: SnapshotId,
   name: string,
   date: string // "YYYY-MM-DD",
   sectionState: SectionState,
   instructorState: InstructorState,
 }
+
+export interface SnapshotState {
+  byId: Record<SnapshotId, Snapshot>;
+  allIds: SnapshotId[];
+  activeId: SnapshotId | null;
+}
+
+export const snapshotStateEmpty:  SnapshotState = {
+  byId: {},
+  allIds: [],  
+  activeId: null,
+};
 
 /* Mock Data --- IGNORE ---
 

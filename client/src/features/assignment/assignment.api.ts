@@ -1,4 +1,5 @@
-import type { SectionState, InstructorState, Section, Instructor, SectionAvailability, Snapshot} from "./assignment.types";
+import type { SectionState, InstructorState, Section, Instructor, SectionAvailability, Snapshot, SnapshotState} from "./assignment.types";
+import { snapshotStateEmpty } from "./assignment.types";
 import { SectionAvailability as SA } from "./assignment.types"
 
 
@@ -452,54 +453,45 @@ export async function removeCourseSection(
  * //
  * //Returns an empty array on any network or HTTP error so the UI degrades gracefully.
  */
-export async function fetchSnapshots(year: string): Promise<{
-    fetchedSnapshots: Snapshot[],
-    activeSnapshot: Snapshot | null;
-}> {
+export async function fetchSnapshots(year: string): Promise<SnapshotState> {
   const [courses, instructors, schedules, courseRules, instructorRules] = await Promise.all([
     fetch(`${API_BASE}/courses/${year}`).then(r => r.json()),
     fetch(`${API_BASE}/instructors/${year}`).then(r => r.json()),
     fetch(`${API_BASE}/schedule/${year}`).then(r => r.json()),
     fetch(`${API_BASE}/year/${year}/rules/courses`).then(r => r.json()),
     fetch(`${API_BASE}/year/${year}/rules/instructors`).then(r => r.json()),
-  ]) as [
-    BCourse[],
-    BInstructor[],
-    BSchedule[],
-    BCourseRule[],
-    BInstructorRule[],
-  ]
+  ])
 
-  const activeSchedule = schedules[0] ?? null
-  let activeSnapshot: Snapshot | null = null;
-  const fetchedSnapshots: Snapshot[] = []
+  if (!schedules || schedules.length == 0) {
+    return snapshotStateEmpty
+  }
+
+  const allIds = []
+  const activeId = schedules[0].id ?? null
+  const byId: Record<string | number, Snapshot> = {}
 
   for (const schedule of schedules) {
-    // BSchedule defines 'date_created as Date object' 
-    // but it gets returned as a string by the API
-    let dateString: string = "";
-    if (typeof schedule.date_created === "string") {
-      dateString = schedule.date_created.split("T")[0];
-    }
-
     const { sectionState, instructorState } = mapToFrontendState(courses, instructors, schedule, courseRules, instructorRules)
+    const scheduleId = schedule.id
     const newSnapshot: Snapshot = {
-      id: schedule.id,
+      id: scheduleId,
       name: schedule.name,
-      date: dateString,
+      date: schedule.date_created.split("T")[0],
       sectionState: sectionState,
       instructorState: instructorState,
     }
-
-    if (activeSnapshot == null && (activeSchedule == null || activeSchedule.id == schedule.id)) {
-      activeSnapshot = newSnapshot
-      continue
-    }
-
-    fetchedSnapshots.push(newSnapshot)
+    
+    byId[scheduleId] = newSnapshot
+    allIds.push(scheduleId)
   }
 
-  return { fetchedSnapshots, activeSnapshot  }
+  const newSnapshotState = {
+    byId: byId,
+    allIds: allIds,  
+    activeId: activeId,
+  }
+
+  return newSnapshotState
 }
 
 
