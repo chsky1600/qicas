@@ -1,4 +1,4 @@
-import type { SectionState, InstructorState, Section, Instructor, SectionAvailability } from "./assignment.types";
+import type { SectionState, InstructorState, Section, Instructor, SectionAvailability, Snapshot} from "./assignment.types";
 import { SectionAvailability as SA } from "./assignment.types"
 
 
@@ -88,7 +88,7 @@ function mapAvailability(rule: BCourseRule | undefined): SectionAvailability {
 function mapToFrontendState(
   courses: BCourse[],
   instructors: BInstructor[],
-  schedules: BSchedule[],
+  schedule: BSchedule,
   courseRules: BCourseRule[],
   instructorRules: BInstructorRule[]
 ): { sectionState: SectionState; instructorState: InstructorState } {
@@ -107,7 +107,7 @@ function mapToFrontendState(
   // If no schedules exist yet, allAssignments will be empty and all sections
   // will be unassigned.
 
-  const allAssignments: BAssignment[] = (schedules[0]?.assignments ?? [])
+  const allAssignments: BAssignment[] = (schedule?.assignments ?? [])
 
   // Maps each section to the instructor it is assigned to.
   // Only the first assignment for a given section is recorded (duplicates ignored).
@@ -228,10 +228,10 @@ export async function fetchAssignment(year: string): Promise<{
     fetch(`${API_BASE}/year/${year}/rules/instructors`).then(r => r.json()),
   ])
 
-  const { sectionState, instructorState } = mapToFrontendState(courses, instructors, schedules, courseRules, instructorRules)
-
   // The first schedule in the list is treated as the active working schedule
   const first = schedules[0] ?? null
+  const { sectionState, instructorState } = mapToFrontendState(courses, instructors, first, courseRules, instructorRules)
+
   const activeSchedule = first ? {
     id: first.id, name: first.name, year_id: first.year_id,
     date_created: first.date_created, is_rc: first.is_rc ?? false,
@@ -444,4 +444,63 @@ export async function removeCourseSection(
     body: JSON.stringify({ course: updatedCourse }),
   })
 }
+
+/**
+ * //Triggers a full schedule validation on the backend and returns the list of violations.
+ * //Sends an empty POST body, which tells the backend to validate the entire saved schedule
+ * //(as opposed to validating a single candidate assignment).
+ * //
+ * //Returns an empty array on any network or HTTP error so the UI degrades gracefully.
+ */
+export async function fetchSnapshots(year: string): Promise<{
+    fetchedSnapshots: Snapshot[],
+    activeSnapshot: Snapshot | null;
+}> {
+  const [courses, instructors, schedules, courseRules, instructorRules] = await Promise.all([
+    fetch(`${API_BASE}/courses/${year}`).then(r => r.json()),
+    fetch(`${API_BASE}/instructors/${year}`).then(r => r.json()),
+    fetch(`${API_BASE}/schedule/${year}`).then(r => r.json()),
+    fetch(`${API_BASE}/year/${year}/rules/courses`).then(r => r.json()),
+    fetch(`${API_BASE}/year/${year}/rules/instructors`).then(r => r.json()),
+  ]) as [
+    BCourse[],
+    BInstructor[],
+    BSchedule[],
+    BCourseRule[],
+    BInstructorRule[],
+  ]
+
+  const activeSchedule = schedules[0] ?? null
+  let activeSnapshot: Snapshot | null = null;
+  const fetchedSnapshots: Snapshot[] = []
+
+  for (const schedule of schedules) {
+    // BSchedule defines 'date_created as Date object' 
+    // but it gets returned as a string by the API
+    let dateString: string = "";
+    if (typeof schedule.date_created === "string") {
+      dateString = schedule.date_created.split("T")[0];
+    }
+
+    const { sectionState, instructorState } = mapToFrontendState(courses, instructors, schedule, courseRules, instructorRules)
+    const newSnapshot: Snapshot = {
+      id: schedule.id,
+      name: schedule.name,
+      date: dateString,
+      sectionState: sectionState,
+      instructorState: instructorState,
+    }
+
+    if (activeSnapshot == null && (activeSchedule == null || activeSchedule.id == schedule.id)) {
+      activeSnapshot = newSnapshot
+      continue
+    }
+
+    fetchedSnapshots.push(newSnapshot)
+  }
+
+  return { fetchedSnapshots, activeSnapshot  }
+}
+
+
 
