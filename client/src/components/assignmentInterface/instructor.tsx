@@ -78,7 +78,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
   
     // Count the types of violations
     sectionIds.forEach((sectionId) => {      
-      totalAssignedWorkload += sectionState.byId[sectionId].workload
+      totalAssignedWorkload += sectionState.byId[sectionId]?.workload ?? 0
     })
 
     return totalAssignedWorkload
@@ -93,7 +93,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
   
     // Count the types of violations
     sectionIds.forEach((sectionId) => {      
-      totalAssignedCapacity += sectionState.byId[sectionId].capacity
+      totalAssignedCapacity += sectionState.byId[sectionId]?.capacity ?? 0
     })
 
     return totalAssignedCapacity
