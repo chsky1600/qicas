@@ -447,11 +447,7 @@ export async function removeCourseSection(
 }
 
 /**
- * //Triggers a full schedule validation on the backend and returns the list of violations.
- * //Sends an empty POST body, which tells the backend to validate the entire saved schedule
- * //(as opposed to validating a single candidate assignment).
- * //
- * //Returns an empty array on any network or HTTP error so the UI degrades gracefully.
+ * fetches snapshots from the backend and builds the SnapshotState from them
  */
 export async function fetchSnapshots(year: string): Promise<SnapshotState> {
   const [courses, instructors, schedules, courseRules, instructorRules] = await Promise.all([
