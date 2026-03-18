@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { SectionState, InstructorState, SnapshotState } from "./assignment.types";
 import { snapshotStateEmpty } from "./assignment.types";
-import { cloneInstructorState, cloneSectionState } from "./assignment.utils";
+import { cloneInstructorState, cloneSectionState, cloneSnapshot } from "./assignment.utils";
 import * as api  from './assignment.api'
 
 export interface UseSnapshotsResults {
   snapshotState: SnapshotState;
   getSnapshots: () => Promise<void>
+  copySnapshot: (snapshotId: string) => Promise<void>
   updateActiveSnapshot: (sectionState: SectionState, instructorState: InstructorState) => void
   loadSnapshot: (snapshotId: string) => { sectionState: SectionState; instructorState: InstructorState } | null;
   renameSnapshot: (snapshotId: string, newName: string) => void;
@@ -57,6 +58,25 @@ export function useSnapshots(): UseSnapshotsResults {
   //    };
   //  setSnapshots((prev) => [...prev, newSnapshot]);
   //}, []);
+
+  const copySnapshot = async (snapshotId: string) => {
+    if (!snapshotId) return;
+    const selected = snapshotState.byId[snapshotId];
+    if (!selected) return;
+
+    //TODO - add section here
+    const snapshotClone = await api.createSnapshotCopy(yearRef.current, cloneSnapshot(selected))
+    if (!snapshotClone) return
+
+    setSnapshotState(prev => ({
+      ...prev,
+      byId: {
+        ...prev.byId,
+        [snapshotClone.id]: snapshotClone,
+      },
+      allIds: [...prev.allIds, snapshotClone.id]
+    }));
+  }
   
   const loadSnapshot = (snapshotId: string) => {
     const selected = snapshotState.byId[snapshotId];
@@ -118,6 +138,7 @@ export function useSnapshots(): UseSnapshotsResults {
   return {
     snapshotState,
     getSnapshots,
+    copySnapshot,
     updateActiveSnapshot,
     loadSnapshot,
     renameSnapshot,

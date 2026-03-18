@@ -494,5 +494,36 @@ export async function fetchSnapshots(year: string): Promise<SnapshotState> {
   return newSnapshotState
 }
 
+/**
+ * takes a snapshot object and makes a copy of it, saving it to backend
+ * the snapshot object must have been derived from a schedule object
+ * 
+ * Returns new Snapshot with id for the newly created ScheduleID or null if process unsuccessful
+ */
+export async function createSnapshotCopy(year: string, snapshot: Snapshot): Promise<Snapshot | null> {
+  let res = await fetch(`${API_BASE}/schedule/${year}/${snapshot.id}`)
+  if (!res.ok) return null
+  const schedule: BSchedule = await res.json()
+
+  res = await fetch(`${API_BASE}/schedule/${year}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      schedule: schedule
+    }),
+  })
+  if (!res.ok) return null
+  const newSchedule = await res.json()
+  const newScheduleId = newSchedule.id
+
+  const newSnapshot: Snapshot = {
+    ...snapshot,
+    id: newScheduleId,
+    name: newSchedule.name,
+    date: newSchedule.date_created.split("T")[0],
+  }
+
+  return newSnapshot
+}
 
 
