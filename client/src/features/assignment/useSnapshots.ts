@@ -95,21 +95,19 @@ export function useSnapshots(): UseSnapshotsResults {
     };
   };
   
-  const renameSnapshot = (snapshotId: string, newName: string) => {
+  const renameSnapshot = async (snapshotId: string, newName: string) => {
     if (!snapshotId) return;
     const selected = snapshotState.byId[snapshotId];
     if (!selected) return;
 
-    //TODO - update API here    
+    const renamedSnapshot = await api.renameSnapshot(yearRef.current, cloneSnapshot(selected), newName)
+    if (!renamedSnapshot) return
 
     setSnapshotState(prev => ({
         ...prev,
         byId: {
           ...prev.byId,
-          [selected.id]: {
-            ...selected,
-            name: newName,
-          }
+          [renamedSnapshot.id]: renamedSnapshot
         }
       })
     )

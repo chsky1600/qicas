@@ -526,4 +526,27 @@ export async function createSnapshotCopy(year: string, snapshot: Snapshot): Prom
   return newSnapshot
 }
 
+export async function renameSnapshot(year: string, snapshot: Snapshot, newName: string): Promise<Snapshot | null> {
+  let res = await fetch(`${API_BASE}/schedule/${year}/${snapshot.id}`)
+  if (!res.ok) return null
+  const schedule: BSchedule = await res.json()
+
+  schedule.name = newName
+
+  res = await fetch(`${API_BASE}/schedule/${year}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      schedule: schedule
+    }),
+  })
+  if (!res.ok) return null
+  
+  const newSnapshot: Snapshot = {
+    ...snapshot,
+    name: newName,
+  }
+
+  return newSnapshot
+}
 
