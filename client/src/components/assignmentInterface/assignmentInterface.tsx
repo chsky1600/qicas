@@ -16,6 +16,7 @@ import type {
   DragEndEvent,
   DragStartEvent,
 } from "@dnd-kit/core"
+import type { SectionAvailability } from "@/features/assignment/assignment.types";
 
 export default function AssignmentInterface({
   sectionState,
@@ -67,14 +68,14 @@ export default function AssignmentInterface({
     
     // drop location is an instructor, make new assignment
     if (dropLocation?.type == "instructor"){
-      makeAssignment(sectionDrag.sectionId, dropLocation.instructorId, dropLocation.term, sectionDrag.prevInstructorId)
+      makeAssignment(sectionDrag.sectionId, dropLocation.instructorId, dropLocation.term, sectionDrag.prevInstructorId, sectionDrag.prevTerm)
       return
     }
     // drop location is the instructor panel and the drag did not originate from the panel, remove assignment
     // second statement prevents user from unassigning by picking up course from courses panel, then dropping back into courses panel
     else if (dropLocation?.type == "panel"){
       if (sectionDrag?.source != "panel"){
-        removeAssignment(sectionDrag.sectionId, sectionDrag.prevInstructorId)
+        removeAssignment(sectionDrag.sectionId, sectionDrag.prevInstructorId, sectionDrag.prevTerm)
         return
       }
       console.log(`INFO: ${over?.id} originated from panel, and will not be removed by being draged to it`)
@@ -117,7 +118,7 @@ export default function AssignmentInterface({
 
           <DragOverlay dropAnimation={null}>
             {heldSection ? (
-              <AssignedChip key={heldSection} {...sectionState.byId[heldSection]}/>
+              <AssignedChip key={heldSection} {...sectionState.byId[heldSection]} prevInstructorId={null} prevTerm={sectionState.byId[heldSection]?.availability as SectionAvailability}/>
             ): null}
           </DragOverlay>        
         </DndContext>

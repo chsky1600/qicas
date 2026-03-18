@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as api  from './assignment.api'
 import type { Violation as BViolation} from "../../../../src/types";
-
+import {cloneInstructor} from "./assignment.utils"
 import * as assignmentType from "./assignment.types";
 
 
@@ -16,8 +16,8 @@ export interface UseAssignmentResult {
   refresh: () => Promise<void>;
   updateSection: (updatedSection: assignmentType.Section) => void;
   updateInstructor: (updatedInstructor: assignmentType.Instructor) => void;
-  makeAssignment: (assignedSectionId: assignmentType.SectionId, nextInstructorId: assignmentType.InstructorId, assignmentLocation: assignmentType.SectionAvailability, prevInstructorId: assignmentType.InstructorId | null) => void;
-  removeAssignment: (unassignedSectionId: assignmentType.SectionId, prevInstructorId: assignmentType.InstructorId) => void;
+  makeAssignment: (assignedSectionId: assignmentType.SectionId, nextInstructorId: assignmentType.InstructorId, assignmentLocation: assignmentType.SectionAvailability, prevInstructorId: assignmentType.InstructorId | null, prevTerm: assignmentType.SectionAvailability | null) => void;
+  removeAssignment: (unassignedSectionId: assignmentType.SectionId, prevInstructorId: assignmentType.InstructorId, prevTerm: assignmentType.SectionAvailability | null) => void;
   loadState: (sectionState: assignmentType.SectionState, instructorState: assignmentType.InstructorState) => void;
   activeSchedule: { id: string; name: string; year_id: string; date_created: string; is_rc: boolean } | null;
   dropInstructor: (instructor_id: assignmentType.InstructorId, dropped: boolean) => void;
@@ -117,25 +117,25 @@ function applyViolations(
             newSectionById[id] = { ...section, in_violation: incoming }
           }
 
-          // Route the violation to the instructor's term coloumn so it appears
-          // visually under the course chips when the vioaltion row is expanded,
-          // A section can be in both fall and winter (Full-year), so we check both.
-          const assignedTo = section.assigned_to
-          if (assignedTo && newInstructorById[assignedTo]) {
-            const inst = newInstructorById[assignedTo]
+          // Scan all instructors to find who holds this section in fall/wint.
+          for (const instId of instructorState.allIds) {
+            const inst = newInstructorById[instId]
             const inFall = inst.fall_assigned.has(section.id)
             const inWint = inst.wint_assigned.has(section.id)
-            newInstructorById[assignedTo] = {
-              ...inst,
-              violations: {
-                ...inst.violations,
-                fall_col_violations: inFall ? [...inst.violations.fall_col_violations, frontendViolation] : inst.violations.fall_col_violations,
-                wint_col_violations: inWint ? [...inst.violations.wint_col_violations, frontendViolation] : inst.violations.wint_col_violations,
+            if (inFall || inWint) {
+              newInstructorById[instId] = {
+                ...inst,
+                violations: {
+                  ...inst.violations,
+                  fall_col_violations: inFall ? [...inst.violations.fall_col_violations, frontendViolation] : inst.violations.fall_col_violations,
+                  wint_col_violations: inWint ? [...inst.violations.wint_col_violations, frontendViolation] : inst.violations.wint_col_violations,
+                }
               }
             }
           }
         }
       }
+
     } else if (v.type === "Instructor") {
       // Match instructors directly by ID
       const instructor = newInstructorById[v.offending_id]
@@ -346,7 +346,8 @@ export function useAssignment(): UseAssignmentResult {
     assignedSectionId: assignmentType.SectionId,
     nextInstructorId: assignmentType.InstructorId,
     assignmentLocation: assignmentType.SectionAvailability,
-    prevInstructorId: assignmentType.InstructorId | null = null
+    prevInstructorId: assignmentType.InstructorId | null = null,
+    prevTerm: assignmentType.SectionAvailability | null = null
   ) => {
 
     // ForW means "fall OR winter" — the user must pick one explicitly
@@ -367,38 +368,56 @@ export function useAssignment(): UseAssignmentResult {
       return
     }
 
+    // Guard: if the section is already assigned to this instructor in the target term, do nothing
+    const nextInstr = instructorState.byId[nextInstructorId]
+    if (assignmentLocation === assignmentType.SectionAvailability.F && nextInstr.fall_assigned.has(assignedSectionId)) return
+    if (assignmentLocation === assignmentType.SectionAvailability.W && nextInstr.wint_assigned.has(assignedSectionId)) return
+
+
     // If no previous instructor was provided, check if the section already has one
     if (!prevInstructorId) {
       prevInstructorId = sectionState.byId[assignedSectionId].assigned_to
     }
 
     // Remove the section from the previous instructor's term sets
-    if (prevInstructorId) {
-      const modifiablePrevInstructor: assignmentType.Instructor = { ...instructorState.byId[prevInstructorId] }
-      modifiablePrevInstructor.fall_assigned.delete(assignedSectionId)
-      modifiablePrevInstructor.wint_assigned.delete(assignedSectionId)
-
+    if (prevInstructorId && prevTerm) {
+      const modifiablePrevInstructor = cloneInstructor(instructorState.byId[prevInstructorId])
+      if (prevTerm === assignmentType.SectionAvailability.F) {
+        modifiablePrevInstructor.fall_assigned.delete(assignedSectionId)
+      } else if (prevTerm === assignmentType.SectionAvailability.W) {
+        modifiablePrevInstructor.wint_assigned.delete(assignedSectionId)
+      }
       setInstructorState(prev => ({
         ...prev,
-        byId: {
-          ...prev.byId,
-          [prevInstructorId]: modifiablePrevInstructor
-        }
+        byId: { ...prev.byId, [prevInstructorId]: modifiablePrevInstructor }
       }))
+    } else {
+      for (const instId of instructorState.allIds) {
+        if (instId === nextInstructorId) continue
+        const inst = instructorState.byId[instId]
+        if (assignmentLocation === assignmentType.SectionAvailability.F && inst.fall_assigned.has(assignedSectionId)) {
+          const m = cloneInstructor(inst); m.fall_assigned.delete(assignedSectionId)
+          setInstructorState(prev => ({ ...prev, byId: { ...prev.byId, [instId]: m } }))
+        } else if (assignmentLocation === assignmentType.SectionAvailability.W && inst.wint_assigned.has(assignedSectionId)) {
+          const m = cloneInstructor(inst); m.wint_assigned.delete(assignedSectionId)
+          setInstructorState(prev => ({ ...prev, byId: { ...prev.byId, [instId]: m } }))
+        }
+      }
     }
+
 
     // Update the section's assigned_to pointer
     const modifiableAssignedSection: assignmentType.Section = { ...sectionState.byId[assignedSectionId] }
     modifiableAssignedSection.assigned_to = nextInstructorId
 
     // Add the section to the next instructor's appropriate term set(s)
-    const modifiableNextInstructor: assignmentType.Instructor = { ...instructorState.byId[nextInstructorId] }
-    const isFullYear = (modifiableAssignedSection.availability === assignmentType.SectionAvailability.FandW)
+    const modifiableNextInstructor = cloneInstructor(instructorState.byId[nextInstructorId])
+    //const isFullYear = (modifiableAssignedSection.availability === assignmentType.SectionAvailability.FandW)
 
-    if (isFullYear || assignmentLocation === assignmentType.SectionAvailability.F) {
+    if (assignmentLocation === assignmentType.SectionAvailability.F) {
       modifiableNextInstructor.fall_assigned.add(assignedSectionId)
     }
-    if (isFullYear || assignmentLocation === assignmentType.SectionAvailability.W) {
+    if (assignmentLocation === assignmentType.SectionAvailability.W) {
       modifiableNextInstructor.wint_assigned.add(assignedSectionId)
     }
 
@@ -434,7 +453,8 @@ export function useAssignment(): UseAssignmentResult {
    */
   const removeAssignment = (
     unassignedSectionId: assignmentType.SectionId,
-    prevInstructorId: assignmentType.InstructorId
+    prevInstructorId: assignmentType.InstructorId,
+    prevTerm: assignmentType.SectionAvailability | null = null
   ) => {
 
     if (!stateObjectExists(sectionState, unassignedSectionId)) {
@@ -450,9 +470,16 @@ export function useAssignment(): UseAssignmentResult {
     }
 
     // Remove the section from both term sets on the previous instructor
-    const modifiablePrevInstructor: assignmentType.Instructor = { ...instructorState.byId[prevInstructorId] }
-    modifiablePrevInstructor.fall_assigned.delete(unassignedSectionId)
-    modifiablePrevInstructor.wint_assigned.delete(unassignedSectionId)
+    const modifiablePrevInstructor= cloneInstructor(instructorState.byId[prevInstructorId])
+    if (prevTerm === assignmentType.SectionAvailability.F) {
+      modifiablePrevInstructor.fall_assigned.delete(unassignedSectionId)
+    } else if (prevTerm === assignmentType.SectionAvailability.W) {
+      modifiablePrevInstructor.wint_assigned.delete(unassignedSectionId)
+    } else {
+      // Dragged from panel - clear this section from whichever term set it is in
+      modifiablePrevInstructor.fall_assigned.delete(unassignedSectionId)
+      modifiablePrevInstructor.wint_assigned.delete(unassignedSectionId)
+    }
 
     setInstructorState(prev => ({
       ...prev,
