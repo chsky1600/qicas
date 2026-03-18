@@ -596,7 +596,7 @@ export function useAssignment(): UseAssignmentResult {
 
     // Clear assignment if the section is currently assigned
     if (section.assigned_to) {
-      removeAssignment(sectionId, section.assigned_to)
+      removeAssignment(sectionId, section.assigned_to, null)
     }
 
     // Remove from local state
