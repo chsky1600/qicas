@@ -62,7 +62,8 @@ export const getToken = async (req : Request, res : Response) => {
     if(email && password) {
         const user = await fetchUser(email)
         if(user){
-            if(user.password === password) {
+            const match = await Bun.password.verify(password, user.password);
+            if(match) {
 
                 const jwt = await new jose.SignJWT({'faculty_id': user.faculty_id})
                     .setProtectedHeader({alg})
@@ -70,18 +71,70 @@ export const getToken = async (req : Request, res : Response) => {
                     .setIssuer('qicas')
                     .setExpirationTime('2h')
                     .sign(secret)
-                
+
                 res.cookie("token",jwt)
                 res.sendStatus(200)
             } else {
                 res.send('Invalid password.')
             }
-        } else { 
+        } else {
             console.log("user not found.")
             res.sendStatus(404)
         }
     } else {
         res.sendStatus(400)
+    }
+}
+
+export const changePassword = async (req : Request, res : Response) => {
+    try {
+        const faculty_id: string = req.body.faculty_id;
+        const email: string | undefined = req.body.email;
+        const current_password: string | undefined = req.body.current_password;
+        const new_password: string | undefined = req.body.new_password;
+
+        if (!email || !current_password || !new_password) {
+            res.status(400).json({ error: "email, current_password, and new_password are required" });
+            return;
+        }
+
+        if (new_password.length < 8) {
+            res.status(400).json({ error: "New password must be at least 8 characters" });
+            return;
+        }
+
+        const user = await fetchUser(email);
+        if (!user) {
+            res.status(404).json({ error: "User not found" });
+            return;
+        }
+
+        const match = await Bun.password.verify(current_password, user.password);
+        if (!match) {
+            res.status(401).json({ error: "Current password is incorrect" });
+            return;
+        }
+
+        const isSame = await Bun.password.verify(new_password, user.password);
+        if (isSame) {
+            res.status(400).json({ error: "New password must be different from current password" });
+            return;
+        }
+
+        const hashed = await Bun.password.hash(new_password);
+
+        const result = await FacultyModel.updateOne(
+            { id: faculty_id, "users.email": email },
+            { $set: { "users.$.password": hashed } }
+        );
+
+        if (result.modifiedCount === 0) {
+            res.status(404).json({ error: "User not found in faculty" });
+        } else {
+            res.status(200).json({ message: "Password updated" });
+        }
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
     }
 }
 

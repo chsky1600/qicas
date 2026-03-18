@@ -2,6 +2,15 @@ import { Request, Response } from "express";
 import { Assignment, Schedule } from "../types";
 import { validateAssignment, validateSchedule as validateScheduleService } from "../services";
 import { FacultyModel } from "../db/models/faculty";
+import { isYearRulesServiceError } from "../services/yearRulesService";
+
+const handleError = (err: unknown, res: Response) => {
+  if (isYearRulesServiceError(err)) {
+    res.status(err.status).json({ error: err.message });
+    return;
+  }
+  res.status(500).json({ error: "Internal server error" });
+};
 
 const fetchScheduleByFacultyIdScheduleIdAndYear = async (faculty_id : string, schedule_id : string, year_id : string): Promise<Schedule | undefined> => {
     try {
@@ -115,8 +124,56 @@ export const saveSchedule = async (req : Request, res : Response) => {
 
 // effectively "picking" a new snapshot to work on as the current schedule
 // set a given schedule to be the current working schedule ("the one the user will be saving to")
+// router.put("/schedule/:year/:schedule_id",setWorkingSchedule)
 export const setWorkingSchedule = async (req : Request, res : Response) => {
+    const schedule_id : string = req.params.schedule_id as string;
+    const faculty_id : string = req.body.faculty_id;
 
+    const result = await FacultyModel.updateOne(
+        { id: faculty_id },
+        {
+            $set: { current_working_schedule_id: schedule_id },
+        }
+    );
+
+    const currentSchedule = await getCurrentWorkingSchedule(faculty_id);
+    res.json(currentSchedule);
+}
+
+export async function getCurrentWorkingSchedule(
+  facultyId: string
+) {
+  const result = await FacultyModel.aggregate([
+    { $match: { id: facultyId } },
+
+    { $unwind: "$academic_years" },
+    { $unwind: "$academic_years.schedules" },
+
+    {
+      $match: {
+        $expr: {
+          $eq: [
+            "$academic_years.schedules.id",
+            "$current_working_schedule_id",
+          ],
+        },
+      },
+    },
+
+    { $replaceRoot: { newRoot: "$academic_years.schedules" } },
+  ]);
+
+  return result[0] ?? null;
+}
+
+export const getWorkingSchedule = async (req : Request, res : Response) => {
+    const faculty_id : string = req.body.faculty_id;
+    try {
+        const currentWorkingSchedule = await getCurrentWorkingSchedule(faculty_id)
+        res.json(currentWorkingSchedule);
+    } catch (err) {
+        handleError(err, res);
+    }
 }
 
 // duplicates the given schedule and gives it a new ID and sets it to the current schedule?
