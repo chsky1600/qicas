@@ -233,7 +233,7 @@ export function useAssignment(): UseAssignmentResult {
         // Ignore AbortError — it just means a newer save superseded this one
         if ((e as Error).name !== "AbortError") console.error("Auto-save failed", e)
       }
-    }, 20)
+    }, 500)
   }, [])
 
 
@@ -381,6 +381,27 @@ export function useAssignment(): UseAssignmentResult {
 
     // Remove the section from the previous instructor's term sets
     if (prevInstructorId && prevTerm) {
+      if (prevInstructorId === nextInstructorId) {
+        const modifiable = cloneInstructor(instructorState.byId[prevInstructorId])
+        if (prevTerm === assignmentType.SectionAvailability.F) {
+          modifiable.fall_assigned.delete(assignedSectionId)
+        } else if (prevTerm === assignmentType.SectionAvailability.W) {
+          modifiable.wint_assigned.delete(assignedSectionId)
+        }
+        if (assignmentLocation === assignmentType.SectionAvailability.F) {
+          modifiable.fall_assigned.add(assignedSectionId)
+        }
+        if (assignmentLocation === assignmentType.SectionAvailability.W) {
+          modifiable.wint_assigned.add(assignedSectionId)
+        }
+        const modifiableAssignedSection: assignmentType.Section = { ...sectionState.byId[assignedSectionId] }
+        modifiableAssignedSection.assigned_to = nextInstructorId
+        setSectionState(prev => ({ ...prev, byId: { ...prev.byId, [assignedSectionId]: modifiableAssignedSection } }))
+        setInstructorState(prev => ({ ...prev, byId: { ...prev.byId, [prevInstructorId]: modifiable } }))
+        triggerAutoSave()
+        return
+      }
+
       const modifiablePrevInstructor = cloneInstructor(instructorState.byId[prevInstructorId])
       if (prevTerm === assignmentType.SectionAvailability.F) {
         modifiablePrevInstructor.fall_assigned.delete(assignedSectionId)
