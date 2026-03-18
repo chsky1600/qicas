@@ -174,7 +174,7 @@ export function checkCourseRules(
     );
     if (duplicate) {
       violations.push({
-        id: `v-cross-term-${candidate.id}`,
+        id: `v-cross-term-${candidate.instructor_id}-${candidate.course_code}`,
         type: "Course",
         offending_id: candidate.course_code,
         code: "CROSS_TERM_DUPLICATE",

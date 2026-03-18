@@ -171,7 +171,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
             .map((sectionId) => {
               const section = sectionState.byId[sectionId];
               return (section && !section.dropped) ? (
-                <AssignedChip key={section.id+"_chip"} {...section}/>
+                <AssignedChip key={section.id+"_chip"} {...section} prevInstructorId={instructor.id} prevTerm={SectionAvailability.F}/>
               ) : null;
             })}
         </div>
@@ -190,7 +190,7 @@ export default function Instructor({ instructor, sectionState }: InstructorProps
             .map((sectionId) => {
               const section = sectionState.byId[sectionId];
               return (section && !section.dropped) ? (
-                <AssignedChip key={section.id+"_chip"} {...section}/>
+                <AssignedChip key={section.id+"_chip"} {...section} prevInstructorId={instructor.id} prevTerm={SectionAvailability.W}/>
               ) : null;
             })}
         </div>

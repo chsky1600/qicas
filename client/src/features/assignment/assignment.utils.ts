@@ -14,7 +14,7 @@ function cloneViolations(violations: Violation[]): Violation[] {
     return violations.map(v => ({...v}))
 }
 
-function cloneInstructor(instructor: Instructor): Instructor {
+export function cloneInstructor(instructor: Instructor): Instructor {
     return {
         ...instructor,
         position: {...instructor.position},

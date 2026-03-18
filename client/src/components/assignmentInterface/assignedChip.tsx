@@ -1,16 +1,17 @@
-import type { Section } from "@/features/assignment/assignment.types"
+import { SectionAvailability, type Section } from "@/features/assignment/assignment.types"
 import { getDegreeColor } from "@/features/assignment/assignment.types"
 import { useDraggable } from "@dnd-kit/core"
 
 
-export default function AssignedChip(section : Section)  {
+export default function AssignedChip(section : Section & { prevInstructorId: string | null, prevTerm: SectionAvailability }) {
   const {attributes, listeners, setNodeRef, isDragging} = useDraggable({
     id: `section-${section.id}-chip`,    
     data: {
       type: "section",      
       source: "chip",
       sectionId: section.id,
-      prevInstructorId: section.assigned_to,
+      prevInstructorId: section.prevInstructorId,
+      prevTerm: section.prevTerm,
     }
   });
 
@@ -23,7 +24,7 @@ export default function AssignedChip(section : Section)  {
 
   return (
     <span ref={setNodeRef} style={style} {...listeners} {...attributes} className={`${chipColor} text-white px-2 py-1 rounded text-sm`}>
-        {section.course_code}-{section.section_num}
+        {section.course_code}{section.availability === SectionAvailability.FandW ? (section.prevTerm === SectionAvailability.F ? 'A' : 'B') : ''}-{section.section_num}
     </span>
   )
 }
