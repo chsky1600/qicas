@@ -1,6 +1,8 @@
 import * as React from "react"
 import * as ReactDOM from "react-dom"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle} from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger} from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button"
 import {
   Table, TableHeader, TableBody, TableRow, TableHead, TableCell
 } from "@/components/ui/table"
@@ -181,6 +183,47 @@ function ContextMenu({
   )
 }
 
+// Per-row 3-dot context menu. The dropdown is rendered via a React portal into
+// document.body so it escapes the table's overflow-hidden clipping.
+function NewContextMenu(
+  {
+  snapshotId,
+  onRename,
+  onLoad,
+  onDelete,
+}: {
+  snapshotId: string
+  onRename: (id: string) => void
+  onLoad: (id: string) => void
+  onDelete: (id: string) => void
+}
+) {
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline">•••</Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onLoad(snapshotId);}}>
+            Load
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename(snapshotId);}}>
+            Rename
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            Copy
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onClick={(e) => { e.stopPropagation(); onDelete(snapshotId); }}>
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function SnapshotsDialog({
@@ -235,15 +278,6 @@ export default function SnapshotsDialog({
     setSavingMode(true)
   }
 
-  // Confirm the save with the given name
-  const confirmSave = () => {
-      return
-    if (saveName.trim()) {
-      saveSnapshots(saveName.trim(), sectionState, instructorState)
-      setSavingMode(false)
-    }
-  }
-
   // Load the selected row (header button)
   const handleLoadSelected = () => {
     if (!selectedId) return
@@ -285,8 +319,7 @@ export default function SnapshotsDialog({
       <DialogContent
         showCloseButton={false}
         className="w-[800px] h-[520px] p-0 gap-0 overflow-hidden border border-black rounded-md bg-[#f4f4f4] flex flex-col"
-      >
-        <DialogTitle>Example</DialogTitle>
+      > 
         {/* ── Header bar ──────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between bg-black text-white h-13 px-4 gap-4">
           <div className="text-sm font-semibold opacity-80">Snapshots</div>
@@ -402,6 +435,12 @@ export default function SnapshotsDialog({
 
                   {/* Context menu cell */}
                   <TableCell onClick={(e) => e.stopPropagation()}>
+                    <NewContextMenu
+                      snapshotId={snapId}
+                      onRename={startRename}
+                      onLoad={handleLoad}
+                      onDelete={handleDelete}
+                    />
                     <ContextMenu
                       snapshotId={snapId}
                       onRename={startRename}
