@@ -159,6 +159,21 @@ function applyViolations(
 }
 
 
+// ─── Assignment Persistence Helpers ───────────────────────────────────────────
+
+/** Creates a map key for looking up backend assignment IDs */
+function assignmentKey(instructorId: string, sectionId: string, term: "Fall" | "Winter"): string {
+  return `${instructorId}:${sectionId}:${term}`
+}
+
+/** Converts frontend SectionAvailability to backend Term string */
+function availabilityToTerm(avail: assignmentType.SectionAvailability): "Fall" | "Winter" | null {
+  if (avail === assignmentType.SectionAvailability.F) return "Fall"
+  if (avail === assignmentType.SectionAvailability.W) return "Winter"
+  return null
+}
+
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useAssignment(): UseAssignmentResult {
@@ -186,40 +201,27 @@ export function useAssignment(): UseAssignmentResult {
   useEffect(() => { activeScheduleRef.current = activeSchedule }, [activeSchedule])
   useEffect(() => { yearRef.current = year }, [year])
 
-  // Used by triggerAutoSave to debounce saves and cancel in-flight requests
+  // Maps "instructorId:sectionId:term" to the backend assignment ID
+  // Used to look up IDs when calling DELETE on individual assignments
+  const assignmentIdMapRef = useRef(new Map<string, string>())
+
+  // Used by refreshViolations to debounce violation fetches
   const saveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const abortController = useRef<AbortController | null>(null)
 
 
-  // ── Auto-save ──────────────────────────────────────────────────────────────
+  // ── Violation Refresh ─────────────────────────────────────────────────────
   /**
-   * Debounced auto-save. Waits 1 second after the last state change before saving.
-   * If called again before the timer fires, the previous timer is cancelled (debounce).
-   * Any in-flight save request is aborted before starting a new one.
-   *
-   * After a successful save, violations are fetched and applied to the local state
-   * so the UI reflects the latest validation results.
+   * Debounced violation refresh. Waits 500ms after the last call before fetching.
+   * Assignments are now persisted individually via POST/DELETE, so this only
+   * needs to re-fetch and apply violations — no full schedule save.
    */
-  const triggerAutoSave = useCallback(() => {
+  const refreshViolations = useCallback(() => {
     if (saveTimeout.current) clearTimeout(saveTimeout.current)
-    if (abortController.current) abortController.current.abort()
 
     saveTimeout.current = setTimeout(async () => {
       if (!activeScheduleRef.current) return
 
-      const controller = new AbortController()
-      abortController.current = controller
-
       try {
-        await api.saveScheduleToBackend(
-          yearRef.current,
-          activeScheduleRef.current,
-          sectionStateRef.current,
-          instructorStateRef.current,
-          controller.signal
-        )
-
-        // After saving, re-fetch violations and apply them to the state
         const violations = await api.fetchViolations(yearRef.current, activeScheduleRef.current.id)
         const { sectionState: newSS, instructorState: newIS } = applyViolations(
           violations,
@@ -228,13 +230,54 @@ export function useAssignment(): UseAssignmentResult {
         )
         setSectionState(newSS)
         setInstructorState(newIS)
-
       } catch (e) {
-        // Ignore AbortError — it just means a newer save superseded this one
-        if ((e as Error).name !== "AbortError") console.error("Auto-save failed", e)
+        console.error("Violation refresh failed", e)
       }
     }, 500)
   }, [])
+
+  /**
+   * Fires backend API calls for assignment changes (removals then additions),
+   * updates the assignment ID map, and triggers a violation refresh.
+   * Called after optimistic state updates so the UI stays instant.
+   */
+  const persistAssignmentChanges = useCallback((
+    removals: { instructorId: string; sectionId: string; term: "Fall" | "Winter" }[],
+    additions: { instructorId: string; sectionId: string; term: "Fall" | "Winter" }[]
+  ) => {
+    ;(async () => {
+      try {
+        const map = assignmentIdMapRef.current
+        const schedule = activeScheduleRef.current
+        if (!schedule) return
+
+        for (const r of removals) {
+          const key = assignmentKey(r.instructorId, r.sectionId, r.term)
+          const id = map.get(key)
+          if (id) {
+            await api.removeAssignment(yearRef.current, schedule.id, id)
+            map.delete(key)
+          }
+        }
+
+        for (const a of additions) {
+          const section = sectionStateRef.current.byId[a.sectionId]
+          if (!section) continue
+          const result = await api.addAssignment(
+            yearRef.current, schedule.id,
+            a.instructorId, a.sectionId, section.course_code, a.term
+          )
+          if (result) {
+            map.set(assignmentKey(a.instructorId, a.sectionId, a.term), result.id)
+          }
+        }
+
+        refreshViolations()
+      } catch (e) {
+        console.error("Assignment persistence failed", e)
+      }
+    })()
+  }, [refreshViolations])
 
 
   // ── Data Fetching ──────────────────────────────────────────────────────────
@@ -265,6 +308,8 @@ export function useAssignment(): UseAssignmentResult {
           finalInstructorState = applied.instructorState
         }
       }
+
+      assignmentIdMapRef.current = assignment.assignmentIdMap
 
       setSectionState(finalSectionState);
       setInstructorState(finalInstructorState);
@@ -349,7 +394,6 @@ export function useAssignment(): UseAssignmentResult {
     prevInstructorId: assignmentType.InstructorId | null = null,
     prevTerm: assignmentType.SectionAvailability | null = null
   ) => {
-
     // ForW means "fall OR winter" — the user must pick one explicitly
     if (assignmentLocation === assignmentType.SectionAvailability.ForW) {
       console.log("WARN: cannot assign course to 'fall or winter', must assign to 'fall', 'winter', or both")
@@ -357,13 +401,11 @@ export function useAssignment(): UseAssignmentResult {
     }
 
     if (!stateObjectExists(instructorState, nextInstructorId)) {
-      // TODO return error
       console.log(`WARN: instructor with id ${nextInstructorId} does not exist`)
       return
     }
 
     if (!stateObjectExists(sectionState, assignedSectionId)) {
-      // TODO return error
       console.log(`WARN: section with id ${assignedSectionId} does not exist`)
       return
     }
@@ -373,6 +415,9 @@ export function useAssignment(): UseAssignmentResult {
     if (assignmentLocation === assignmentType.SectionAvailability.F && nextInstr.fall_assigned.has(assignedSectionId)) return
     if (assignmentLocation === assignmentType.SectionAvailability.W && nextInstr.wint_assigned.has(assignedSectionId)) return
 
+    // Track backend operations for individual endpoint calls
+    const removals: { instructorId: string; sectionId: string; term: "Fall" | "Winter" }[] = []
+    const additions: { instructorId: string; sectionId: string; term: "Fall" | "Winter" }[] = []
 
     // If no previous instructor was provided, check if the section already has one
     if (!prevInstructorId) {
@@ -381,6 +426,8 @@ export function useAssignment(): UseAssignmentResult {
 
     // Remove the section from the previous instructor's term sets
     if (prevInstructorId && prevTerm) {
+      const prevTermBackend = availabilityToTerm(prevTerm)
+
       if (prevInstructorId === nextInstructorId) {
         const modifiable = cloneInstructor(instructorState.byId[prevInstructorId])
         if (prevTerm === assignmentType.SectionAvailability.F) {
@@ -388,17 +435,21 @@ export function useAssignment(): UseAssignmentResult {
         } else if (prevTerm === assignmentType.SectionAvailability.W) {
           modifiable.wint_assigned.delete(assignedSectionId)
         }
+        if (prevTermBackend) removals.push({ instructorId: prevInstructorId, sectionId: assignedSectionId, term: prevTermBackend })
+
         if (assignmentLocation === assignmentType.SectionAvailability.F) {
           modifiable.fall_assigned.add(assignedSectionId)
+          additions.push({ instructorId: nextInstructorId, sectionId: assignedSectionId, term: "Fall" })
         }
         if (assignmentLocation === assignmentType.SectionAvailability.W) {
           modifiable.wint_assigned.add(assignedSectionId)
+          additions.push({ instructorId: nextInstructorId, sectionId: assignedSectionId, term: "Winter" })
         }
         const modifiableAssignedSection: assignmentType.Section = { ...sectionState.byId[assignedSectionId] }
         modifiableAssignedSection.assigned_to = nextInstructorId
         setSectionState(prev => ({ ...prev, byId: { ...prev.byId, [assignedSectionId]: modifiableAssignedSection } }))
         setInstructorState(prev => ({ ...prev, byId: { ...prev.byId, [prevInstructorId]: modifiable } }))
-        triggerAutoSave()
+        persistAssignmentChanges(removals, additions)
         return
       }
 
@@ -408,6 +459,8 @@ export function useAssignment(): UseAssignmentResult {
       } else if (prevTerm === assignmentType.SectionAvailability.W) {
         modifiablePrevInstructor.wint_assigned.delete(assignedSectionId)
       }
+      if (prevTermBackend) removals.push({ instructorId: prevInstructorId, sectionId: assignedSectionId, term: prevTermBackend })
+
       setInstructorState(prev => ({
         ...prev,
         byId: { ...prev.byId, [prevInstructorId]: modifiablePrevInstructor }
@@ -417,9 +470,11 @@ export function useAssignment(): UseAssignmentResult {
         if (instId === nextInstructorId) continue
         const inst = instructorState.byId[instId]
         if (assignmentLocation === assignmentType.SectionAvailability.F && inst.fall_assigned.has(assignedSectionId)) {
+          removals.push({ instructorId: instId, sectionId: assignedSectionId, term: "Fall" })
           const m = cloneInstructor(inst); m.fall_assigned.delete(assignedSectionId)
           setInstructorState(prev => ({ ...prev, byId: { ...prev.byId, [instId]: m } }))
         } else if (assignmentLocation === assignmentType.SectionAvailability.W && inst.wint_assigned.has(assignedSectionId)) {
+          removals.push({ instructorId: instId, sectionId: assignedSectionId, term: "Winter" })
           const m = cloneInstructor(inst); m.wint_assigned.delete(assignedSectionId)
           setInstructorState(prev => ({ ...prev, byId: { ...prev.byId, [instId]: m } }))
         }
@@ -433,13 +488,14 @@ export function useAssignment(): UseAssignmentResult {
 
     // Add the section to the next instructor's appropriate term set(s)
     const modifiableNextInstructor = cloneInstructor(instructorState.byId[nextInstructorId])
-    //const isFullYear = (modifiableAssignedSection.availability === assignmentType.SectionAvailability.FandW)
 
     if (assignmentLocation === assignmentType.SectionAvailability.F) {
       modifiableNextInstructor.fall_assigned.add(assignedSectionId)
+      additions.push({ instructorId: nextInstructorId, sectionId: assignedSectionId, term: "Fall" })
     }
     if (assignmentLocation === assignmentType.SectionAvailability.W) {
       modifiableNextInstructor.wint_assigned.add(assignedSectionId)
+      additions.push({ instructorId: nextInstructorId, sectionId: assignedSectionId, term: "Winter" })
     }
 
     setSectionState(prev => ({
@@ -458,7 +514,7 @@ export function useAssignment(): UseAssignmentResult {
       }
     }))
 
-    triggerAutoSave()
+    persistAssignmentChanges(removals, additions)
   };
 
   /**
@@ -479,27 +535,39 @@ export function useAssignment(): UseAssignmentResult {
   ) => {
 
     if (!stateObjectExists(sectionState, unassignedSectionId)) {
-      // TODO return error
       console.log(`WARN: section with id ${unassignedSectionId} does not exist`)
       return
     }
 
     if (!stateObjectExists(instructorState, prevInstructorId)) {
-      // TODO return error
       console.log(`WARN: instructor with id ${prevInstructorId} does not exist`)
       return
     }
 
-    // Remove the section from both term sets on the previous instructor
-    const modifiablePrevInstructor= cloneInstructor(instructorState.byId[prevInstructorId])
+    // Track which backend assignments to remove
+    const removals: { instructorId: string; sectionId: string; term: "Fall" | "Winter" }[] = []
+
+    // Remove the section from the appropriate term sets on the previous instructor
+    const modifiablePrevInstructor = cloneInstructor(instructorState.byId[prevInstructorId])
     if (prevTerm === assignmentType.SectionAvailability.F) {
       modifiablePrevInstructor.fall_assigned.delete(unassignedSectionId)
+      removals.push({ instructorId: prevInstructorId, sectionId: unassignedSectionId, term: "Fall" })
     } else if (prevTerm === assignmentType.SectionAvailability.W) {
       modifiablePrevInstructor.wint_assigned.delete(unassignedSectionId)
+      removals.push({ instructorId: prevInstructorId, sectionId: unassignedSectionId, term: "Winter" })
     } else {
       // Dragged from panel - clear this section from whichever term set it is in
       modifiablePrevInstructor.fall_assigned.delete(unassignedSectionId)
       modifiablePrevInstructor.wint_assigned.delete(unassignedSectionId)
+      // Check the map for which assignments actually exist in the backend
+      const fallKey = assignmentKey(prevInstructorId, unassignedSectionId, "Fall")
+      const wintKey = assignmentKey(prevInstructorId, unassignedSectionId, "Winter")
+      if (assignmentIdMapRef.current.has(fallKey)) {
+        removals.push({ instructorId: prevInstructorId, sectionId: unassignedSectionId, term: "Fall" })
+      }
+      if (assignmentIdMapRef.current.has(wintKey)) {
+        removals.push({ instructorId: prevInstructorId, sectionId: unassignedSectionId, term: "Winter" })
+      }
     }
 
     setInstructorState(prev => ({
@@ -522,7 +590,7 @@ export function useAssignment(): UseAssignmentResult {
       }
     }))
 
-    triggerAutoSave()
+    persistAssignmentChanges(removals, [])
   };
 
   /**

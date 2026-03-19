@@ -91,7 +91,7 @@ function mapToFrontendState(
   schedules: BSchedule[],
   courseRules: BCourseRule[],
   instructorRules: BInstructorRule[]
-): { sectionState: SectionState; instructorState: InstructorState } {
+): { sectionState: SectionState; instructorState: InstructorState; assignmentIdMap: Map<string, string> } {
 
   // ── Step 1: Index rules for fast lookup ───────────────────────────────────
 
@@ -193,9 +193,16 @@ function mapToFrontendState(
     instructorAllIds.push(inst.id)
   }
 
+  // Build assignment ID map: "instructorId:sectionId:term" -> assignment ID
+  const assignmentIdMap = new Map<string, string>()
+  for (const a of allAssignments) {
+    assignmentIdMap.set(`${a.instructor_id}:${a.section_id}:${a.term}`, a.id)
+  }
+
   return {
     sectionState: { byId: sectionById, allIds: sectionAllIds },
     instructorState: { byId: instructorById, allIds: instructorAllIds },
+    assignmentIdMap,
   }
 }
 
@@ -219,6 +226,7 @@ export async function fetchAssignment(year: string): Promise<{
   sectionState: SectionState;
   instructorState: InstructorState;
   activeSchedule: { id: string; name: string; year_id: string; date_created: string; is_rc: boolean } | null;
+  assignmentIdMap: Map<string, string>;
 }> {
   const [courses, instructors, schedules, courseRules, instructorRules] = await Promise.all([
     fetch(`${API_BASE}/courses/${year}`).then(r => r.json()),
@@ -228,7 +236,7 @@ export async function fetchAssignment(year: string): Promise<{
     fetch(`${API_BASE}/year/${year}/rules/instructors`).then(r => r.json()),
   ])
 
-  const { sectionState, instructorState } = mapToFrontendState(courses, instructors, schedules, courseRules, instructorRules)
+  const { sectionState, instructorState, assignmentIdMap } = mapToFrontendState(courses, instructors, schedules, courseRules, instructorRules)
 
   // The first schedule in the list is treated as the active working schedule
   const first = schedules[0] ?? null
@@ -237,7 +245,7 @@ export async function fetchAssignment(year: string): Promise<{
     date_created: first.date_created, is_rc: first.is_rc ?? false,
   } : null
 
-  return { sectionState, instructorState, activeSchedule }
+  return { sectionState, instructorState, activeSchedule, assignmentIdMap }
 }
 
 /**
@@ -344,10 +352,6 @@ export async function addAssignment(year: string, schedule_id: string, instructo
 export async function removeAssignment(year: string, schedule_id: string,  assignment_id: string) {
   const res = await fetch(`${API_BASE}/schedule/${year}/${schedule_id}/assignments/${assignment_id}`, {
     method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({}),    
   })
 
   if (!res.ok) return null
