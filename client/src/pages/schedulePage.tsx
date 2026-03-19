@@ -108,7 +108,7 @@ export default function SchedulePage() {
             violations={violations}
           />
         </div>
-        <DragOverlay modifiers={[snapCenterToCursor]}>
+        <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
           {dragging && draggingSection ? (
             <SectionChip
               courseCode={dragging.courseCode}
