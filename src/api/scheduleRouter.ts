@@ -6,6 +6,7 @@ import {
     setWorkingSchedule,
     createSnapshot,
     getSchedules,
+    deleteSchedule,
     addAssignment,
     removeAssignment,
     validateSchedule,
@@ -21,6 +22,7 @@ router.get("/schedule/", getWorkingSchedule)
 router.get("/schedule/:year",getSchedules)
 router.put("/schedule/:year",saveSchedule)
 router.post("/schedule/:year", createSnapshot)
+router.delete("/schedule/:schedule_id", deleteSchedule)
 
 router.post("/schedule/:year/:schedule_id/assignments", addAssignment)
 router.delete("/schedule/:year/:schedule_id/assignments/:assignment_id", removeAssignment)
