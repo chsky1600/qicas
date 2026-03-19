@@ -1,0 +1,132 @@
+import { useState } from "react"
+import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { snapCenterToCursor } from "@dnd-kit/modifiers"
+import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core"
+import { useSchedule } from "@/features/schedule/useSchedule"
+import type { SectionDragData, InstructorDropData, PanelDropData } from "@/features/schedule/types"
+import Toolbar from "@/components/schedule/Toolbar"
+import CoursesPanel from "@/components/schedule/CoursesPanel"
+import ScheduleTable from "@/components/schedule/ScheduleTable"
+import PropertiesDialog from "@/components/schedule/PropertiesDialog"
+import SavedSchedulesDialog from "@/components/schedule/SavedSchedulesDialog"
+import SectionChip from "@/components/schedule/SectionChip"
+
+export default function SchedulePage() {
+  const {
+    years, yearId, courses, courseRules,
+    instructors, instructorRules,
+    schedules, schedule, assignments, violations,
+    loading, error,
+    assign, unassign,
+    createInstructor, updateInstructor, dropInstructor, updateInstructorRule,
+    createCourse, updateCourse, dropCourse, updateCourseRule,
+    createSavedSchedule, deleteSavedSchedule, switchSchedule,
+    changeYear,
+  } = useSchedule()
+
+  const [propertiesOpen, setPropertiesOpen] = useState(false)
+  const [snapshotsOpen, setSnapshotsOpen] = useState(false)
+  const [dragging, setDragging] = useState<SectionDragData | null>(null)
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+
+  function handleDragStart(e: DragStartEvent) {
+    setDragging(e.active.data.current as SectionDragData)
+  }
+
+  function handleDragEnd(e: DragEndEvent) {
+    setDragging(null)
+    const drag = e.active.data.current as SectionDragData
+    if (!e.over) return
+    const over = e.over.data.current as InstructorDropData | PanelDropData
+    if (over.type === "instructor") {
+      assign(drag.sectionId, drag.courseCode, over.instructorId, over.term, drag.assignmentId)
+    } else if (over.type === "panel" && drag.assignmentId) {
+      unassign(drag.assignmentId)
+    }
+  }
+
+  const draggingCourse = dragging ? courses.find(c => c.code === dragging.courseCode) : null
+  const draggingSection = draggingCourse?.sections.find(s => s.id === dragging?.sectionId)
+  const draggingRule = dragging ? courseRules.find(r => r.course_code === dragging.courseCode) : null
+
+  if (loading) return <div className="flex items-center justify-center h-screen text-gray-500">Loading…</div>
+  if (error) return <div className="flex items-center justify-center h-screen text-red-500">{error}</div>
+
+  return (
+    <div className="flex flex-col h-screen overflow-hidden">
+      <Toolbar
+        years={years}
+        yearId={yearId}
+        courses={courses}
+        assignments={assignments}
+        schedule={schedule}
+        onChangeYear={changeYear}
+        onOpenProperties={() => setPropertiesOpen(true)}
+        onOpenSnapshots={() => setSnapshotsOpen(true)}
+      />
+
+      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <div className="flex flex-1 overflow-hidden">
+          <CoursesPanel
+            courses={courses}
+            courseRules={courseRules}
+            assignments={assignments}
+          />
+          <ScheduleTable
+            instructors={instructors}
+            instructorRules={instructorRules}
+            courses={courses}
+            courseRules={courseRules}
+            assignments={assignments}
+            violations={violations}
+          />
+        </div>
+        <DragOverlay modifiers={[snapCenterToCursor]}>
+          {dragging && draggingSection ? (
+            <SectionChip
+              courseCode={dragging.courseCode}
+              sectionId={dragging.sectionId}
+              sectionNum={draggingSection.number}
+              isFullYear={draggingRule?.is_full_year ?? false}
+              assignmentId={dragging.assignmentId ?? ""}
+              prevInstructorId={dragging.prevInstructorId ?? ""}
+              prevTerm={dragging.prevTerm ?? "Fall"}
+              inViolation={null}
+            />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+
+      <PropertiesDialog
+        open={propertiesOpen}
+        onClose={() => setPropertiesOpen(false)}
+        instructors={instructors}
+        instructorRules={instructorRules}
+        courses={courses}
+        courseRules={courseRules}
+        assignments={assignments}
+        onCreateInstructor={createInstructor}
+        onUpdateInstructor={updateInstructor}
+        onDropInstructor={dropInstructor}
+        onUpdateInstructorRule={updateInstructorRule}
+        onCreateCourse={createCourse}
+        onUpdateCourse={updateCourse}
+        onDropCourse={dropCourse}
+        onUpdateCourseRule={updateCourseRule}
+      />
+
+      <SavedSchedulesDialog
+        open={snapshotsOpen}
+        onClose={() => setSnapshotsOpen(false)}
+        schedules={schedules}
+        activeScheduleId={schedule?.id ?? null}
+        courses={courses}
+        courseRules={courseRules}
+        onCreateSavedSchedule={createSavedSchedule}
+        onDeleteSavedSchedule={deleteSavedSchedule}
+        onSwitchSchedule={switchSchedule}
+      />
+    </div>
+  )
+}
