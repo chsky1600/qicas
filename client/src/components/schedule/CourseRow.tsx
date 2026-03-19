@@ -25,7 +25,7 @@ export default function CourseRow({ course, section, rule, assignments }: Props)
       type: "section", source: "panel",
       sectionId: section.id,
       courseCode: course.code,
-      assignmentId: assignment?.id ?? null,
+      assignmentId:null,
       prevInstructorId: assignment?.instructor_id ?? null,
       prevTerm: assignment?.term ?? null,
     } satisfies SectionDragData,
