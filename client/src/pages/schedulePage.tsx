@@ -27,6 +27,7 @@ export default function SchedulePage() {
   const [propertiesOpen, setPropertiesOpen] = useState(false)
   const [snapshotsOpen, setSnapshotsOpen] = useState(false)
   const [dragging, setDragging] = useState<SectionDragData | null>(null)
+  const [propertiesMode, setPropertiesMode] = useState<"instructors" | "courses">("instructors")
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -38,13 +39,37 @@ export default function SchedulePage() {
     setDragging(null)
     const drag = e.active.data.current as SectionDragData
     if (!e.over) return
+
     const over = e.over.data.current as InstructorDropData | PanelDropData
-    if (over.type === "instructor") {
-      assign(drag.sectionId, drag.courseCode, over.instructorId, over.term, drag.assignmentId)
-    } else if (over.type === "panel" && drag.assignmentId) {
+
+    if (over.type === "panel" && drag.assignmentId) {
       unassign(drag.assignmentId)
+      return
     }
+
+    if (over.type !== "instructor") return
+
+    const isFullYear = courseRules.find(r => r.course_code === drag.courseCode)?.is_full_year ?? false
+
+    // Full year: Fall chip must stay in Fall, Winter chip must stay in Winter.
+    // If user drags across terms, redirect to the chip that belongs in the target term.
+    if (isFullYear && drag.source === "chip" && drag.prevTerm !== over.term) {
+      const targetAssignment = assignments.find(
+        a => a.course_code === drag.courseCode && a.term === over.term
+      )
+      if (targetAssignment) {
+        // Move the chip that actually belongs in that term
+        assign(targetAssignment.section_id, drag.courseCode, over.instructorId, over.term, targetAssignment.id)
+      } else {
+        // No chip in target term yet — move the dragged chip there (change its term)
+        assign(drag.sectionId, drag.courseCode, over.instructorId, over.term, drag.assignmentId)
+      }
+      return
+    }
+
+    assign(drag.sectionId, drag.courseCode, over.instructorId, over.term, drag.assignmentId)
   }
+
 
   const draggingCourse = dragging ? courses.find(c => c.code === dragging.courseCode) : null
   const draggingSection = draggingCourse?.sections.find(s => s.id === dragging?.sectionId)
@@ -62,7 +87,7 @@ export default function SchedulePage() {
         assignments={assignments}
         schedule={schedule}
         onChangeYear={changeYear}
-        onOpenProperties={() => setPropertiesOpen(true)}
+        onOpenProperties={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
         onOpenSnapshots={() => setSnapshotsOpen(true)}
       />
 
@@ -72,6 +97,7 @@ export default function SchedulePage() {
             courses={courses}
             courseRules={courseRules}
             assignments={assignments}
+            onAdd={() => { setPropertiesMode("courses"); setPropertiesOpen(true) }}
           />
           <ScheduleTable
             instructors={instructors}
@@ -100,6 +126,7 @@ export default function SchedulePage() {
 
       <PropertiesDialog
         open={propertiesOpen}
+        defaultMode={propertiesMode}
         onClose={() => setPropertiesOpen(false)}
         instructors={instructors}
         instructorRules={instructorRules}

@@ -17,6 +17,7 @@ type Status = "current" | "dropped"
 
 interface Props {
   open: boolean
+  defaultMode?: "instructors" | "courses"
   onClose: () => void
   instructors: Instructor[]
   instructorRules: InstructorRule[]
@@ -50,7 +51,7 @@ function blankCourseRule(courseCode: string): CourseRule {
 }
 
 export default function PropertiesDialog({
-  open, onClose,
+  open, onClose, defaultMode,
   instructors, instructorRules,
   courses, courseRules,
   assignments,
@@ -68,6 +69,7 @@ export default function PropertiesDialog({
   const [courseRuleEdit, setCourseRuleEdit] = useState<CourseRule | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  useEffect(() => { if (open) setMode(defaultMode ?? "instructors") }, [open, defaultMode])
 
   const instrItems = useMemo(() =>
     instructors.filter(i => {

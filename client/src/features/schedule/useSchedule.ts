@@ -162,6 +162,8 @@ export function useSchedule(): UseScheduleResult {
     const yr = yearIdRef.current
     if (!sched || !yr) return
 
+    const isFullYear = courseRulesRef.current.find(r => r.course_code === courseCode)?.is_full_year ?? false
+
     const newAssignment: Assignment = {
       id: crypto.randomUUID(),
       instructor_id: instructorId,
@@ -170,17 +172,22 @@ export function useSchedule(): UseScheduleResult {
       term,
     }
 
-    // Optimistic update
+    // Collect all assignments that must be removed
+    const toRemove = sched.assignments.filter(a => {
+      if (a.id === prevAssignmentId) return true
+      if (isFullYear) return a.section_id === sectionId && a.term === term // one per term slot
+      return a.section_id === sectionId // non-full year: only one chip ever
+    })
+
     setSchedule(prev => {
       if (!prev) return prev
-      const filtered = prevAssignmentId
-        ? prev.assignments.filter(a => a.id !== prevAssignmentId)
-        : prev.assignments
+      const removeIds = new Set(toRemove.map(a => a.id))
+      const filtered = prev.assignments.filter(a => !removeIds.has(a.id))
       return { ...prev, assignments: [...filtered, newAssignment] }
     })
 
     try {
-      if (prevAssignmentId) await api.removeAssignment(yr, sched.id, prevAssignmentId)
+      await Promise.all(toRemove.map(a => api.removeAssignment(yr, sched.id, a.id)))
       await api.addAssignment(yr, sched.id, newAssignment)
       triggerRevalidate()
     } catch (e) {
