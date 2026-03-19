@@ -149,7 +149,7 @@ export function checkCourseRules(
   );
   if (duplicate) {
     violations.push({
-      id: `v-duplicate-${candidate.id}`,
+      id: `v-duplicate-${candidate.course_code}-${candidate.section_id}-${candidate.term}`,
       type: "Course",
       offending_id: candidate.course_code,
       code: "DUPLICATE_ASSIGNMENT",
@@ -224,7 +224,7 @@ export function checkCourseRules(
   // Assigned course term does not exist in the course's terms_offered.
   if (rule && !rule.terms_offered.includes(candidate.term)) {
     violations.push({
-      id: `v-term-not-offered-${candidate.id}`,
+      id: `v-term-not-offered-${candidate.course_code}-${candidate.section_id}-${candidate.term}`,
       type: "Course",
       offending_id: candidate.course_code,
       code: "TERM_NOT_OFFERED",
@@ -241,7 +241,7 @@ export function checkCourseRules(
     const eligible = RANK_ELIGIBILITY[course.level as CourseLevel];
     if (eligible && !eligible.includes(instructor.rank)) {
       violations.push({
-        id: `v-rank-mismatch-${candidate.id}`,
+        id: `v-rank-mismatch-${candidate.instructor_id}-${candidate.course_code}-${candidate.section_id}`,
         type: "Course",
         offending_id: candidate.course_code,
         code: "RANK_MISMATCH",
@@ -295,7 +295,7 @@ export function checkInstructorRules(
   const hasTaught = instructor.prev_taught.some(c => c.code === candidate.course_code);
   if (!hasTaught) {
     violations.push({
-      id: `v-first-time-${candidate.id}`,
+      id: `v-first-time-${candidate.instructor_id}-${candidate.course_code}`,
       type: "Instructor",
       offending_id: candidate.instructor_id,
       code: "FIRST_TIME_TEACHING",
@@ -360,7 +360,7 @@ export function checkInstructorRules(
         !rule.declined_courses.includes(candidate.course_code)
       ) {
         violations.push({
-          id: `v-tadj-conflict-${candidate.id}-${rule.instructor_id}`,
+          id: `v-tadj-conflict-${candidate.instructor_id}-${rule.instructor_id}-${candidate.course_code}`,
           type: "Instructor",
           offending_id: candidate.instructor_id,
           code: "TADJ_CONFLICT",
