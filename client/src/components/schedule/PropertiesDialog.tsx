@@ -5,6 +5,8 @@ import { SectionBox } from "@/components/ui/section-box"
 import { SidebarListItem } from "@/components/ui/sidebar-list-item"
 import { ModeTogglePill } from "@/components/ui/mode-toggle-pill"
 import { IconControlButton } from "@/components/ui/icon-control-button"
+import { toast } from "sonner"
+
 import type {
   Instructor, InstructorRule, Course, CourseRule,
   InstructorRank, Term, CourseLevel,
@@ -126,8 +128,12 @@ export default function PropertiesDialog({
         if (isNew) { await onCreateInstructor(instrEdit, instrRuleEdit); setIsNew(false) }
         else { await Promise.all([ onUpdateInstructor(instrEdit), instrRuleEdit.id ? onUpdateInstructorRule(instrRuleEdit.id, instrRuleEdit) : Promise.resolve() ]) }
       } else if (mode === "courses" && courseEdit && courseRuleEdit) {
+        // ensure courseRuleEdit and courseEdit align on coursecode
         const rule = { ...courseRuleEdit, course_code: courseEdit.code }
-        if (isNew) { await onCreateCourse(courseEdit, rule); setIsNew(false) }
+        if (isNew) {
+          if (courseEdit.code.trim() === "") toast.warning("All Courses must have a Course Code")
+          else { await onCreateCourse(courseEdit, rule); setIsNew(false) }
+        }
         else { await Promise.all([ onUpdateCourse(courseEdit), courseRuleEdit.id ? onUpdateCourseRule(courseRuleEdit.id, rule) : Promise.resolve()])}
       }
     } finally { setSaving(false) }

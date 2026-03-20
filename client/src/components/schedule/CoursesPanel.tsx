@@ -68,14 +68,13 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAdd 
           </TableHeader>
           <TableBody>
             <TableRow className="bg-gray-50 hover:bg-gray-50">
-              <TableCell colSpan={4} className="py-1 px-3">
-                <button
-                  onClick={() => setShowUnassigned(v => !v)}
-                  className="w-full flex items-center justify-between text-xs text-gray-500 font-semibold"
+              <TableCell onClick={() => setShowUnassigned(v => !v)} colSpan={4} className="py-1 px-3">
+                <div                  
+                  className="w-full flex items-center focus:outline-none justify-between text-xs text-gray-500 font-semibold"
                 >
                   <span>Unassigned Courses ({unassigned.length})</span>
                   <span>{showUnassigned ? "▲" : "▼"}</span>
-                </button>
+                </div>
               </TableCell>
             </TableRow>
             {showUnassigned && unassigned.map(({ course, section, rule }) => (
@@ -85,14 +84,13 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAdd 
             {assigned.length > 0 && (
               <>
                 <TableRow className="bg-gray-50 hover:bg-gray-50">
-                  <TableCell colSpan={4} className="py-1 px-3">
-                    <button
-                      onClick={() => setShowAssigned(v => !v)}
+                  <TableCell onClick={() => setShowAssigned(v => !v)} colSpan={4} className="py-1 px-3">
+                    <div
                       className="w-full flex items-center justify-between text-xs text-gray-500 font-semibold"
                     >
                       <span>Assigned Courses ({assigned.length})</span>
                       <span>{showAssigned ? "▲" : "▼"}</span>
-                    </button>
+                    </div>
                   </TableCell>
                 </TableRow>
                 {showAssigned && assigned.map(({ course, section, rule }) => (

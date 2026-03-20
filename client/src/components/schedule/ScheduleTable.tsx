@@ -27,9 +27,9 @@ export default function ScheduleTable({
       <table className="w-full border-collapse text-left">
         <thead className="sticky top-0 z-10">
           <tr>
-            <th className="px-3 py-3 text-sm font-semibold text-gray-700 w-48 bg-gray-100">Instructor</th>
-            <th className="px-3 py-3 text-sm font-semibold text-gray-700 w-96 bg-orange-100 text-center">Fall</th>
-            <th className="px-3 py-3 text-sm font-semibold text-gray-700 w-96 bg-cyan-100 text-center">Winter</th>
+            <th className="px-3 py-3 text-sm font-semibold text-gray-700 w-72 bg-gray-100">Instructor</th>
+            <th className="px-3 py-3 text-sm font-semibold text-gray-700 w-48 bg-orange-100 text-center">Fall</th>
+            <th className="px-3 py-3 text-sm font-semibold text-gray-700 w-48 bg-cyan-100 text-center">Winter</th>
           </tr>
         </thead>
         <tbody>
