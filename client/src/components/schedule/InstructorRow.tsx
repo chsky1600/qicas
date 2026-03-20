@@ -109,7 +109,7 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
         {/* -- Fall Col -- */}
         <td
           ref={fallRef}
-          className={`px-3 py-2 min-w-48 align-top ${fallOver ? "bg-blue-100" : "bg-orange-50"}`}
+          className={`px-3 py-2 min-w-48 ${fallOver ? "bg-blue-100" : "bg-orange-50"}`}
         >
           <div className="flex flex-wrap gap-1">
             {fallAssignments.map(a => {
@@ -137,7 +137,7 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
         {/* -- Winter Col -- */}
         <td
           ref={wintRef}
-          className={`px-3 py-2 min-w-48 align-top ${wintOver ? "bg-blue-100" : "bg-cyan-50"}`}
+          className={`px-3 py-2 min-w-48 ${wintOver ? "bg-blue-100" : "bg-cyan-50"}`}
         >
           <div className="flex flex-wrap gap-1">
             {wintAssignments.map(a => {
