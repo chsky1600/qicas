@@ -22,6 +22,7 @@ export default function SchedulePage() {
     createCourse, updateCourse, dropCourse, updateCourseRule,
     createSavedSchedule, deleteSavedSchedule, switchSchedule,
     changeYear,
+    exportCSV
   } = useSchedule()
 
   const [propertiesOpen, setPropertiesOpen] = useState(false)
@@ -83,12 +84,11 @@ export default function SchedulePage() {
       <Toolbar
         years={years}
         yearId={yearId}
-        courses={courses}
-        assignments={assignments}
         schedule={schedule}
         onChangeYear={changeYear}
         onOpenProperties={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
         onOpenSnapshots={() => setSnapshotsOpen(true)}
+        onExportCSV={exportCSV}
       />
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>

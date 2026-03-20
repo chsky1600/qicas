@@ -4,6 +4,9 @@ import type {
   Year, Course, Instructor, Schedule, Assignment,
   InstructorRule, CourseRule, Violation, Term
 } from "./types"
+import  {
+  RANK_DISPLAY
+} from "./types"
 
 export interface UseScheduleResult {
   // Raw data — components derive what they need
@@ -35,7 +38,7 @@ export interface UseScheduleResult {
   refresh: () => Promise<void>
   updateInstructorRule: (ruleId: string, updates: Partial<InstructorRule>) => Promise<void>
   updateCourseRule: (ruleId: string, updates: Partial<CourseRule>) => Promise<void>
-
+  exportCSV: () => void
 }
 
 export function useSchedule(): UseScheduleResult {
@@ -335,6 +338,90 @@ export function useSchedule(): UseScheduleResult {
     }
   }, [loadYear])
 
+  // ── export scheudle ─────────────────────────────────────────────────────────────
+  function exportCSV() {
+    let scheduleName;
+    if (!schedule) scheduleName = "Schedule"
+    else scheduleName = schedule.name
+
+    interface row {
+      data: string[]
+      fallAssign: string[]
+      wintAssign: string[]
+    }
+
+    // there must be at least 1
+    let maxFallAssigned = 1 
+
+    const courseMap = new Map<string, Course>()
+    for (const c of courses){
+      courseMap.set(c.code, c)
+    }
+
+    const exportMap = new Map<string, row>()
+    for (const a of assignments) {
+      let csvRow = exportMap.get(a.instructor_id)
+      if (!csvRow){
+        const i = instructors.find(i => i.id === a.instructor_id) 
+        if (!i) continue
+
+        exportMap.set(a.instructor_id, 
+          {
+            data: [RANK_DISPLAY[i.rank].short + " " + i.name], 
+            fallAssign: [], 
+            wintAssign: []
+          })
+        csvRow = exportMap.get(a.instructor_id)
+      }
+
+      const c = courseMap.get(a.course_code)
+      if (!c) continue
+      let courseString = a.course_code
+      if (c.sections.length > 1) {
+        const s = c.sections.find(s => s.id === a.section_id) ?? {id: "", number: 1, capacity: 0}
+        courseString += "-" + s.number
+      }
+
+      if(a.term == "Fall"){
+        if (!csvRow) continue
+        csvRow.fallAssign.push(courseString)
+        if (csvRow.fallAssign.length > maxFallAssigned) maxFallAssigned = csvRow.fallAssign.length
+      }
+      if(a.term == "Winter"){
+        if (!csvRow) continue
+        csvRow.wintAssign.push(courseString)
+      }
+    }
+
+    let csv: string = `${scheduleName},`;
+
+    let fallPadding = ","
+    while (fallPadding.length < maxFallAssigned) fallPadding += ","
+    csv = csv + "Fall" + fallPadding + "Winter,\n"
+
+    exportMap.forEach((row) => {
+      const sortedFall = row.fallAssign.sort((a, b) => a.localeCompare(b));
+      const sortedWint = row.wintAssign.sort((a, b) => a.localeCompare(b));
+
+      while (sortedFall.length < maxFallAssigned) sortedFall.push("")
+
+      const combinedRow = row.data
+      combinedRow.push(...sortedFall)
+      combinedRow.push(...sortedWint)
+
+      csv += combinedRow.join(",") + "\n";
+    })
+
+    const blob = new Blob([csv], { type: "text/csv" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    if (scheduleName) a.download = `${scheduleName}.csv`
+    else a.download = `schedule.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return {
     years, yearId, courses, courseRules, instructors, instructorRules,
     schedules, schedule, assignments, violations,
@@ -344,6 +431,7 @@ export function useSchedule(): UseScheduleResult {
     createCourse, updateCourse, dropCourse,
     createSavedSchedule, switchSchedule, deleteSavedSchedule,
     changeYear,
+    exportCSV,
     refresh: load,
     updateInstructorRule,
     updateCourseRule,
