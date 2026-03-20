@@ -10,6 +10,7 @@ import ScheduleTable from "@/components/schedule/ScheduleTable"
 import PropertiesDialog from "@/components/schedule/PropertiesDialog"
 import SavedSchedulesDialog from "@/components/schedule/SavedSchedulesDialog"
 import SectionChip from "@/components/schedule/SectionChip"
+import { Toaster } from "@/components/ui/sonner"
 
 export default function SchedulePage() {
   const {
@@ -80,6 +81,7 @@ export default function SchedulePage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      <Toaster />
       <Toolbar
         years={years}
         yearId={yearId}
