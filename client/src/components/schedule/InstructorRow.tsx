@@ -45,9 +45,6 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
   }, 0)
 
   const myViolations = violations.filter(v => v.type === "Instructor" && v.offending_id === instructor.id)
-  const infoCount = myViolations.filter(v => v.degree === "Info").length
-  const warnCount = myViolations.filter(v => v.degree === "Warning").length
-  const errCount = myViolations.filter(v => v.degree === "Error").length
 
   const fallCourseViolations = [... new Map(
     fallAssignments.flatMap(a =>
@@ -65,6 +62,20 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
     ).map(v => [v.id, v])
   ).values()]
 
+  const violationCounts = [...myViolations, ...fallCourseViolations, ...wintCourseViolations].reduce(
+    (acc, v) => {
+      if (v.degree === "Info") acc.info++
+      else if (v.degree === "Warning") acc.warn++
+      else if (v.degree === "Error") acc.err++
+      return acc
+    },
+    { info: 0, warn: 0, err: 0 }
+  )
+
+  const infoCount = violationCounts.info
+  const warnCount = violationCounts.warn
+  const errCount = violationCounts.err
+
   const { setNodeRef: fallRef, isOver: fallOver } = useDroppable({ id: `drop-${instructor.id}-Fall`, data: { type: "instructor", instructorId: instructor.id, term: "Fall" } })
   const { setNodeRef: wintRef, isOver: wintOver } = useDroppable({ id: `drop-${instructor.id}-Winter`, data: { type: "instructor", instructorId: instructor.id, term: "Winter" } })
 
@@ -75,6 +86,8 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
   return (
     <>
       <tr className="border-b border-gray-200">
+
+        {/* -- Info Col -- */}
         <td className="px-3 py-2 text-sm whitespace-nowrap align-top">
           <div className="font-medium">{rankShort} {instructor.name}</div>
           <div className={`text-xs ${workloadExceeded ? "text-orange-500 font-semibold" : "text-gray-500"}`}>
@@ -82,16 +95,18 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
           </div>
           <div className="text-xs text-gray-500">Students: {totalCapacity}</div>
           {myViolations.length > 0 && (
-            <div className="text-xs flex items-center gap-1 mt-0.5">
+            <div className="cursor-pointer text-xs flex items-center gap-1 mt-0.5 " onClick={() => setShowViolations(v => !v)}>
               {infoCount > 0 && <span className="text-blue-500">Info: {infoCount},</span>}
               {warnCount > 0 && <span className="text-orange-500">Warnings: {warnCount},</span>}
               {errCount > 0 && <span className="text-red-500">Errors: {errCount}</span>}
-              <button onClick={() => setShowViolations(v => !v)} className="text-gray-400 hover:text-gray-600 ml-0.5">
+              <div className="text-gray-400 hover:text-gray-600 ml-0.5">
                 {showViolations ? "▲" : "▼"}
-              </button>
+              </div>
             </div>
           )}
         </td>
+
+        {/* -- Fall Col -- */}
         <td
           ref={fallRef}
           className={`px-3 py-2 min-w-48 align-top ${fallOver ? "bg-blue-100" : "bg-orange-50"}`}
@@ -117,16 +132,9 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
               ) : null
             })}
           </div>
-          {fallCourseViolations.length > 0 && (
-            <ul className="mt-1 space-y-0.5">
-              {fallCourseViolations.map(v => (
-                <li key={v.id} className={`text-xs flex gap-2 ${v.degree === "Error" ? "text-red-600" : v.degree === "Warning" ? "text-orange-500" : "text-blue-500"}`}>
-                  [{v.degree}] {v.message}
-                </li>
-              ))}
-            </ul>
-          )}
         </td>
+
+        {/* -- Winter Col -- */}
         <td
           ref={wintRef}
           className={`px-3 py-2 min-w-48 align-top ${wintOver ? "bg-blue-100" : "bg-cyan-50"}`}
@@ -152,22 +160,35 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
               ) : null
             })}
           </div>
-          {wintCourseViolations.length > 0 && (
-            <ul className="mt-1 space-y-0.5">
-              {wintCourseViolations.map(v => (
+        </td>
+      </tr>
+
+      {/* -- Violation Warnings -- */}
+      {showViolations && (myViolations.length + fallCourseViolations.length + wintCourseViolations.length) > 0 && (
+        <tr className="border-b border-gray-100 bg-gray-50">
+          <td colSpan={1} className="px-4 py-2 align-top">
+            <ul className="space-y-0.5">
+              {myViolations.map(v => (
                 <li key={v.id} className={`text-xs flex gap-2 ${v.degree === "Error" ? "text-red-600" : v.degree === "Warning" ? "text-orange-500" : "text-blue-500"}`}>
-                  [{v.degree}] {v.message}
+                  <span className="font-semibold">[{v.degree}]</span>
+                  <span>{v.message}</span>
                 </li>
               ))}
             </ul>
-          )}
-        </td>
-      </tr>
-      {showViolations && myViolations.length > 0 && (
-        <tr className="border-b border-gray-100 bg-gray-50">
-          <td colSpan={3} className="px-4 py-2">
+          </td>
+          <td colSpan={1} className="px-4 py-2 align-top">
             <ul className="space-y-0.5">
-              {myViolations.map(v => (
+              {fallCourseViolations.map(v => (
+                <li key={v.id} className={`text-xs flex gap-2 ${v.degree === "Error" ? "text-red-600" : v.degree === "Warning" ? "text-orange-500" : "text-blue-500"}`}>
+                  <span className="font-semibold">[{v.degree}]</span>
+                  <span>{v.message}</span>
+                </li>
+              ))}
+            </ul>
+          </td>
+          <td colSpan={1} className="px-4 py-2 align-top">
+            <ul className="space-y-0.5">
+              {wintCourseViolations.map(v => (
                 <li key={v.id} className={`text-xs flex gap-2 ${v.degree === "Error" ? "text-red-600" : v.degree === "Warning" ? "text-orange-500" : "text-blue-500"}`}>
                   <span className="font-semibold">[{v.degree}]</span>
                   <span>{v.message}</span>
