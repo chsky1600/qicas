@@ -228,6 +228,30 @@ describe("migrateFacultyToNewYear (deep copy)", () => {
     expect(copy!.schedules.length).toBe(0);
   });
 
+  test("mixed valid and non-existent schedule_ids picks only valid ones", async () => {
+    const result = await migrateFacultyToNewYear(
+      facultyId, facultyId, sourceYearId, newYearId, undefined, ["SCH001", "NONEXISTENT"]
+    );
+
+    const copy = result.academic_years.find((y) => y.id === newYearId);
+    expect(copy!.schedules.length).toBe(1);
+    expect(copy!.schedules[0].id).toBe("SCH001");
+  });
+
+  test("cloned schedule assignments preserve field values", async () => {
+    const result = await migrateFacultyToNewYear(
+      facultyId, facultyId, sourceYearId, newYearId, undefined, ["SCH001"]
+    );
+
+    const copy = result.academic_years.find((y) => y.id === newYearId);
+    const assignment = copy!.schedules[0].assignments[0];
+    expect(assignment.id).toBe("A001");
+    expect(assignment.instructor_id).toBe("I001");
+    expect(assignment.section_id).toBe("SEC001");
+    expect(assignment.course_code).toBe("CISC101");
+    expect(assignment.term).toBe("Fall");
+  });
+
   test("cloned schedules get fresh Mongo _id fields", async () => {
     const result = await migrateFacultyToNewYear(
       facultyId, facultyId, sourceYearId, newYearId, undefined, ["SCH001"]

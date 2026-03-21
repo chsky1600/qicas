@@ -206,6 +206,9 @@ export const migrateFacultyToNewYear = async (
   if (!source_year_id || !new_year_id) {
     return res.status(400).json({ error: "Missing source_year_id or new_year_id" });
   }
+  if (schedule_ids !== undefined && !Array.isArray(schedule_ids)) {
+    return res.status(400).json({ error: "schedule_ids must be an array of strings" });
+  }
 
   try {
     const updated = await migrateFacultyToNewYearSvc(
