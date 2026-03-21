@@ -212,7 +212,8 @@ export async function migrateFacultyToNewYear(
   target_id: string,
   source_year_id: string,
   new_year_id: string,
-  name?: string
+  name?: string,
+  schedule_ids?: string[]
 ): Promise<Faculty> {
   if (target_id !== faculty_id) {
     throw new ServiceError(404, "Faculty not found");
@@ -237,10 +238,19 @@ export async function migrateFacultyToNewYear(
     throw new ServiceError(404, "Source academic year not found");
   }
 
+  const pickedSchedules = schedule_ids?.length
+    ? source.schedules.filter(s => schedule_ids.includes(s.id))
+    : [];
+
+  const clonedSchedules = cloneWithoutMongoIds(pickedSchedules).map(s => ({
+    ...s,
+    year_id: new_year_id,
+  }));
+
   const newYear: AcademicYear = {
     id: new_year_id,
     name: name ?? `${source.name} (Copy)`,
-    schedules: [],
+    schedules: clonedSchedules,
     courses: cloneWithoutMongoIds(source.courses),
     instructors: cloneWithoutMongoIds(source.instructors),
     instructor_rules: cloneWithoutMongoIds(source.instructor_rules),
