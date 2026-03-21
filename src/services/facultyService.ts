@@ -197,14 +197,18 @@ export async function removeUserFromFacultyByID(
 }
 
 /**
- * Clone rules/courses/instructors into a new academic year with empty schedules.
- * Uses a deep clone and strips Mongo _id fields to avoid shared references.
+ * Clone rules/courses/instructors (and optionally selected schedules) into a
+ * new academic year.  Uses a deep clone and strips Mongo _id fields to avoid
+ * shared references.  Cloned schedules have their year_id updated to the new
+ * year so downstream lookups (e.g. validator) resolve correctly.
  *
  * @param faculty_id - Faculty identifier from JWT
  * @param target_id - Faculty id from route param
  * @param source_year_id - Existing year to copy from
  * @param new_year_id - New year id to create
  * @param name - Optional display name
+ * @param schedule_ids - Optional list of schedule ids to cherry-pick from the
+ *   source year.  Omitting or passing [] keeps the new year's schedules empty.
  * @returns Updated faculty
  */
 export async function migrateFacultyToNewYear(
@@ -212,7 +216,8 @@ export async function migrateFacultyToNewYear(
   target_id: string,
   source_year_id: string,
   new_year_id: string,
-  name?: string
+  name?: string,
+  schedule_ids?: string[]
 ): Promise<Faculty> {
   if (target_id !== faculty_id) {
     throw new ServiceError(404, "Faculty not found");
@@ -237,10 +242,23 @@ export async function migrateFacultyToNewYear(
     throw new ServiceError(404, "Source academic year not found");
   }
 
+  // Cherry-pick requested schedules from the source year.  Assignment references
+  // (instructor_id, course_code, etc.) stay valid because courses and instructors
+  // are also cloned with the same application-level ids.
+  const pickedSchedules = schedule_ids?.length
+    ? source.schedules.filter(s => schedule_ids.includes(s.id))
+    : [];
+
+  const clonedSchedules = cloneWithoutMongoIds(pickedSchedules).map(s => ({
+    ...s,
+    year_id: new_year_id,
+  }));
+
   const newYear: AcademicYear = {
     id: new_year_id,
     name: name ?? `${source.name} (Copy)`,
-    schedules: [],
+    start_year: source.start_year + 1,
+    schedules: clonedSchedules,
     courses: cloneWithoutMongoIds(source.courses),
     instructors: cloneWithoutMongoIds(source.instructors),
     instructor_rules: cloneWithoutMongoIds(source.instructor_rules),

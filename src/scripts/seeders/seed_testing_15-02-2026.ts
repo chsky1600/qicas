@@ -42,6 +42,7 @@ async function main() {
       {
         id: "Y2026",
         name: "2026–2027 Academic Year",
+        start_year: 2026,
 
         schedules: [
           {

@@ -44,6 +44,8 @@ export interface AcademicYear {
   id: string;
   /** Display name (e.g., "2024-2025") */
   name: string;
+  /** Starting calendar year (e.g., 2024 for the 2024-2025 academic year) */
+  start_year: number;
   /** Schedule IDs associated with this year */
   schedules: Schedule[];
   /** Courses available this year */

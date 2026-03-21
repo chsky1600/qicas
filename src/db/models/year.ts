@@ -40,6 +40,7 @@ export const academicYearSchema = new mongoose.Schema<AcademicYear>(
     {
         id: {type: String, required: true},
         name: {type: String, required: true},
+        start_year: {type: Number, required: true},
         schedules: {type: [scheduleSchema], required: true},
         courses: {type: [courseSchema], required: true},
         instructors: {type: [instructorSchema], required: true},
