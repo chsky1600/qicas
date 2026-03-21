@@ -18,6 +18,7 @@ const seedFaculty = {
     {
       id: sourceYearId,
       name: "2026–2027 Academic Year",
+      start_year: 2026,
       schedules: [
         {
           id: "SCH001",
@@ -170,6 +171,17 @@ describe("migrateFacultyToNewYear (deep copy)", () => {
     expect(err).toBeTruthy();
     expect(err.status).toBe(409);
     expect(err.message).toBe("Academic year already exists");
+  });
+
+  test("migrated year has start_year incremented by 1", async () => {
+    const result = await migrateFacultyToNewYear(
+      facultyId, facultyId, sourceYearId, newYearId
+    );
+
+    const source = result.academic_years.find((y) => y.id === sourceYearId);
+    const copy = result.academic_years.find((y) => y.id === newYearId);
+    expect(source!.start_year).toBe(2026);
+    expect(copy!.start_year).toBe(2027);
   });
 
   test("omitting schedule_ids produces empty schedules (unchanged behavior)", async () => {

@@ -257,6 +257,7 @@ export async function migrateFacultyToNewYear(
   const newYear: AcademicYear = {
     id: new_year_id,
     name: name ?? `${source.name} (Copy)`,
+    start_year: source.start_year + 1,
     schedules: clonedSchedules,
     courses: cloneWithoutMongoIds(source.courses),
     instructors: cloneWithoutMongoIds(source.instructors),
