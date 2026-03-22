@@ -13,7 +13,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
   })
   if (!res.ok) throw new Error(`${options?.method ?? "GET"} ${path} → ${res.status}`)
-  if (res.status === 204) return undefined as T
+  if (res.status === 204 || res.status === 201) return undefined as T
   return res.json()
 }
 
@@ -139,6 +139,13 @@ export function getSchedules(year: string) {
 
 export function setWorkingSchedule(scheduleId: string) {
   return request<Schedule>(`/schedule/active/${scheduleId}`, { method: "PUT" })
+}
+
+export function saveSchedule(year: string, schedule: Schedule) {
+  return request<void>(`/schedule/${year}`, { 
+    method: "PUT",  
+    body: JSON.stringify({ schedule: schedule }),
+  })
 }
 
 export function createSavedSchedule(year: string, schedule: Schedule) {

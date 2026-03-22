@@ -21,7 +21,7 @@ export default function SchedulePage() {
     assign, unassign,
     createInstructor, updateInstructor, dropInstructor, updateInstructorRule,
     createCourse, updateCourse, dropCourse, updateCourseRule,
-    createSavedSchedule, deleteSavedSchedule, switchSchedule,
+    addSchedule, copySchedule, deleteSavedSchedule, switchSchedule, renameSchedule,
     changeYear,
     exportCSV
   } = useSchedule()
@@ -148,13 +148,15 @@ export default function SchedulePage() {
       <SavedSchedulesDialog
         open={snapshotsOpen}
         onClose={() => setSnapshotsOpen(false)}
+        activeSchedule={schedule}
         schedules={schedules}
-        activeScheduleId={schedule?.id ?? null}
         courses={courses}
         courseRules={courseRules}
-        onCreateSavedSchedule={createSavedSchedule}
+        onAddSchedule={addSchedule}
+        onCopySchedule={copySchedule}
         onDeleteSavedSchedule={deleteSavedSchedule}
         onSwitchSchedule={switchSchedule}
+        onRenameSchedule={renameSchedule}
       />
     </div>
   )
