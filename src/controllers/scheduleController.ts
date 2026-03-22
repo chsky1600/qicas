@@ -89,8 +89,9 @@ export const getSchedules = async (req : Request, res : Response) => {
     }
 }
 
-// takes in a schedule, and overrides the currently saved one with the same ID
-// router.put("/schedule/:year",saveSchedule)
+/** takes in a schedule, and overrides the currently saved one with the same ID
+*    router.put("/schedule/:year",saveSchedule)
+*/
 export const saveSchedule = async (req : Request, res : Response) => {
     try {
         const year_id : string = req.params.year as string;

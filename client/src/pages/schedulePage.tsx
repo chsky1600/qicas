@@ -21,7 +21,7 @@ export default function SchedulePage() {
     assign, unassign,
     createInstructor, updateInstructor, dropInstructor, updateInstructorRule,
     createCourse, updateCourse, dropCourse, updateCourseRule,
-    createSavedSchedule, deleteSavedSchedule, switchSchedule,
+    createSavedSchedule, deleteSavedSchedule, switchSchedule, renameSchedule,
     changeYear,
     exportCSV
   } = useSchedule()
@@ -155,6 +155,7 @@ export default function SchedulePage() {
         onCreateSavedSchedule={createSavedSchedule}
         onDeleteSavedSchedule={deleteSavedSchedule}
         onSwitchSchedule={switchSchedule}
+        onRenameSchedule={renameSchedule}
       />
     </div>
   )

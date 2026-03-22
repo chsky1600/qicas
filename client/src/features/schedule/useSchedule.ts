@@ -33,6 +33,7 @@ export interface UseScheduleResult {
   dropCourse: (courseCode: string, dropped: boolean) => Promise<void>
   createSavedSchedule: () => Promise<Schedule | undefined>
   deleteSavedSchedule: (scheduleId: string) => Promise<void>
+  renameSchedule: (scheduleId: string, newName: string)  => Promise<void>
   switchSchedule: (scheduleId: string) => Promise<void>
   changeYear: (yearId: string) => Promise<void>
   refresh: () => Promise<void>
@@ -319,6 +320,25 @@ export function useSchedule(): UseScheduleResult {
     setViolations(result.validationResult.violations)
   }, [])
 
+  const renameSchedule = async (scheduleId: string, newName: string) => {
+    const yr = yearIdRef.current
+    if (!yr) return
+    const index = schedules.findIndex(a => a.id === scheduleId);
+    if (index === -1) return;
+    const renamedSchedule = {...schedules[index], name: newName}
+    
+    try {      
+      await api.saveSchedule(yr, renamedSchedule)
+      setSchedules(prev => {
+        const next = [...prev];
+        next[index] = renamedSchedule;
+        return next;
+      });
+    }
+    catch (e){
+      console.log("Rename failed", e)
+    }
+  }
   // ── Year change ─────────────────────────────────────────────────────────────
 
   const changeYear = useCallback(async (newYearId: string) => {
@@ -429,7 +449,7 @@ export function useSchedule(): UseScheduleResult {
     assign, unassign,
     createInstructor, updateInstructor, dropInstructor,
     createCourse, updateCourse, dropCourse,
-    createSavedSchedule, switchSchedule, deleteSavedSchedule,
+    createSavedSchedule, switchSchedule, deleteSavedSchedule, renameSchedule,
     changeYear,
     exportCSV,
     refresh: load,

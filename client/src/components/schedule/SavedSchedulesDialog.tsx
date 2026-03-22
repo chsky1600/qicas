@@ -12,6 +12,7 @@ interface Props {
   onCreateSavedSchedule: () => Promise<Schedule | undefined>
   onDeleteSavedSchedule: (id: string) => Promise<void>
   onSwitchSchedule: (id: string) => Promise<void>
+  onRenameSchedule: (scheduleId: string, newName: string)  => Promise<void>
 }
 
 function totalSections(courses: Course[], courseRules: CourseRule[]) {
@@ -27,8 +28,11 @@ function assignedCount(schedule: Schedule) {
 export default function SavedSchedulesDialog({
   open, onClose, schedules, activeScheduleId, courses, courseRules,
   onCreateSavedSchedule, onDeleteSavedSchedule, onSwitchSchedule,
+  onRenameSchedule,
 }: Props) {
   const [loading, setLoading] = useState(false)
+  const [renameId, setRenameId] = useState<string|null>(null)
+  const [renameValue, setRenameValue] = useState<string>("")
 
   if (!open) return null
 
@@ -63,34 +67,67 @@ export default function SavedSchedulesDialog({
             return (
               <div key={s.id} className={`border rounded-lg p-3 ${isActive ? "border-blue-500 bg-blue-50" : "border-gray-200"}`}>
                 <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <span className="font-medium text-sm">{s.name}</span>
+                  {/* Rename Schedule Input: */}
+                  {renameId === s.id ?
+                    <>
+                      <label className="mb-2 text-sm font-medium text-gray-900 sr-only dark:text-white">Search</label>
+                      <div className="relative">
+                        <input autoFocus type="search" value={renameValue} onChange={(e) => setRenameValue(e.target.value)}
+                        style={{ width: `${Math.max(renameValue.length+8, 20)}ch`}}
+                        onBlur={() => setRenameId(null)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            if (renameValue && s.name !== renameValue) onRenameSchedule(s.id, renameValue)
+                          }
+                          if (e.key === "Enter" || e.key == "Escape") setRenameId(null);
+                        }}
+                        className="p-1.5 pr-20px border border-default-medium text-sm rounded shadow-xs" placeholder="Rename..." required />
+                        <button type="button" 
+                        onMouseDown={(e) => {e.preventDefault(); 
+                          console.log("test");
+                          if (renameValue && s.name !== renameValue) onRenameSchedule(s.id, renameValue)
+                          setRenameId(null)}}
+                        className="absolute end-1.5 bottom-1.5 ml-2 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded">Confirm</button>
+                      </div>
+                    </>
+                    :
+                    <span onDoubleClick={() => {setRenameValue(s.name); setRenameId(s.id)}} className="font-medium text-sm">{s.name}</span>
+                  }
+                  <div className="flex items-center">              
                     {s.is_rc && <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">RC</span>}
                     {isActive && <span className="ml-2 text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded">Active</span>}
+                    <span className="text-xs text-gray-400 px-1.5">{new Date(s.date_created).toLocaleDateString()}</span>
                   </div>
-                  <span className="text-xs text-gray-400">{new Date(s.date_created).toLocaleDateString()}</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
                   <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${pct}%` }} />
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">{count}/{total} sections assigned ({pct}%)</span>
+                  <div className="flex gap-2">
+                  <button
+                    onClick={() => {setRenameValue(s.name); setRenameId(s.id)}}
+                    className="text-xs bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
+                  >
+                    Rename
+                  </button>
                   {!isActive && (
-                    <div className="flex gap-2">
-                    <button
-                      onClick={() => onDeleteSavedSchedule(s.id)}
-                      className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                    >
-                      Delete
-                    </button>
-                    <button
-                      onClick={() => handleLoad(s.id)}
-                      className="text-xs bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
-                    >
-                      Load
-                    </button>
-                    </div>
+                    <>                      
+                      <button
+                        onClick={() => handleLoad(s.id)}
+                        className="text-xs bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
+                      >
+                        Load
+                      </button>
+                      <button
+                        onClick={() => onDeleteSavedSchedule(s.id)}
+                        className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                      >
+                        Delete
+                      </button>
+                    </>
                   )}
+                  </div>
                 </div>
               </div>
             )
