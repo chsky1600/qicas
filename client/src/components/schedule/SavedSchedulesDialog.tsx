@@ -5,11 +5,12 @@ import type { Schedule, Course, CourseRule } from "@/features/schedule/types"
 interface Props {
   open: boolean
   onClose: () => void
+  activeSchedule: Schedule | null
   schedules: Schedule[]
-  activeScheduleId: string | null
   courses: Course[]
   courseRules: CourseRule[]
-  onCreateSavedSchedule: () => Promise<Schedule | undefined>
+  onAddSchedule: () => Promise<Schedule | undefined>
+  onCopySchedule: (schedule: Schedule) => Promise<Schedule | undefined>
   onDeleteSavedSchedule: (id: string) => Promise<void>
   onSwitchSchedule: (id: string) => Promise<void>
   onRenameSchedule: (scheduleId: string, newName: string)  => Promise<void>
@@ -26,8 +27,8 @@ function assignedCount(schedule: Schedule) {
 }
 
 export default function SavedSchedulesDialog({
-  open, onClose, schedules, activeScheduleId, courses, courseRules,
-  onCreateSavedSchedule, onDeleteSavedSchedule, onSwitchSchedule,
+  open, onClose, activeSchedule, schedules, courses, courseRules,
+  onAddSchedule, onCopySchedule, onDeleteSavedSchedule, onSwitchSchedule,
   onRenameSchedule,
 }: Props) {
   const [loading, setLoading] = useState(false)
@@ -39,12 +40,6 @@ export default function SavedSchedulesDialog({
   const total = totalSections(courses, courseRules)
   const sorted = [...schedules].sort((a, b) => b.date_created.localeCompare(a.date_created))
 
-  async function handleCreate() {
-    setLoading(true)
-    await onCreateSavedSchedule()
-    setLoading(false)
-  }
-
   async function handleLoad(id: string) {
     await onSwitchSchedule(id)
     onClose()
@@ -54,16 +49,24 @@ export default function SavedSchedulesDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-lg shadow-xl w-[700px] max-h-[70vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
-          <h2 className="text-white font-semibold text-base">Saved Schedules</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-white font-semibold text-base">Saved Schedules</h2>
+            <button
+              onClick={onAddSchedule}
+              className="text-xs bg-white text-black font-semibold px-2 py-1 rounded hover:bg-gray-200"
+            >
+              Add+
+            </button>
+          </div>          
           <button onClick={onClose} className="text-white hover:text-gray-300">
             <X size={18} />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {sorted.map(s => {
-            const count = assignedCount(s)
+            const isActive = s.id === activeSchedule?.id
+            const count = isActive ? assignedCount(activeSchedule) : assignedCount(s) // Keeps Active schedule up to date with any assignments
             const pct = total > 0 ? Math.round((count / total) * 100) : 0
-            const isActive = s.id === activeScheduleId
             return (
               <div key={s.id} className={`border rounded-lg p-3 ${isActive ? "border-blue-500 bg-blue-50" : "border-gray-200"}`}>
                 <div className="flex items-center justify-between mb-2">
@@ -99,9 +102,13 @@ export default function SavedSchedulesDialog({
                     <span className="text-xs text-gray-400 px-1.5">{new Date(s.date_created).toLocaleDateString()}</span>
                   </div>
                 </div>
+
+                {/* Progress */}
                 <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
                   <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${pct}%` }} />
                 </div>
+
+                {/* Action Buttons */}
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">{count}/{total} sections assigned ({pct}%)</span>
                   <div className="flex gap-2">
@@ -110,6 +117,12 @@ export default function SavedSchedulesDialog({
                     className="text-xs bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
                   >
                     Rename
+                  </button>
+                  <button
+                    onClick={() => {onCopySchedule(s)}}
+                    className="text-xs bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
+                  >
+                    Copy
                   </button>
                   {!isActive && (
                     <>                      
@@ -132,15 +145,6 @@ export default function SavedSchedulesDialog({
               </div>
             )
           })}
-        </div>
-        <div className="px-4 py-3 border-t">
-          <button
-            onClick={handleCreate}
-            disabled={loading}
-            className="w-full bg-black text-white py-2 rounded font-medium text-sm hover:bg-gray-800 disabled:opacity-50"
-          >
-            {loading ? "Saving…" : "Save Current Schedule"}
-          </button>
         </div>
       </div>
     </div>

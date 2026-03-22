@@ -31,7 +31,8 @@ export interface UseScheduleResult {
   createCourse: (course: Course, rule: CourseRule) => Promise<void>
   updateCourse: (course: Course) => Promise<void>
   dropCourse: (courseCode: string, dropped: boolean) => Promise<void>
-  createSavedSchedule: () => Promise<Schedule | undefined>
+  addSchedule: () => Promise<Schedule | undefined>
+  copySchedule: (schedule: Schedule) => Promise<Schedule | undefined>
   deleteSavedSchedule: (scheduleId: string) => Promise<void>
   renameSchedule: (scheduleId: string, newName: string)  => Promise<void>
   switchSchedule: (scheduleId: string) => Promise<void>
@@ -294,13 +295,29 @@ export function useSchedule(): UseScheduleResult {
 
   // ── Schedule / snapshot actions ─────────────────────────────────────────────
 
-  const createSavedSchedule = useCallback(async () => {
-    const sched = scheduleRef.current
+  const addSchedule = useCallback(async () => {
     const yr = yearIdRef.current
-    if (!sched || !yr) return
-    const snapshot = await api.createSavedSchedule(yr, sched)
-    setSchedules(prev => [...prev, snapshot])
-    return snapshot
+    if (!yr) return
+    const newSchedule: Schedule = {
+      id: "overwritten", // will be ovewritten
+      name: "new Schedule",
+      year_id: yr,
+      date_created: "overwritten", // will be ovewritten
+      is_rc: false,
+      assignments: []
+    }
+    const copySchedule = await api.createSavedSchedule(yr, newSchedule)
+    setSchedules(prev => [...prev, copySchedule])
+    return copySchedule
+  }, [])
+
+  const copySchedule = useCallback(async (schedule: Schedule) => {
+    const yr = yearIdRef.current
+    if (!yr) return
+    const copiedSchedule = {...schedule, name: (schedule.name + " (copy)")}
+    const copySchedule = await api.createSavedSchedule(yr, copiedSchedule)
+    setSchedules(prev => [...prev, copySchedule])
+    return copySchedule
   }, [])
 
   const deleteSavedSchedule = useCallback(async (scheduleId: string) => {
@@ -449,7 +466,7 @@ export function useSchedule(): UseScheduleResult {
     assign, unassign,
     createInstructor, updateInstructor, dropInstructor,
     createCourse, updateCourse, dropCourse,
-    createSavedSchedule, switchSchedule, deleteSavedSchedule, renameSchedule,
+    addSchedule, copySchedule, switchSchedule, deleteSavedSchedule, renameSchedule,
     changeYear,
     exportCSV,
     refresh: load,

@@ -193,7 +193,7 @@ export const createSnapshot = async (req : Request, res : Response) => {
             id: newScheduleId,
             year_id: year_id,
             date_created: new Date(),
-            name: `${schedule.name} (Copy)`,
+            name: schedule.name,
         };
 
         const result = await FacultyModel.updateOne(
