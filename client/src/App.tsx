@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import AssignmentPage from './pages/assignmentPage'
+import LoginPage from './pages/loginPage'
 
 function App() {
   return (
@@ -7,7 +8,7 @@ function App() {
       {/* send home to your real page */}
       <Route path="/" element={<Navigate to="/schedule" replace />} />
 
-      <Route path="/login" element={<div>Login</div>} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/schedule" element={<AssignmentPage />} />
 
       {/* optional: 404 */}
