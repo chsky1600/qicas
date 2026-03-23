@@ -10,6 +10,7 @@ interface Props {
   sectionId: string
   sectionNum: number
   isFullYear: boolean
+  isExternal: boolean
   assignmentId: string
   prevInstructorId: string
   prevTerm: Term
@@ -17,7 +18,7 @@ interface Props {
 }
 
 export default function SectionChip({
-  courseCode, sectionId, sectionNum, isFullYear,
+  courseCode, sectionId, sectionNum, isFullYear, isExternal,
   assignmentId, prevInstructorId, prevTerm, inViolation,
 }: Props) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({

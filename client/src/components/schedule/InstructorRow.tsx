@@ -111,7 +111,7 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
           ref={fallRef}
           className={`px-3 py-2 min-w-48 ${fallOver ? "bg-blue-100" : "bg-orange-50"}`}
         >
-          <div className="flex flex-wrap gap-1">
+          <div className="flex flex-wrap gap-2">
             {fallAssignments.map(a => {
               const course = courses.find(c => c.code === a.course_code)
               const section = course?.sections.find(s => s.id === a.section_id)
@@ -124,6 +124,7 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
                   sectionId={a.section_id}
                   sectionNum={section.number}
                   isFullYear={cRule?.is_full_year ?? false}
+                  isExternal={cRule?.is_external ?? false}
                   assignmentId={a.id}
                   prevInstructorId={instructor.id}
                   prevTerm="Fall"
@@ -151,7 +152,8 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
                   courseCode={a.course_code}
                   sectionId={a.section_id}
                   sectionNum={section.number}
-                  isFullYear={cRule?.is_full_year ?? false}
+                  isFullYear={cRule?.is_full_year ?? false}                  
+                  isExternal={cRule?.is_external ?? false}
                   assignmentId={a.id}
                   prevInstructorId={instructor.id}
                   prevTerm="Winter"
