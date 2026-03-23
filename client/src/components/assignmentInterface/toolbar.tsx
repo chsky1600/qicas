@@ -1,6 +1,7 @@
 import './toolbar.css';
 import type { SectionState, InstructorState, Section, Instructor } from '@/features/assignment/assignment.types';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PropertiesDialog from './propertiesDialog';
 
 export default function Toolbar({sectionState, instructorState, updateSection, updateInstructor}: {
@@ -11,6 +12,13 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
 }) {
 
   const [isPropertiesOpen, setIsPropertiesOpen] = useState(false);
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    navigate("/login", { replace: true });
+  }
+
   return (
     <div className="toolbar">
       {/* Left side - Logo and Schedule selector */}
@@ -52,6 +60,11 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
         <button className="toolbar-btn">
           <span className="icon">⚙️</span>
           Settings
+        </button>
+
+        <button className="toolbar-btn" onClick={handleLogout}>
+          <span className="icon">🚪</span>
+          Logout
         </button>
       </div>
       <PropertiesDialog
