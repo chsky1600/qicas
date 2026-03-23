@@ -57,11 +57,6 @@ export default function Toolbar({sectionState, instructorState, updateSection, u
           Export
         </button>
         
-        <button className="toolbar-btn">
-          <span className="icon">⚙️</span>
-          Settings
-        </button>
-
         <button className="toolbar-btn" onClick={handleLogout}>
           <span className="icon">🚪</span>
           Logout
