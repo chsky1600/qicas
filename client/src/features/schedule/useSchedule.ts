@@ -20,6 +20,7 @@ export interface UseScheduleResult {
   schedule: Schedule | null
   assignments: Assignment[]
   violations: Violation[]
+  saving: boolean
   loading: boolean
   error: string | null
   // Actions
@@ -53,6 +54,7 @@ export function useSchedule(): UseScheduleResult {
   const [schedule, setSchedule] = useState<Schedule | null>(null)
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [violations, setViolations] = useState<Violation[]>([])
+  const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -166,6 +168,7 @@ export function useSchedule(): UseScheduleResult {
     const sched = scheduleRef.current
     const yr = yearIdRef.current
     if (!sched || !yr) return
+    setSaving(true)
 
     const isFullYear = courseRulesRef.current.find(r => r.course_code === courseCode)?.is_full_year ?? false
 
@@ -199,12 +202,14 @@ export function useSchedule(): UseScheduleResult {
       console.error("Assignment failed", e)
       load()
     }
+    setSaving(false)
   }, [load, triggerRevalidate])
 
   const unassign = useCallback(async (assignmentId: string) => {
     const sched = scheduleRef.current
     const yr = yearIdRef.current
     if (!sched || !yr) return
+    setSaving(true)
 
     setSchedule(prev =>
       prev ? { ...prev, assignments: prev.assignments.filter(a => a.id !== assignmentId) } : prev
@@ -217,6 +222,7 @@ export function useSchedule(): UseScheduleResult {
       console.error("Unassign failed", e)
       load()
     }
+    setSaving(false)
   }, [load, triggerRevalidate])
 
   // ── Instructor actions ──────────────────────────────────────────────────────
@@ -462,7 +468,7 @@ export function useSchedule(): UseScheduleResult {
   return {
     years, yearId, courses, courseRules, instructors, instructorRules,
     schedules, schedule, assignments, violations,
-    loading, error,
+    saving, loading, error,
     assign, unassign,
     createInstructor, updateInstructor, dropInstructor,
     createCourse, updateCourse, dropCourse,

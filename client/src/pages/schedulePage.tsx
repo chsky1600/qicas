@@ -17,7 +17,7 @@ export default function SchedulePage() {
     years, yearId, courses, courseRules,
     instructors, instructorRules,
     schedules, schedule, assignments, violations,
-    loading, error,
+    saving, loading, error,
     assign, unassign,
     createInstructor, updateInstructor, dropInstructor, updateInstructorRule,
     createCourse, updateCourse, dropCourse, updateCourseRule,
@@ -87,6 +87,7 @@ export default function SchedulePage() {
         years={years}
         yearId={yearId}
         schedule={schedule}
+        saving={saving}
         onChangeYear={changeYear}
         onOpenProperties={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
         onOpenSnapshots={() => setSnapshotsOpen(true)}

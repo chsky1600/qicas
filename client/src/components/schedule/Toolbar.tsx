@@ -1,9 +1,11 @@
 import type { Year, Schedule } from "@/features/schedule/types"
+import * as icon from '@/assets/index'
 
 interface Props {
   years: Year[]
   yearId: string
   schedule: Schedule | null
+  saving: boolean
   onChangeYear: (yearId: string) => void
   onOpenProperties: () => void
   onOpenSnapshots: () => void
@@ -11,7 +13,7 @@ interface Props {
 }
 
 export default function Toolbar({
-  years, yearId, schedule,
+  years, yearId, schedule, saving,
   onChangeYear, onOpenProperties, onOpenSnapshots, onExportCSV
 }: Props) {
   return (
@@ -30,24 +32,30 @@ export default function Toolbar({
             <option key={y.id} value={y.id}>{y.name}</option>
           ))}
         </select>
-        {schedule && <span className="text-gray-400 text-xs">{schedule.name}</span>}
+        <div className="flex items-center gap-2">
+          {schedule && <span className="text-white text-sm">{schedule.name}</span>}
+          {saving ? // if saving, show spining icon, otherwise all saved icon
+            <img src={icon.spin} alt="Saving..." className="w-8 h-8 animate-spin" /> :
+            <img src={icon.cloudSave} alt="All Saved!" className="w-8 h-8" />
+          }
+        </div>
       </div>
 
       <div className="flex gap-2">
         <button className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
-          <span className="text-lg">📖</span>Tutorial
+          <img src={icon.tutorial} alt="Tutorial" className="w-6 h-6"/>Tutorial
         </button>
         <button onClick={onOpenProperties} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
-          <span className="text-lg">📄</span>Edit Properties
+          <img src={icon.edit} alt="Edit Properties" className="w-6 h-6"/>Edit Properties
         </button>
         <button onClick={onOpenSnapshots} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
-          <span className="text-lg">📸</span>Saved Schedules
+          <img src={icon.save} alt="Saved Schedules" className="w-6 h-6"/>Saved Schedules
         </button>
         <button onClick={onExportCSV} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
-          <span className="text-lg">📤</span>Export
+          <img src={icon.userExport} alt="Export" className="w-6 h-6"/>Export
         </button>
         <button className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
-          <span className="text-lg">⚙️</span>Settings
+          <img src={icon.logout} alt="Settings" className="w-6 h-6"/>Logout
         </button>
       </div>
     </div>
