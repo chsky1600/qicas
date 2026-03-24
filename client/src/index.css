@@ -218,3 +218,9 @@ button:focus-visible {
     @apply bg-background text-foreground;
   }
 }
+
+
+.driver-popover-close-btn:focus {
+  outline: none;
+}
+

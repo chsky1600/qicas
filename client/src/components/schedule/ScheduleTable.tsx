@@ -23,7 +23,7 @@ export default function ScheduleTable({
   })
 
   return (
-    <div className="flex-1 overflow-auto">
+    <div id="schedule-table" className="flex-1 overflow-auto">
       <table className="w-full border-collapse text-left">
         <thead className="sticky top-0 z-10">
           <tr>

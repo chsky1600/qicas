@@ -47,18 +47,19 @@ export default function SavedSchedulesDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-lg shadow-xl w-[700px] max-h-[70vh] flex flex-col">
+      <div id="saved-schedules-dialog" className="bg-white rounded-lg shadow-xl w-[700px] max-h-[70vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
           <div className="flex items-center gap-2">
             <h2 className="text-white font-semibold text-base">Saved Schedules</h2>
             <button
+              id="saved-schedules-add"
               onClick={onAddSchedule}
               className="text-xs bg-white text-black font-semibold px-2 py-1 rounded hover:bg-gray-200"
             >
               Add+
             </button>
           </div>          
-          <button onClick={onClose} className="text-white hover:text-gray-300">
+          <button id="saved-schedules-dialog-close" onClick={onClose} className="text-white hover:text-gray-300">
             <X size={18} />
           </button>
         </div>

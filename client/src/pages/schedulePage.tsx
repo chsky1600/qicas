@@ -1,8 +1,9 @@
-import { useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { snapCenterToCursor } from "@dnd-kit/modifiers"
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core"
 import { useSchedule } from "@/features/schedule/useSchedule"
+import { useTutorial } from "@/features/schedule/useTutorial"
 import type { SectionDragData, InstructorDropData, PanelDropData } from "@/features/schedule/types"
 import Toolbar from "@/components/schedule/Toolbar"
 import CoursesPanel from "@/components/schedule/CoursesPanel"
@@ -30,6 +31,23 @@ export default function SchedulePage() {
   const [snapshotsOpen, setSnapshotsOpen] = useState(false)
   const [dragging, setDragging] = useState<SectionDragData | null>(null)
   const [propertiesMode, setPropertiesMode] = useState<"instructors" | "courses">("instructors")
+  const { startTutorial } = useTutorial({
+    courses, courseRules,
+    instructors, instructorRules,
+    schedule, schedules,
+    onOpenProperties: () => { setPropertiesMode("instructors"); setPropertiesOpen(true) },
+    onCloseProperties: () => setPropertiesOpen(false),
+    onOpenSnapshots: () => setSnapshotsOpen(true),
+    onCloseSnapshots: () => setSnapshotsOpen(false),
+  })
+
+  const tutorialStarted = useRef(false)
+  useEffect(() => {
+    if (!tutorialStarted.current && !localStorage.getItem("tutorialSeen")) {
+      tutorialStarted.current = true
+      startTutorial()
+    }
+  }, [startTutorial])
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -92,6 +110,7 @@ export default function SchedulePage() {
         onOpenProperties={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
         onOpenSnapshots={() => setSnapshotsOpen(true)}
         onExportCSV={exportCSV}
+        onStartTutorial={startTutorial}
       />
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>

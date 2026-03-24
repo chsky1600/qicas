@@ -197,12 +197,14 @@ export default function PropertiesDialog({
   return (
     <Dialog open={open} onOpenChange={o => { if (!o) onClose() }}>
       <DialogContent
+        id="properties-dialog"
         showCloseButton={false}
         className="w-[1100px] h-[620px] p-0 gap-0 overflow-hidden border border-black rounded-md bg-[#f4f4f4]"
       >
         {/* Header */}
         <div className="relative flex items-center justify-center bg-black text-white h-13 px-4">
           <div className="absolute left-2 text-xs opacity-80">Edit Properties</div>
+          <div id="properties-tab-courses">
           <ModeTogglePill<Mode>
             value={mode}
             onChange={next => { setMode(next); setSelectedIndex(0); setIsNew(false) }}
@@ -213,7 +215,8 @@ export default function PropertiesDialog({
             className="!bg-black"
             buttonClassName="!w-[400px]"
           />
-          <button onClick={onClose} className="absolute right-3 text-lg leading-none hover:opacity-80">×</button>
+          </div>
+          <button id="properties-dialog-close" onClick={onClose} className="absolute right-3 text-lg leading-none hover:opacity-80">×</button>
         </div>
 
         {/* Body */}
@@ -353,7 +356,7 @@ export default function PropertiesDialog({
                       onChange={e => setCourseEdit(p => p ? { ...p, name: e.target.value } : p)} />
                   </FormRow>
                   <FormRow label="Course Code" labelClassName="w-auto">
-                    <input className="w-24 border border-black rounded-md px-2 py-1 bg-white text-center focus:outline-none"
+                    <input id="course-code-field" className="w-24 border border-black rounded-md px-2 py-1 bg-white text-center focus:outline-none"
                       value={courseEdit.code} readOnly={!isNew}
                       onChange={e => {
                         if (!isNew) return

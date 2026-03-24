@@ -36,18 +36,20 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAdd 
 
   return (
     <div
+    id="courses-panel"
       ref={setNodeRef}
       className={`w-85 shrink-0 border-r border-gray-200 flex flex-col overflow-hidden ${isOver ? "bg-blue-50" : "bg-white"}`}
     >
       <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
         <span className="font-semibold text-sm text-gray-700">Courses</span>
-        <button onClick={onAdd} className="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">
+        <button id="courses-panel-add" onClick={onAdd} className="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">
           Add +
         </button>
       </div>
 
       <div className="px-3 py-2 border-b border-gray-200">
         <input
+          id="courses-panel-search"
           type="text"
           placeholder="Search..."
           value={search}
@@ -56,7 +58,7 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAdd 
         />
       </div>
 
-      <div className="overflow-y-auto flex-1">
+      <div id="courses-panel-list" className="overflow-y-auto flex-1">
         <Table className="[&_th]:px-3 [&_td]:px-3">
           <TableHeader>
             <TableRow>
