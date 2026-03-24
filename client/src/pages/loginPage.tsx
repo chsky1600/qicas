@@ -139,9 +139,9 @@ export default function LoginPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-10 transition-all duration-200 hover:shadow-md hover:-translate-y-px active:translate-y-0 active:shadow-sm"
+                  className="w-full h-10 transition-all duration-200 hover:shadow-md hover:-translate-y-px active:translate-y-0 active:shadow-sm disabled:opacity-40 disabled:pointer-events-none"
                   style={{ borderColor: "transparent" }}
-                  disabled={loading}
+                  disabled={loading || !email || !password}
                 >
                   {loading ? "Signing in..." : "Sign in"}
                 </Button>
