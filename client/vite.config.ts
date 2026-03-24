@@ -13,11 +13,12 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/auth": "http://localhost:3000",
-      "/courses": "http://localhost:3000",
-      "/instructors": "http://localhost:3000",
-      "/schedule/": "http://localhost:3000",
-      "/year": "http://localhost:3000",
+      "/auth": { target: "http://localhost:3000", changeOrigin: true },
+      "/courses": { target: "http://localhost:3000", changeOrigin: true },
+      "/instructors": { target: "http://localhost:3000", changeOrigin: true },
+      "/schedule/": { target: "http://localhost:3000", changeOrigin: true },
+      "/year": { target: "http://localhost:3000", changeOrigin: true },
+      "/faculty": { target: "http://localhost:3000", changeOrigin: true },
     },
   },  
 })
