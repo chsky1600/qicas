@@ -1,9 +1,12 @@
 import type { Year, Schedule } from "@/features/schedule/types"
+import cloudIcon from '../../assets/cloud-check-duotone.svg';
+import spinIcon from '../../assets/spinner-gap-bold.svg';
 
 interface Props {
   years: Year[]
   yearId: string
   schedule: Schedule | null
+  saving: boolean
   onChangeYear: (yearId: string) => void
   onOpenProperties: () => void
   onOpenSnapshots: () => void
@@ -11,7 +14,7 @@ interface Props {
 }
 
 export default function Toolbar({
-  years, yearId, schedule,
+  years, yearId, schedule, saving,
   onChangeYear, onOpenProperties, onOpenSnapshots, onExportCSV
 }: Props) {
   return (
@@ -30,7 +33,13 @@ export default function Toolbar({
             <option key={y.id} value={y.id}>{y.name}</option>
           ))}
         </select>
-        {schedule && <span className="text-gray-400 text-xs">{schedule.name}</span>}
+        <div className="flex items-center gap-2">
+          {schedule && <span className="text-white text-sm">{schedule.name}</span>}
+          {saving ? // if saving, show spining icon, otherwise all saved icon
+            <img src={spinIcon} alt="Saving..." className="w-8 h-8 animate-spin" /> :
+            <img src={cloudIcon} alt="All Saved!" className="w-8 h-8" />
+          }
+        </div>
       </div>
 
       <div className="flex gap-2">
