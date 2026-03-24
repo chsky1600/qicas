@@ -43,19 +43,19 @@ export default function Toolbar({
 
       <div className="flex gap-2">
         <button className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
-          <img src={icon.tutorial} alt="Tutorial" className="w-7 h-7"/>Tutorial
+          <img src={icon.tutorial} alt="Tutorial" className="w-6 h-6"/>Tutorial
         </button>
         <button onClick={onOpenProperties} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
-          <img src={icon.edit} alt="Edit Properties" className="w-7 h-7"/>Edit Properties
+          <img src={icon.edit} alt="Edit Properties" className="w-6 h-6"/>Edit Properties
         </button>
         <button onClick={onOpenSnapshots} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
-          <img src={icon.save} alt="Saved Schedules" className="w-7 h-7"/>Saved Schedules
+          <img src={icon.save} alt="Saved Schedules" className="w-6 h-6"/>Saved Schedules
         </button>
         <button onClick={onExportCSV} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
-          <img src={icon.userExport} alt="Export" className="w-7 h-7"/>Export
+          <img src={icon.userExport} alt="Export" className="w-6 h-6"/>Export
         </button>
         <button className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
-          <img src={icon.logout} alt="Settings" className="w-7 h-7"/>Logout
+          <img src={icon.logout} alt="Settings" className="w-6 h-6"/>Logout
         </button>
       </div>
     </div>
