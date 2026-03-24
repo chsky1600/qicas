@@ -117,6 +117,7 @@ export default function SchedulePage() {
               sectionId={dragging.sectionId}
               sectionNum={draggingSection.number}
               isFullYear={draggingRule?.is_full_year ?? false}
+              isExternal={draggingRule?.is_external ?? false}
               assignmentId={dragging.assignmentId ?? ""}
               prevInstructorId={dragging.prevInstructorId ?? ""}
               prevTerm={dragging.prevTerm ?? "Fall"}

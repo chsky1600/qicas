@@ -10,6 +10,7 @@ interface Props {
   sectionId: string
   sectionNum: number
   isFullYear: boolean
+  isExternal: boolean
   assignmentId: string
   prevInstructorId: string
   prevTerm: Term
@@ -17,7 +18,7 @@ interface Props {
 }
 
 export default function SectionChip({
-  courseCode, sectionId, sectionNum, isFullYear,
+  courseCode, sectionId, sectionNum, isFullYear, isExternal,
   assignmentId, prevInstructorId, prevTerm, inViolation,
 }: Props) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
@@ -30,12 +31,14 @@ export default function SectionChip({
 
   const suffix = isFullYear ? (prevTerm === "Fall" ? "A" : "B") : ""
   const colour = inViolation ? VIOLATION_COLOUR[inViolation] : "bg-green-500"
+  // Tailwind decoration for courses paid for externally
+  const externalDecoration = isExternal ? "outline-dashed outline-2 outline-offset-1 outline-blue-500" : "text-white"
 
   return (
     <span
       ref={setNodeRef} {...listeners} {...attributes}
       style={{ opacity: isDragging ? 0.3 : 1, transform: undefined }}
-      className={`${colour} text-white px-2 py-1 rounded text-sm cursor-grab select-none`}
+      className={`${colour} ${externalDecoration} text-white px-2 py-1 rounded text-sm cursor-grab select-none`}
     >
       {courseCode}{suffix}-{sectionNum}
     </span>

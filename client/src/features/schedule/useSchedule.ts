@@ -300,7 +300,7 @@ export function useSchedule(): UseScheduleResult {
     if (!yr) return
     const newSchedule: Schedule = {
       id: "overwritten", // will be ovewritten
-      name: "new Schedule",
+      name: "New Schedule",
       year_id: yr,
       date_created: "overwritten", // will be ovewritten
       is_rc: false,

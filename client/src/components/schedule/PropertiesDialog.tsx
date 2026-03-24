@@ -374,11 +374,11 @@ export default function PropertiesDialog({
                       onChange={e => setCourseRuleEdit(p => p ? { ...p, workload_fulfillment: Number(e.target.value) } : p)} />
                   </FormRow>
                   <FormRow label="Paid By" labelClassName="w-auto">
-                    <select className="border border-black rounded-md px-3 py-1 bg-white"
-                      value={courseRuleEdit.is_external ? "department" : "faculty"}
-                      onChange={e => setCourseRuleEdit(p => p ? { ...p, is_external: e.target.value === "department" } : p)}>
-                      <option value="faculty">Faculty</option>
-                      <option value="department">Department</option>
+                    <select className="border border-black rounded-md px-1 py-1 bg-white"
+                      value={courseRuleEdit.is_external ? "faculty" : "department"}
+                      onChange={e => setCourseRuleEdit(p => p ? { ...p, is_external: e.target.value === "faculty" } : p)}>
+                      <option value="department">Department (Internal)</option>
+                      <option value="faculty">Faculty (External)</option>
                     </select>
                   </FormRow>
                 </div>
