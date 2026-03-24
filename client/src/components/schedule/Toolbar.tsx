@@ -1,5 +1,6 @@
 import type { Year, Schedule } from "@/features/schedule/types"
 import * as icon from '@/assets/index'
+import { useNavigate } from 'react-router-dom';
 
 interface Props {
   years: Year[]
@@ -16,6 +17,13 @@ export default function Toolbar({
   years, yearId, schedule, saving,
   onChangeYear, onOpenProperties, onOpenSnapshots, onExportCSV
 }: Props) {
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    navigate("/login", { replace: true });
+  }
+
   return (
     <div className="flex justify-between items-center bg-[#1a1a1a] text-white px-8 py-4 border-b-2 border-[#2c2c2c]">
       <div className="flex items-center gap-6">
@@ -54,7 +62,7 @@ export default function Toolbar({
         <button onClick={onExportCSV} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
           <img src={icon.userExport} alt="Export" className="w-6 h-6"/>Export
         </button>
-        <button className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
+        <button onClick={handleLogout} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
           <img src={icon.logout} alt="Settings" className="w-6 h-6"/>Logout
         </button>
       </div>
