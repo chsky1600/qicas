@@ -138,7 +138,29 @@ export const changePassword = async (req : Request, res : Response) => {
     }
 }
 
-// verification middleware 
+export const refreshToken = async (req : Request, res : Response) => {
+    const faculty_id = req.body.faculty_id
+    if (!faculty_id) {
+        res.sendStatus(401)
+        return
+    }
+
+    try {
+        const jwt = await new jose.SignJWT({'faculty_id': faculty_id})
+            .setProtectedHeader({alg})
+            .setIssuedAt()
+            .setIssuer('qicas')
+            .setExpirationTime('2h')
+            .sign(secret)
+
+        res.cookie("token", jwt)
+        res.sendStatus(200)
+    } catch (err: any) {
+        res.status(500).json({ error: err.message })
+    }
+}
+
+// verification middleware
 export const verifyToken = async (req : Request, res : Response, next: NextFunction) => {
 
     const tokenFromCookies = (req as any).cookies?.token as string | undefined;
