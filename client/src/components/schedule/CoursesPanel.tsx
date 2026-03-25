@@ -3,6 +3,7 @@ import { useDroppable } from "@dnd-kit/core"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import CourseRow from "./CourseRow"
 import type { Course, CourseRule, Assignment } from "@/features/schedule/types"
+import { HelpTooltip } from "../ui/help-tooltip"
 
 interface Props {
   courses: Course[]
@@ -41,7 +42,13 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAdd 
       className={`w-85 shrink-0 border-r border-gray-200 flex flex-col overflow-hidden ${isOver ? "bg-blue-50" : "bg-white"}`}
     >
       <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-        <span className="font-semibold text-sm text-gray-700">Courses</span>
+        <div className="flex items-center gap-1.5">
+          <span className="font-semibold text-sm text-gray-700">Courses</span>
+          <HelpTooltip
+            title="Courses Panel"
+            description="Lists all active courses for the year. Drag a chip onto an instructor's Fall or Winter cell to assign it. Drag it back here to unassign."
+          />
+        </div>
         <button id="courses-panel-add" onClick={onAdd} className="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">
           Add +
         </button>

@@ -6,6 +6,7 @@ import { SidebarListItem } from "@/components/ui/sidebar-list-item"
 import { ModeTogglePill } from "@/components/ui/mode-toggle-pill"
 import { IconControlButton } from "@/components/ui/icon-control-button"
 import { toast } from "sonner"
+import { HelpTooltip } from "../ui/help-tooltip.tsx"
 
 import type {
   Instructor, InstructorRule, Course, CourseRule,
@@ -207,7 +208,13 @@ export default function PropertiesDialog({
       >
         {/* Header */}
         <div className="relative flex items-center justify-center bg-black text-white h-13 px-4">
-          <div className="absolute left-2 text-xs opacity-80">Edit Properties</div>
+          <div className="absolute left-2 flex items-center gap-1.5">
+            <span className="text-xs opacity-80">Edit Properties</span>
+            <HelpTooltip
+              title="Edit Properties"
+              description="Manage instructors and courses for the year. Switch between the Instructors and Courses tabs using the toggle at the top."
+            />
+          </div>
           <div id="properties-tab-courses">
           <ModeTogglePill<Mode>
             value={mode}

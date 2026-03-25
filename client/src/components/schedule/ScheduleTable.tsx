@@ -1,4 +1,5 @@
 import InstructorRow from "./InstructorRow.tsx"
+import { HelpTooltip } from "../ui/help-tooltip.tsx"
 import type {
   Instructor, InstructorRule, Course, CourseRule,
   Assignment, Violation
@@ -27,7 +28,15 @@ export default function ScheduleTable({
       <table className="w-full border-collapse text-left">
         <thead className="sticky top-0 z-10">
           <tr>
-            <th className="px-3 py-3 text-sm font-semibold text-gray-700 w-72 bg-gray-100">Instructor</th>
+            <th className="px-3 py-3 text-sm font-semibold text-gray-700 w-72 bg-gray-100">
+              <div className="flex items-center gap-1.5">
+                Instructor
+                <HelpTooltip
+                  title="Schedule Table"
+                  description="Each row is an instructor. Drop chips in Fall or Winter to assign. Drag a chip back to the Courses panel to unassign, or to another row to reassign."
+                  />
+              </div>
+            </th>
             <th className="px-3 py-3 text-sm font-semibold text-gray-700 w-48 bg-orange-100 text-center">Fall</th>
             <th className="px-3 py-3 text-sm font-semibold text-gray-700 w-48 bg-cyan-100 text-center">Winter</th>
           </tr>

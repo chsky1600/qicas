@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { X } from "lucide-react"
 import type { Schedule, Course, CourseRule } from "@/features/schedule/types"
+import { HelpTooltip } from "../ui/help-tooltip.tsx"
+
 
 interface Props {
   open: boolean
@@ -51,6 +53,10 @@ export default function SavedSchedulesDialog({
         <div className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
           <div className="flex items-center gap-2">
             <h2 className="text-white font-semibold text-base">Saved Schedules</h2>
+            <HelpTooltip
+              title="Saved Schedules"
+              description="Save multiple versions of a schedule for the same year. Load one to make it active, copy it as a starting point, rename it, or delete it."
+            />
             <button
               id="saved-schedules-add"
               onClick={onAddSchedule}
