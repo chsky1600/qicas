@@ -200,10 +200,7 @@ export default function PropertiesDialog({
       <DialogContent
         id="properties-dialog"
         showCloseButton={false}
-        onInteractOutside={(e) =>{
-          const target = e.target as Element
-          if (target.closest?.("#driver-popover-content")) e.preventDefault()
-        }}
+        onInteractOutside={(e) => e.preventDefault()}
         className="w-[1100px] h-[620px] p-0 gap-0 overflow-hidden border border-black rounded-md bg-[#f4f4f4]"
       >
         {/* Header */}
