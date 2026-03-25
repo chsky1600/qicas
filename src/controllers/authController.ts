@@ -7,33 +7,17 @@ import { JOSEError, JWTClaimValidationFailed } from "jose/errors"
 import { FacultyModel } from "../db/models/faculty"
 import { User } from "../types/user"
 
-// change to something 
-const secret : Uint8Array = new TextEncoder().encode('queensuniversity')
+// JWT signing/verifying secret.
+// Falls back to the historical default if `JWT_SECRET` is not provided.
+const secret: Uint8Array = new TextEncoder().encode(
+  process.env.JWT_SECRET ?? "queensuniversity"
+);
 
 const alg = 'HS256'
-
-// // ------------TO REMOVE------------
-// // await mongoose.connect("mongodb://127.0.0.1:27017/mongoose-app");
-// await mongoose.connect("mongodb://localhost:27017/qicas");
-
-// const testUser = await UserModel.create({
-//     id: "Test-Id-1",
-//     faculty_id: "F001",
-//     name: "Test-Name",
-//     email: "Test-Email",
-//     password: "Test-Password",
-//     role: "Test-Role"
-// });
-
-// await mongoose.disconnect();
-// // ------------REMOVE------------
 
 // change to lookup users in all faculty docs?
 const fetchUser = async (email : String): Promise<User | undefined> => {
     try {
-        // const user = await UserModel.findOne({email : email});
-        // return new Promise<UserModel | undefined>((resolve) => {
-        //     resolve(user ? user : undefined)})
 
         const faculty = await FacultyModel.findOne(
             { "users.email": email },
