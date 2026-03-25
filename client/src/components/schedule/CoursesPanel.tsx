@@ -26,7 +26,7 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
   const [search, setSearch] = useState("")
   const [showUnassigned, setShowUnassigned] = useState(true)
   const [showAssigned, setShowAssigned] = useState(true)
-  const [sortBy, setSortBy] = useState<CourseSortBy>(null)
+  const [sortBy, setSortBy] = useState<CourseSortBy>("code-asc")
   const [availFilter, setAvailFilter] = useState<Set<string>>(new Set())
 
   let rows = courses
@@ -47,7 +47,6 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
   else if (sortBy === "code-desc") rows = rows.sort((a, b) => b.course.code.localeCompare(a.course.code))
   else if (sortBy === "cap-asc") rows = rows.sort((a, b) => a.section.capacity - b.section.capacity)
   else if (sortBy === "cap-desc") rows = rows.sort((a, b) => b.section.capacity - a.section.capacity)
-  else rows = rows.sort((a, b) => a.course.code.localeCompare(b.course.code))
 
   const unassigned = rows.filter(r => !r.assigned)
   const assigned = rows.filter(r => r.assigned)

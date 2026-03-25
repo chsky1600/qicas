@@ -1,6 +1,5 @@
 import { useCallback, useRef } from "react"
 import { driver } from "driver.js"
-import "driver.js/dist/driver.css"
 import type { UseScheduleResult } from "./useSchedule"
 
 type TutorialDeps = Pick<
@@ -14,6 +13,34 @@ type TutorialDeps = Pick<
   onOpenSnapshots: () => void
   onCloseSnapshots: () => void
 }
+
+// Step index constants - update these if steps are reordered or added
+const STEP_OPEN_PROPERTIES    = 7   // ArrowRight - open Edit Properties dialog
+const STEP_CLOSE_PROPERTIES_BACK = 8  // ArrowLeft  - close properties (go back to step 7)
+const STEP_COURSES_TAB        = 9   // ArrowRight - click Courses tab inside properties
+const STEP_INSTRUCTORS_TAB    = 10  // ArrowLeft  - click back to Instructors tab
+const STEP_CLOSE_PROPERTIES   = 11  // ArrowRight - close Edit Properties dialog
+const STEP_OPEN_SNAPSHOTS     = 12  // ArrowRight - open Saved Schedules / ArrowLeft - reopen properties
+const STEP_CLOSE_SNAPSHOTS_BACK = 13 // ArrowLeft  - close snapshots (go back to step 12)
+const STEP_CLOSE_SNAPSHOTS    = 15  // ArrowRight - close Saved Schedules dialog
+const STEP_REOPEN_SNAPSHOTS   = 16  // ArrowLeft  - reopen snapshots (go back to step 15)
+
+// Required DOM IDs for tutorial targeting - do not remove these from their components:
+// #toolbar-year-select       - Toolbar year dropdown
+// #toolbar-active-schedule   - Toolbar active schedule name
+// #toolbar-edit-properties   - Toolbar Edit Properties button
+// #toolbar-saved-schedules   - Toolbar Saved Schedules button
+// #toolbar-export            - Toolbar Export button
+// #courses-panel             - Courses panel container
+// #courses-panel-search      - Courses panel search input
+// #courses-panel-list        - Courses panel list
+// #schedule-table            - Schedule table container
+// #properties-dialog         - Edit Properties dialog
+// #properties-dialog-close   - Edit Properties close button
+// #properties-tab-courses    - Edit Properties tab switcher
+// #saved-schedules-dialog    - Saved Schedules dialog
+// #saved-schedules-dialog-close - Saved Schedules close button
+// #saved-schedules-add       - Saved Schedules Add+ button
 
 export function useTutorial({
   onOpenProperties, onCloseProperties,
@@ -56,7 +83,7 @@ export function useTutorial({
       if (index === undefined || index === null) return
 
       if (e.key === "ArrowRight") {
-        if (index === 7) {
+        if (index === STEP_OPEN_PROPERTIES) {
           e.stopImmediatePropagation()
           const btn = document.querySelector<HTMLElement>("#toolbar-edit-properties")
           if (btn && propertiesClickHandler) {
@@ -65,7 +92,7 @@ export function useTutorial({
           }
           onOpenProperties()
           setTimeout(() => d.moveNext(), 150)
-        } else if (index === 9) {
+        } else if (index === STEP_COURSES_TAB) {
           e.stopImmediatePropagation()
           const wrapper = document.querySelector<HTMLElement>("#properties-tab-courses")
           if (wrapper && coursesTabClickHandler) {
@@ -74,7 +101,7 @@ export function useTutorial({
           }
           document.querySelector<HTMLElement>("#properties-tab-courses button:last-child")?.click()
           setTimeout(() => d.moveNext(), 50)
-        } else if (index === 11) {
+        } else if (index === STEP_CLOSE_PROPERTIES) {
           e.stopImmediatePropagation()
           const btn = document.querySelector<HTMLElement>("#properties-dialog-close")
           if (btn && propertiesCloseHandler) {
@@ -83,7 +110,7 @@ export function useTutorial({
           }
           onCloseProperties()
           setTimeout(() => d.moveNext(), 50)
-        } else if (index === 12) {
+        } else if (index === STEP_OPEN_SNAPSHOTS) {
           e.stopImmediatePropagation()
           const btn = document.querySelector<HTMLElement>("#toolbar-saved-schedules")
           if (btn && snapshotsClickHandler) {
@@ -92,7 +119,7 @@ export function useTutorial({
           }
           onOpenSnapshots()
           setTimeout(() => d.moveNext(), 150)
-        } else if (index === 15) {
+        } else if (index === STEP_CLOSE_SNAPSHOTS) {
           e.stopImmediatePropagation()
           const btn = document.querySelector<HTMLElement>("#saved-schedules-dialog-close")
           if (btn && snapshotsCloseHandler) {
@@ -103,23 +130,23 @@ export function useTutorial({
           setTimeout(() => d.moveNext(), 50)
         }
       } else {
-        if (index === 8) {
+        if (index === STEP_CLOSE_PROPERTIES_BACK) {
           e.stopImmediatePropagation()
           onCloseProperties()
           setTimeout(() => d.movePrevious(), 50)
-        } else if (index === 10) {
+        } else if (index === STEP_INSTRUCTORS_TAB) {
           e.stopImmediatePropagation()
           document.querySelector<HTMLElement>("#properties-tab-courses button:first-child")?.click()
           setTimeout(() => d.movePrevious(), 50)
-        } else if (index === 12) {
+        } else if (index === STEP_OPEN_SNAPSHOTS) {
           e.stopImmediatePropagation()
           onOpenProperties()
           setTimeout(() => d.movePrevious(), 150)
-        } else if (index === 13) {
+        } else if (index === STEP_CLOSE_SNAPSHOTS_BACK) {
           e.stopImmediatePropagation()
           onCloseSnapshots()
           setTimeout(() => d.movePrevious(), 50)
-        } else if (index === 16) {
+        } else if (index === STEP_REOPEN_SNAPSHOTS) {
           e.stopImmediatePropagation()
           onOpenSnapshots()
           setTimeout(() => d.movePrevious(), 150)
@@ -218,7 +245,7 @@ export function useTutorial({
             align: "start",
           },
         },
-        // 7 - user clicks the button to open; Next hidden
+        // 7 (STEP_OPEN_PROPERTIES) - user clicks the button to open; Next hidden
         {
           element: "#toolbar-edit-properties",
           onHighlighted: () => {
@@ -243,7 +270,7 @@ export function useTutorial({
             showButtons: ["previous", "close"],
           },
         },
-        // 8 - prev closes properties
+        // 8 (STEP_CLOSE_PROPERTIES_BACK) - prev closes properties
         {
           element: "#properties-dialog",
           popover: {
@@ -258,7 +285,7 @@ export function useTutorial({
             },
           },
         },
-        // 9 - user clicks Courses tab; Next hidden
+        // 9 (STEP_COURSES_TAB) - user clicks Courses tab; Next hidden
         {
           element: "#properties-tab-courses",
           onHighlighted: () => {
@@ -283,7 +310,7 @@ export function useTutorial({
             showButtons: ["previous", "close"],
           },
         },
-        // 10 - explain Courses tab content
+        // 10 (STEP_INSTRUCTORS_TAB) - explain Courses tab content
         {
           element: "#properties-dialog",
           popover: {
@@ -299,7 +326,7 @@ export function useTutorial({
             },
           },
         },
-        // 11 - user clicks X to close properties
+        // 11 (STEP_CLOSE_PROPERTIES) - user clicks X to close properties
         {
           element: "#properties-dialog-close",
           onHighlighted: () => {
@@ -324,7 +351,7 @@ export function useTutorial({
             showButtons: ["previous", "close"],
           },
         },
-        // 12 - user clicks the button to open; Next hidden; prev reopens properties
+        // 12 (STEP_OPEN_SNAPSHOTS) - user clicks the button to open; Next hidden; prev reopens properties
         {
           element: "#toolbar-saved-schedules",
           onHighlighted: () => {
@@ -353,7 +380,7 @@ export function useTutorial({
             },
           },
         },
-        // 13 - prev closes snapshots
+        // 13 (STEP_CLOSE_SNAPSHOTS_BACK) - prev closes snapshots
         {
           element: "#saved-schedules-dialog",
           popover: {
@@ -379,7 +406,7 @@ export function useTutorial({
             align: "start",
           },
         },
-        // 15 - user clicks X to close snapshots
+        // 15 (STEP_CLOSE_SNAPSHOTS) - user clicks X to close snapshots
         {
           element: "#saved-schedules-dialog-close",
           onHighlighted: () => {
@@ -404,7 +431,7 @@ export function useTutorial({
             showButtons: ["previous", "close"],
           },
         },
-        // 16 - prev reopens snapshots
+        // 16 (STEP_REOPEN_SNAPSHOTS) - prev reopens snapshots
         {
           element: "#toolbar-export",
           popover: {
