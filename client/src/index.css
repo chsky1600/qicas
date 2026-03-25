@@ -219,6 +219,11 @@ button:focus-visible {
   }
 }
 
+
+.driver-popover-close-btn:focus {
+  outline: none;
+}
+
 @keyframes fadeSlide {
   from {
     opacity: 0;

@@ -11,11 +11,12 @@ interface Props {
   onOpenProperties: () => void
   onOpenSnapshots: () => void
   onExportCSV: () => void
+  onStartTutorial: () => void
 }
 
 export default function Toolbar({
   years, yearId, schedule, saving,
-  onChangeYear, onOpenProperties, onOpenSnapshots, onExportCSV
+  onChangeYear, onOpenProperties, onOpenSnapshots, onExportCSV, onStartTutorial
 }: Props) {
   const navigate = useNavigate();
 
@@ -32,6 +33,7 @@ export default function Toolbar({
           <span className="text-sm leading-tight tracking-wide">IC<br/>AS</span>
         </div>
         <select
+          id="toolbar-year-select"
           className="bg-[#2c2c2c] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c]"
           value={yearId}
           onChange={e => onChangeYear(e.target.value)}
@@ -41,8 +43,8 @@ export default function Toolbar({
           ))}
         </select>
         <div className="flex items-center gap-2">
-          {schedule && <span className="text-white text-sm">{schedule.name}</span>}
-          {saving ? // if saving, show spining icon, otherwise all saved icon
+          {schedule && <span id="toolbar-active-schedule" className="text-white text-sm">{schedule.name}</span>}
+          {saving ?
             <img src={icon.spin} alt="Saving..." className="w-8 h-8 animate-spin" /> :
             <img src={icon.cloudSave} alt="All Saved!" className="w-8 h-8" />
           }
@@ -50,16 +52,16 @@ export default function Toolbar({
       </div>
 
       <div className="flex gap-2">
-        <button className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
+        <button onClick={onStartTutorial} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
           <img src={icon.tutorial} alt="Tutorial" className="w-6 h-6"/>Tutorial
         </button>
-        <button onClick={onOpenProperties} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
+        <button id="toolbar-edit-properties" onClick={onOpenProperties} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
           <img src={icon.edit} alt="Edit Properties" className="w-6 h-6"/>Edit Properties
         </button>
-        <button onClick={onOpenSnapshots} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
+        <button id="toolbar-saved-schedules" onClick={onOpenSnapshots} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
           <img src={icon.save} alt="Saved Schedules" className="w-6 h-6"/>Saved Schedules
         </button>
-        <button onClick={onExportCSV} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
+        <button id="toolbar-export" onClick={onExportCSV} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
           <img src={icon.userExport} alt="Export" className="w-6 h-6"/>Export
         </button>
         <button onClick={handleLogout} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">

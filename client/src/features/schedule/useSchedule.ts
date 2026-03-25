@@ -63,10 +63,12 @@ export function useSchedule(): UseScheduleResult {
   const yearIdRef = useRef(yearId)
   const instructorRulesRef = useRef(instructorRules)
   const courseRulesRef = useRef(courseRules)
+  const coursesRef = useRef(courses)
   useEffect(() => { scheduleRef.current = schedule }, [schedule])
   useEffect(() => { yearIdRef.current = yearId }, [yearId])
   useEffect(() => { instructorRulesRef.current = instructorRules }, [instructorRules])
   useEffect(() => { courseRulesRef.current = courseRules }, [courseRules])
+  useEffect(() => { coursesRef.current = courses}, [courses])
 
   const assignments = useMemo(() => schedule?.assignments ?? [], [schedule])
 
@@ -289,6 +291,20 @@ export function useSchedule(): UseScheduleResult {
     if (!rule) return
     const updated = await api.updateCourseRule(yr, rule.id, { dropped })
     setCourseRules(prev => prev.map(r => r.id === rule.id ? updated : r))
+
+    // If dropping, remove all assignments for this course from the active schedule
+    if (dropped) {
+      const sched = scheduleRef.current
+      const course = coursesRef.current.find(c => c.code === courseCode)
+      if (sched && course) {
+        const sectionIds = new Set(course.sections.map(s => s.id))
+        const toRemove = sched.assignments.filter(a => sectionIds.has(a.section_id))
+        await Promise.all(toRemove.map(a => api.removeAssignment(yr, sched.id, a.id)))
+        setSchedule(prev =>
+          prev ? { ...prev, assignments: prev.assignments.filter(a => !sectionIds.has(a.section_id)) } : prev
+        )
+      }
+    }
   }, [])
 
   const updateCourseRule = useCallback(async (ruleId: string, updates: Partial<CourseRule>) => {

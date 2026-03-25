@@ -1,6 +1,9 @@
 import { useState } from "react"
 import { X } from "lucide-react"
 import type { Schedule, Course, CourseRule } from "@/features/schedule/types"
+import { HelpTooltip } from "../ui/help-tooltip.tsx"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+
 
 interface Props {
   open: boolean
@@ -35,8 +38,6 @@ export default function SavedSchedulesDialog({
   const [renameId, setRenameId] = useState<string|null>(null)
   const [renameValue, setRenameValue] = useState<string>("")
 
-  if (!open) return null
-
   const total = totalSections(courses, courseRules)
   const sorted = [...schedules].sort((a, b) => b.date_created.localeCompare(a.date_created))
 
@@ -46,19 +47,32 @@ export default function SavedSchedulesDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-lg shadow-xl w-[700px] max-h-[70vh] flex flex-col">
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
+      <DialogContent
+        id="saved-schedules-dialog"
+        showCloseButton={false}
+        onInteractOutside={(e) => {
+          const target = e.target as Element
+          if (target.closest?.("#driver-popover-content")) e.preventDefault()
+        }}
+        className="p-0 gap-0 w-[700px] max-h-[70vh] h-auto flex flex-col rounded-lg overflow-hidden"
+      >
         <div className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
           <div className="flex items-center gap-2">
             <h2 className="text-white font-semibold text-base">Saved Schedules</h2>
+            <HelpTooltip
+              title="Saved Schedules"
+              description="Save multiple versions of a schedule for the same year. Load one to make it active, copy it as a starting point, rename it, or delete it."
+            />
             <button
+              id="saved-schedules-add"
               onClick={onAddSchedule}
               className="text-xs bg-white text-black font-semibold px-2 py-1 rounded hover:bg-gray-200"
             >
               Add+
             </button>
           </div>          
-          <button onClick={onClose} className="text-white hover:text-gray-300">
+          <button id="saved-schedules-dialog-close" onClick={onClose} className="text-white hover:text-gray-300">
             <X size={18} />
           </button>
         </div>
@@ -87,7 +101,6 @@ export default function SavedSchedulesDialog({
                         className="p-1.5 pr-20px border border-default-medium text-sm rounded shadow-xs" placeholder="Rename..." required />
                         <button type="button" 
                         onMouseDown={(e) => {e.preventDefault(); 
-                          console.log("test");
                           if (renameValue && s.name !== renameValue) onRenameSchedule(s.id, renameValue)
                           setRenameId(null)}}
                         className="absolute end-1.5 bottom-1.5 ml-2 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded">Confirm</button>
@@ -133,7 +146,9 @@ export default function SavedSchedulesDialog({
                         Load
                       </button>
                       <button
-                        onClick={() => onDeleteSavedSchedule(s.id)}
+                        onClick={() => {
+                          if (window.confirm(`Do you want to delete "${s.name}"?`))onDeleteSavedSchedule(s.id)
+                        }}
                         className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
                       >
                         Delete
@@ -146,7 +161,7 @@ export default function SavedSchedulesDialog({
             )
           })}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
