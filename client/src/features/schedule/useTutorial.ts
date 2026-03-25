@@ -1,4 +1,4 @@
-import { useCallback } from "react"
+import { useCallback, useRef } from "react"
 import { driver } from "driver.js"
 import "driver.js/dist/driver.css"
 import type { UseScheduleResult } from "./useSchedule"
@@ -19,8 +19,14 @@ export function useTutorial({
   onOpenProperties, onCloseProperties,
   onOpenSnapshots, onCloseSnapshots,
 }: TutorialDeps) {
+  const keyHandlerRef = useRef<((e: KeyboardEvent) => void) | null>(null)
+
   const stopTutorial = useCallback(() => {
     localStorage.setItem("tutorialSeen", "true")
+    if (keyHandlerRef.current) {
+      window.removeEventListener("keyup", keyHandlerRef.current, true)
+      keyHandlerRef.current = null
+    }
     onCloseProperties()
     onCloseSnapshots()
   }, [onCloseProperties, onCloseSnapshots])
@@ -32,11 +38,106 @@ export function useTutorial({
     let snapshotsCloseHandler: (() => void) | null = null
     let coursesTabClickHandler: (() => void) | null = null
 
+    // driverInstance is set after driver() is called below.
+    // The handler is registered BEFORE driver() so our capture listener
+    // is first in the queue, ensuring stopImmediatePropagation blocks driver.js.
+    let driverInstance: ReturnType<typeof driver> | null = null
+
+    const keyHandler = (e: KeyboardEvent) => {
+      const d = driverInstance
+      if (!d) return
+      if (e.key === "Escape") {
+        d.destroy()
+        return
+      }
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return
+
+      const index = d.getActiveIndex()
+      if (index === undefined || index === null) return
+
+      if (e.key === "ArrowRight") {
+        if (index === 7) {
+          e.stopImmediatePropagation()
+          const btn = document.querySelector<HTMLElement>("#toolbar-edit-properties")
+          if (btn && propertiesClickHandler) {
+            btn.removeEventListener("click", propertiesClickHandler)
+            propertiesClickHandler = null
+          }
+          onOpenProperties()
+          setTimeout(() => d.moveNext(), 150)
+        } else if (index === 9) {
+          e.stopImmediatePropagation()
+          const wrapper = document.querySelector<HTMLElement>("#properties-tab-courses")
+          if (wrapper && coursesTabClickHandler) {
+            wrapper.removeEventListener("click", coursesTabClickHandler)
+            coursesTabClickHandler = null
+          }
+          document.querySelector<HTMLElement>("#properties-tab-courses button:last-child")?.click()
+          setTimeout(() => d.moveNext(), 50)
+        } else if (index === 11) {
+          e.stopImmediatePropagation()
+          const btn = document.querySelector<HTMLElement>("#properties-dialog-close")
+          if (btn && propertiesCloseHandler) {
+            btn.removeEventListener("click", propertiesCloseHandler)
+            propertiesCloseHandler = null
+          }
+          onCloseProperties()
+          setTimeout(() => d.moveNext(), 50)
+        } else if (index === 12) {
+          e.stopImmediatePropagation()
+          const btn = document.querySelector<HTMLElement>("#toolbar-saved-schedules")
+          if (btn && snapshotsClickHandler) {
+            btn.removeEventListener("click", snapshotsClickHandler)
+            snapshotsClickHandler = null
+          }
+          onOpenSnapshots()
+          setTimeout(() => d.moveNext(), 150)
+        } else if (index === 15) {
+          e.stopImmediatePropagation()
+          const btn = document.querySelector<HTMLElement>("#saved-schedules-dialog-close")
+          if (btn && snapshotsCloseHandler) {
+            btn.removeEventListener("click", snapshotsCloseHandler)
+            snapshotsCloseHandler = null
+          }
+          onCloseSnapshots()
+          setTimeout(() => d.moveNext(), 50)
+        }
+      } else {
+        if (index === 8) {
+          e.stopImmediatePropagation()
+          onCloseProperties()
+          setTimeout(() => d.movePrevious(), 50)
+        } else if (index === 10) {
+          e.stopImmediatePropagation()
+          document.querySelector<HTMLElement>("#properties-tab-courses button:first-child")?.click()
+          setTimeout(() => d.movePrevious(), 50)
+        } else if (index === 12) {
+          e.stopImmediatePropagation()
+          onOpenProperties()
+          setTimeout(() => d.movePrevious(), 150)
+        } else if (index === 13) {
+          e.stopImmediatePropagation()
+          onCloseSnapshots()
+          setTimeout(() => d.movePrevious(), 50)
+        } else if (index === 16) {
+          e.stopImmediatePropagation()
+          onOpenSnapshots()
+          setTimeout(() => d.movePrevious(), 150)
+        }
+      }
+    }
+
+    // Register BEFORE driver() on window+keyup (same as driver.js) in capture
+    // phase so stopImmediatePropagation blocks driver.js's bubble listener
+    keyHandlerRef.current = keyHandler
+    window.addEventListener("keyup", keyHandler, true)
+
     const driverObj = driver({
       showProgress: true,
       animate: true,
       overlayColor: "rgba(0,0,0,0.6)",
       onDestroyStarted: () => {
+        driverInstance = null
         driverObj.destroy()
         stopTutorial()
       },
@@ -117,7 +218,7 @@ export function useTutorial({
             align: "start",
           },
         },
-        // 7 — user clicks the button to open; Next hidden
+        // 7 - user clicks the button to open; Next hidden
         {
           element: "#toolbar-edit-properties",
           onHighlighted: () => {
@@ -142,7 +243,7 @@ export function useTutorial({
             showButtons: ["previous", "close"],
           },
         },
-        // 8 — prev closes properties
+        // 8 - prev closes properties
         {
           element: "#properties-dialog",
           popover: {
@@ -153,23 +254,23 @@ export function useTutorial({
             align: "start",
             onPrevClick: () => {
               onCloseProperties()
-              setTimeout(() => driverObj.movePrevious(), 150)
+              setTimeout(() => driverObj.movePrevious(), 50)
             },
           },
         },
-        // 9 — user clicks Courses tab; Next hidden
+        // 9 - user clicks Courses tab; Next hidden
         {
           element: "#properties-tab-courses",
           onHighlighted: () => {
-            const btn = document.querySelector<HTMLElement>("#properties-tab-courses")
-            if (!btn) return
-            coursesTabClickHandler = () => setTimeout(() => driverObj.moveNext(), 150)
-            btn.addEventListener("click", coursesTabClickHandler)
+            const wrapper = document.querySelector<HTMLElement>("#properties-tab-courses")
+            if (!wrapper) return
+            coursesTabClickHandler = () => setTimeout(() => driverObj.moveNext(), 50)
+            wrapper.addEventListener("click", coursesTabClickHandler)
           },
           onDeselected: () => {
-            const btn = document.querySelector<HTMLElement>("#properties-tab-courses")
-            if (btn && coursesTabClickHandler) {
-              btn.removeEventListener("click", coursesTabClickHandler)
+            const wrapper = document.querySelector<HTMLElement>("#properties-tab-courses")
+            if (wrapper && coursesTabClickHandler) {
+              wrapper.removeEventListener("click", coursesTabClickHandler)
               coursesTabClickHandler = null
             }
           },
@@ -182,7 +283,7 @@ export function useTutorial({
             showButtons: ["previous", "close"],
           },
         },
-        // 10 — explain Courses tab content
+        // 10 - explain Courses tab content
         {
           element: "#properties-dialog",
           popover: {
@@ -194,19 +295,17 @@ export function useTutorial({
             onPrevClick: () => {
               const instructorsBtn = document.querySelector<HTMLElement>("#properties-tab-courses button:first-child")
               instructorsBtn?.click()
-              setTimeout(() => driverObj.movePrevious(), 150)
+              setTimeout(() => driverObj.movePrevious(), 50)
             },
           },
         },
-
-
-        // 11 — user clicks X to close properties
+        // 11 - user clicks X to close properties
         {
           element: "#properties-dialog-close",
           onHighlighted: () => {
             const btn = document.querySelector<HTMLElement>("#properties-dialog-close")
             if (!btn) return
-            propertiesCloseHandler = () => setTimeout(() => driverObj.moveNext(), 150)
+            propertiesCloseHandler = () => setTimeout(() => driverObj.moveNext(), 50)
             btn.addEventListener("click", propertiesCloseHandler)
           },
           onDeselected: () => {
@@ -225,7 +324,7 @@ export function useTutorial({
             showButtons: ["previous", "close"],
           },
         },
-        // 12 — user clicks the button to open; Next hidden; prev reopens properties
+        // 12 - user clicks the button to open; Next hidden; prev reopens properties
         {
           element: "#toolbar-saved-schedules",
           onHighlighted: () => {
@@ -254,7 +353,7 @@ export function useTutorial({
             },
           },
         },
-        // 13 — prev closes snapshots
+        // 13 - prev closes snapshots
         {
           element: "#saved-schedules-dialog",
           popover: {
@@ -265,11 +364,11 @@ export function useTutorial({
             align: "start",
             onPrevClick: () => {
               onCloseSnapshots()
-              setTimeout(() => driverObj.movePrevious(), 150)
+              setTimeout(() => driverObj.movePrevious(), 50)
             },
           },
         },
-        // 14 - save scheudles add button
+        // 14 - saved schedules add button
         {
           element: "#saved-schedules-add",
           popover: {
@@ -280,13 +379,13 @@ export function useTutorial({
             align: "start",
           },
         },
-        // 15 — user clicks X to close snapshots
+        // 15 - user clicks X to close snapshots
         {
           element: "#saved-schedules-dialog-close",
           onHighlighted: () => {
             const btn = document.querySelector<HTMLElement>("#saved-schedules-dialog-close")
             if (!btn) return
-            snapshotsCloseHandler = () => setTimeout(() => driverObj.moveNext(), 150)
+            snapshotsCloseHandler = () => setTimeout(() => driverObj.moveNext(), 50)
             btn.addEventListener("click", snapshotsCloseHandler)
           },
           onDeselected: () => {
@@ -305,13 +404,13 @@ export function useTutorial({
             showButtons: ["previous", "close"],
           },
         },
-        // 16 — prev reopens snapshots
+        // 16 - prev reopens snapshots
         {
-          element: "#toolbar-export-csv",
+          element: "#toolbar-export",
           popover: {
             title: "Export to CSV",
             description:
-              "Download the current schedule as a CSV file — instructors as rows, Fall and Winter assignments as columns.",
+              "Download the current schedule as a CSV file. Instructors as rows, Fall and Winter assignments as columns.",
             side: "bottom",
             align: "end",
             onPrevClick: () => {
@@ -333,6 +432,8 @@ export function useTutorial({
       ],
     })
 
+    // Point the closure ref at the real object, then start
+    driverInstance = driverObj
     driverObj.drive()
   }, [stopTutorial, onOpenProperties, onCloseProperties, onOpenSnapshots, onCloseSnapshots])
 
