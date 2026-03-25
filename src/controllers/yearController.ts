@@ -337,6 +337,7 @@ export const getYears = async (
     const years = faculty?.academic_years?.map((year: any) => ({
       id: year.id,
       name: year.name,
+      start_year: year.start_year
     })) ?? []
     res.json(years);
   } catch (err) {
