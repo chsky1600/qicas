@@ -191,7 +191,7 @@ export function useTutorial({
           popover: {
             title: "Search Courses",
             description:
-              "Type here to filter by course code or name. The list updates as you type.",
+              "Type here to filter by course code. The list updates as you type.",
             side: "right",
             align: "start",
           },
