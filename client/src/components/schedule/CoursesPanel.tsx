@@ -2,8 +2,17 @@ import { useState } from "react"
 import { useDroppable } from "@dnd-kit/core"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import CourseRow from "./CourseRow"
+import CourseFilters from "./CourseFilters"
+import type { CourseSortBy } from "./CourseFilters"
 import type { Course, CourseRule, Assignment } from "@/features/schedule/types"
 import { HelpTooltip } from "../ui/help-tooltip"
+
+function getAvailability(rule?: CourseRule): string {
+  if (!rule) return "—"
+  if (rule.is_full_year) return "Full Year"
+  if (rule.terms_offered.includes("Fall") && rule.terms_offered.includes("Winter")) return "Fall/Wint."
+  return rule.terms_offered[0] ?? "—"
+}
 
 interface Props {
   courses: Course[]
@@ -17,10 +26,11 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
   const [search, setSearch] = useState("")
   const [showUnassigned, setShowUnassigned] = useState(true)
   const [showAssigned, setShowAssigned] = useState(true)
+  const [sortBy, setSortBy] = useState<CourseSortBy>(null)
+  const [availFilter, setAvailFilter] = useState<Set<string>>(new Set())
 
-  const rows = courses
+  let rows = courses
     .filter(c => !courseRules.find(r => r.course_code === c.code)?.dropped)
-    .sort((a, b) => a.code.localeCompare(b.code))
     .flatMap(course => {
       const rule = courseRules.find(r => r.course_code === course.code)
       return [...course.sections]
@@ -31,13 +41,20 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
         }))
     })
     .filter(r => r.course.code.toLowerCase().includes(search.toLowerCase()))
+    .filter(r => availFilter.size === 0 || availFilter.has(getAvailability(r.rule)))
+
+  if (sortBy === "code-asc") rows = rows.sort((a, b) => a.course.code.localeCompare(b.course.code))
+  else if (sortBy === "code-desc") rows = rows.sort((a, b) => b.course.code.localeCompare(a.course.code))
+  else if (sortBy === "cap-asc") rows = rows.sort((a, b) => a.section.capacity - b.section.capacity)
+  else if (sortBy === "cap-desc") rows = rows.sort((a, b) => b.section.capacity - a.section.capacity)
+  else rows = rows.sort((a, b) => a.course.code.localeCompare(b.course.code))
 
   const unassigned = rows.filter(r => !r.assigned)
   const assigned = rows.filter(r => r.assigned)
 
   return (
     <div
-    id="courses-panel"
+      id="courses-panel"
       ref={setNodeRef}
       className={`w-85 shrink-0 border-r border-gray-200 flex flex-col overflow-hidden ${isOver ? "bg-blue-50" : "bg-white"}`}
     >
@@ -54,14 +71,20 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
         </button>
       </div>
 
-      <div className="px-3 py-2 border-b border-gray-200">
+      <div className="px-3 py-2 border-b border-gray-200 flex items-center gap-2">
         <input
           id="courses-panel-search"
           type="text"
           placeholder="Search..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="w-full text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-gray-400"
+          className="flex-1 text-sm border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-gray-400"
+        />
+        <CourseFilters
+          onChange={(sort, avail) => {
+            setSortBy(sort)
+            setAvailFilter(avail)
+          }}
         />
       </div>
 
@@ -78,9 +101,7 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
           <TableBody>
             <TableRow className="bg-gray-50 hover:bg-gray-50">
               <TableCell onClick={() => setShowUnassigned(v => !v)} colSpan={4} className="py-1 px-3">
-                <div                  
-                  className="w-full flex items-center focus:outline-none justify-between text-xs text-gray-500 font-semibold"
-                >
+                <div className="w-full flex items-center focus:outline-none justify-between text-xs text-gray-500 font-semibold">
                   <span>Unassigned Courses ({unassigned.length})</span>
                   <span>{showUnassigned ? "▲" : "▼"}</span>
                 </div>
@@ -94,9 +115,7 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
               <>
                 <TableRow className="bg-gray-50 hover:bg-gray-50">
                   <TableCell onClick={() => setShowAssigned(v => !v)} colSpan={4} className="py-1 px-3">
-                    <div
-                      className="w-full flex items-center justify-between text-xs text-gray-500 font-semibold"
-                    >
+                    <div className="w-full flex items-center justify-between text-xs text-gray-500 font-semibold">
                       <span>Assigned Courses ({assigned.length})</span>
                       <span>{showAssigned ? "▲" : "▼"}</span>
                     </div>

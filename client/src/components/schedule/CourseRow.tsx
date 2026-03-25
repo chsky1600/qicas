@@ -39,8 +39,8 @@ export default function CourseRow({ course, section, rule, assignments }: Props)
       ref={setNodeRef} {...listeners} {...attributes}
       style={{ opacity: isDragging ? 0.3 : 1, transform: undefined, cursor: "grab" }}
     >
-      <TableCell className={`text-center ${externalDecoration}`}>
-        <span className="bg-grey-100 rounded-full px-2 py-0.5 text-xs font-medium">{course.code}</span>
+      <TableCell className="text-center">
+        <span className={`bg-gray-100 border border-gray-300 rounded px-2 py-1 text-sm ${externalDecoration}`}>{course.code}</span>
       </TableCell>
       <TableCell className="text-center text-sm">{section.number}</TableCell>
       <TableCell className="text-center text-sm">{getAvailability(rule)}</TableCell>

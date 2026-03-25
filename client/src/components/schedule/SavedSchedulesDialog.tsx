@@ -101,7 +101,6 @@ export default function SavedSchedulesDialog({
                         className="p-1.5 pr-20px border border-default-medium text-sm rounded shadow-xs" placeholder="Rename..." required />
                         <button type="button" 
                         onMouseDown={(e) => {e.preventDefault(); 
-                          console.log("test");
                           if (renameValue && s.name !== renameValue) onRenameSchedule(s.id, renameValue)
                           setRenameId(null)}}
                         className="absolute end-1.5 bottom-1.5 ml-2 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded">Confirm</button>
