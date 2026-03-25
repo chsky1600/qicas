@@ -51,7 +51,10 @@ export default function SavedSchedulesDialog({
       <DialogContent
         id="saved-schedules-dialog"
         showCloseButton={false}
-        onInteractOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => {
+          const target = e.target as Element
+          if (target.closest?.("#driver-popover-content")) e.preventDefault()
+        }}
         className="p-0 gap-0 w-[700px] max-h-[70vh] h-auto flex flex-col rounded-lg overflow-hidden"
       >
         <div className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
@@ -144,7 +147,9 @@ export default function SavedSchedulesDialog({
                         Load
                       </button>
                       <button
-                        onClick={() => onDeleteSavedSchedule(s.id)}
+                        onClick={() => {
+                          if (window.confirm(`Do you want to delete "${s.name}"?`))onDeleteSavedSchedule(s.id)
+                        }}
                         className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
                       >
                         Delete
