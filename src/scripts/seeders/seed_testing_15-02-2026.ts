@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 import { FacultyModel } from "../../db/models/faculty";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/qicas";
+const MONGODB_URI = process.env.MONGO_URI || "mongodb://localhost:27017/qicas";
 
 async function main() {
   await mongoose.connect(MONGODB_URI);
