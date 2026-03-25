@@ -8,10 +8,10 @@ interface Props {
   courses: Course[]
   courseRules: CourseRule[]
   assignments: Assignment[]
-  onAdd: () => void
+  onAddCourse: () => void
 }
 
-export default function CoursesPanel({ courses, courseRules, assignments, onAdd }: Props) {
+export default function CoursesPanel({ courses, courseRules, assignments, onAddCourse }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: "panel", data: { type: "panel" } })
   const [search, setSearch] = useState("")
   const [showUnassigned, setShowUnassigned] = useState(true)
@@ -41,7 +41,7 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAdd 
     >
       <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
         <span className="font-semibold text-sm text-gray-700">Courses</span>
-        <button onClick={onAdd} className="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">
+        <button onClick={onAddCourse} className="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">
           Add +
         </button>
       </div>
