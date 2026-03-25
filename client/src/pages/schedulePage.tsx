@@ -100,7 +100,7 @@ export default function SchedulePage() {
             courses={courses}
             courseRules={courseRules}
             assignments={assignments}
-            onAdd={() => { setPropertiesMode("courses"); setPropertiesOpen(true) }}
+            onAddCourse={() => { setPropertiesMode("courses"); setPropertiesOpen(true) }}
           />
           <ScheduleTable
             instructors={instructors}
@@ -109,6 +109,7 @@ export default function SchedulePage() {
             courseRules={courseRules}
             assignments={assignments}
             violations={violations}
+            onAddInstructor={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
           />
         </div>
         <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
