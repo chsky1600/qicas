@@ -38,6 +38,7 @@ export interface UseScheduleResult {
   renameSchedule: (scheduleId: string, newName: string)  => Promise<void>
   switchSchedule: (scheduleId: string) => Promise<void>
   changeYear: (yearId: string) => Promise<void>
+  migrateYear: (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]) => Promise<void>
   refresh: () => Promise<void>
   updateInstructorRule: (ruleId: string, updates: Partial<InstructorRule>) => Promise<void>
   updateCourseRule: (ruleId: string, updates: Partial<CourseRule>) => Promise<void>
@@ -381,6 +382,17 @@ export function useSchedule(): UseScheduleResult {
     }
   }, [loadYear])
 
+  const migrateYear = useCallback(async (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]) => {
+    try {
+      const newYear = await api.migrateToNextYear(source_year_id, new_year_id, name, schedule_ids)
+      console.log(newYear)
+      changeYear(newYear.id)
+    } catch (e) {
+      console.log(e)
+      setError((e as Error).message)
+    }
+  }, [])
+
   // ── export scheudle ─────────────────────────────────────────────────────────────
   function exportCSV() {
     let scheduleName;
@@ -473,7 +485,7 @@ export function useSchedule(): UseScheduleResult {
     createInstructor, updateInstructor, dropInstructor,
     createCourse, updateCourse, dropCourse,
     addSchedule, copySchedule, switchSchedule, deleteSavedSchedule, renameSchedule,
-    changeYear,
+    changeYear, migrateYear,
     exportCSV,
     refresh: load,
     updateInstructorRule,

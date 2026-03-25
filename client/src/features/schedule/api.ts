@@ -39,6 +39,18 @@ export function getYears() {
   return request<Year[]>("/year")
 }
 
+export function migrateToNextYear(source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]){
+  return request<Year>("/faculty/migrate", {
+    method: "POST",
+    body: JSON.stringify({
+      source_year_id, 
+      new_year_id, 
+      name, 
+      schedule_ids
+    }),
+  })
+}
+
 // ── Course rules ──────────────────────────────────────────────────────────────
 
 export function getCourseRules(year: string) {
