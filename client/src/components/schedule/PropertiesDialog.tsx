@@ -7,6 +7,7 @@ import { ModeTogglePill } from "@/components/ui/mode-toggle-pill"
 import { IconControlButton } from "@/components/ui/icon-control-button"
 import { toast } from "sonner"
 import { HelpTooltip } from "../ui/help-tooltip.tsx"
+import { X } from "lucide-react"
 
 import type {
   Instructor, InstructorRule, Course, CourseRule,
@@ -224,7 +225,7 @@ export default function PropertiesDialog({
             buttonClassName="!w-[400px]"
           />
           </div>
-          <button id="properties-dialog-close" onClick={onClose} className="absolute right-3 text-lg leading-none hover:opacity-80">×</button>
+          <button id="properties-dialog-close" onClick={onClose} className="absolute right-3 text-white hover:opacity-80"><X size={18} /></button>
         </div>
 
         {/* Body */}

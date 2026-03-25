@@ -2,6 +2,7 @@ import { useState } from "react"
 import { X } from "lucide-react"
 import type { Schedule, Course, CourseRule } from "@/features/schedule/types"
 import { HelpTooltip } from "../ui/help-tooltip.tsx"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 
 
 interface Props {
@@ -37,8 +38,6 @@ export default function SavedSchedulesDialog({
   const [renameId, setRenameId] = useState<string|null>(null)
   const [renameValue, setRenameValue] = useState<string>("")
 
-  if (!open) return null
-
   const total = totalSections(courses, courseRules)
   const sorted = [...schedules].sort((a, b) => b.date_created.localeCompare(a.date_created))
 
@@ -48,8 +47,13 @@ export default function SavedSchedulesDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div id="saved-schedules-dialog" className="bg-white rounded-lg shadow-xl w-[700px] max-h-[70vh] flex flex-col">
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
+      <DialogContent
+        id="saved-schedules-dialog"
+        showCloseButton={false}
+        onInteractOutside={(e) => e.preventDefault()}
+        className="p-0 gap-0 w-[700px] max-h-[70vh] h-auto flex flex-col rounded-lg overflow-hidden"
+      >
         <div className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
           <div className="flex items-center gap-2">
             <h2 className="text-white font-semibold text-base">Saved Schedules</h2>
@@ -153,7 +157,7 @@ export default function SavedSchedulesDialog({
             )
           })}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
