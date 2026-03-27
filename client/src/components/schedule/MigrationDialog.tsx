@@ -19,7 +19,7 @@ function mustBeLatestYear(latestYearName: string, onClose: () => void) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-lg shadow-xl flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 bg-red-400 rounded-t-lg">          
-          <h2 className="text-white font-semibold text-base">Please switch years</h2>       
+          <h2 className="text-white font-semibold text-base">Please switch years</h2>
           <button onClick={onClose} className="text-white hover:text-gray-300">
             <X size={18} />
           </button>
@@ -85,16 +85,16 @@ export default function MigrationDialog({
         </div>
         <div className="flex-1 overflow-y-auto p-3 space-y-3 ">
           <div>
-            <span className="text-red-700 font-bold">Important!</span> You are about to create academic year {newName}. 
-            Once created, academic years cannot be deleted.
+            <span className="text-red-700 font-bold">Important!</span> You are about to create academic year <b>{newName}</b>. 
+            Once created, academic years <span className="text-red-700 font-bold">cannot be deleted</span>.
             You will still be able to view and edit all previous academic years.
           </div>
-          <div className="text-blue-400">Please select the schedule's from <b>{latestYear.name}</b> you would like to copy over to <b>{newName}</b>:
+          <div className="text-blue-400">Optionally, select the schedule(s) from <b>{latestYear.name}</b> you would like to copy over to <b>{newName}</b>:
           </div>
 
           <div className="border-b-3 border-gray-500 my-1 flex justify-between">
             <span>
-              {latestYear.name} Schedules
+              {latestYear.name} Schedule(s)
             </span>
 
             <div>
