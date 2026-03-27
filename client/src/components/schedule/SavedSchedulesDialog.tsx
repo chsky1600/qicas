@@ -1,4 +1,4 @@
-import { useState, useMemi, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { X } from "lucide-react"
 import type { Schedule, Course, CourseRule } from "@/features/schedule/types"
 import { HelpTooltip } from "../ui/help-tooltip.tsx"

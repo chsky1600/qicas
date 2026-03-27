@@ -102,7 +102,7 @@ export default function SchedulePage() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <Toaster />
+      <Toaster position="top-center" />
       <Toolbar
         years={years}
         yearId={yearId}
