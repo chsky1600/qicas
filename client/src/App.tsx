@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from './pages/loginPage'
 import SchedulePage from './pages/schedulePage'
-
 import { AuthGuard, GuestGuard } from './components/authGuard'
 import SessionWarning from './components/sessionWarning'
 
