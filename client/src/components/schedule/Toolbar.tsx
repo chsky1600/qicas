@@ -12,11 +12,12 @@ interface Props {
   onOpenSnapshots: () => void
   onExportCSV: () => void
   onStartTutorial: () => void
+  onOpenMigration: () => void
 }
 
 export default function Toolbar({
   years, yearId, schedule, saving,
-  onChangeYear, onOpenProperties, onOpenSnapshots, onExportCSV, onStartTutorial
+  onChangeYear, onOpenProperties, onOpenSnapshots, onExportCSV, onStartTutorial, onOpenMigration
 }: Props) {
   const navigate = useNavigate();
 
@@ -24,6 +25,7 @@ export default function Toolbar({
     document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     navigate("/login", { replace: true });
   }
+  const migrate = "migrate"
 
   return (
     <div className="flex justify-between items-center bg-[#1a1a1a] text-white px-8 py-4 border-b-2 border-[#2c2c2c]">
@@ -36,11 +38,12 @@ export default function Toolbar({
           id="toolbar-year-select"
           className="bg-[#2c2c2c] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c]"
           value={yearId}
-          onChange={e => onChangeYear(e.target.value)}
+          onChange={e => e.target.value == migrate ? onOpenMigration() : onChangeYear(e.target.value)}
         >
           {years.map(y => (
             <option key={y.id} value={y.id}>{y.name}</option>
           ))}
+          <option key={migrate} value={migrate}>New Year +</option>
         </select>
         <div className="flex items-center gap-2">
           {schedule && <span id="toolbar-active-schedule" className="text-white text-sm">{schedule.name}</span>}

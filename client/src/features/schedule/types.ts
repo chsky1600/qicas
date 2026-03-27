@@ -81,6 +81,7 @@ export interface InstructorRule {
 export interface Year {
   id: string
   name: string
+  start_year: number
 }
 
 export interface Violation {

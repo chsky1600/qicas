@@ -10,6 +10,7 @@ import CoursesPanel from "@/components/schedule/CoursesPanel"
 import ScheduleTable from "@/components/schedule/ScheduleTable"
 import PropertiesDialog from "@/components/schedule/PropertiesDialog"
 import SavedSchedulesDialog from "@/components/schedule/SavedSchedulesDialog"
+import MigrationDialog from "@/components/schedule/MigrationDialog"
 import SectionChip from "@/components/schedule/SectionChip"
 import { Toaster } from "@/components/ui/sonner"
 
@@ -23,12 +24,13 @@ export default function SchedulePage() {
     createInstructor, updateInstructor, dropInstructor, updateInstructorRule,
     createCourse, updateCourse, dropCourse, updateCourseRule,
     addSchedule, copySchedule, deleteSavedSchedule, switchSchedule, renameSchedule,
-    changeYear,
+    changeYear, migrateYear,
     exportCSV
   } = useSchedule()
 
   const [propertiesOpen, setPropertiesOpen] = useState(false)
   const [snapshotsOpen, setSnapshotsOpen] = useState(false)
+  const [migrationOpen, setMigrationOpen] = useState(false)
   const [dragging, setDragging] = useState<SectionDragData | null>(null)
   const [propertiesMode, setPropertiesMode] = useState<"instructors" | "courses">("instructors")
   const { startTutorial } = useTutorial({
@@ -111,6 +113,7 @@ export default function SchedulePage() {
         onOpenSnapshots={() => setSnapshotsOpen(true)}
         onExportCSV={exportCSV}
         onStartTutorial={startTutorial}
+        onOpenMigration={() => setMigrationOpen(true)}
       />
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
@@ -179,6 +182,16 @@ export default function SchedulePage() {
         onDeleteSavedSchedule={deleteSavedSchedule}
         onSwitchSchedule={switchSchedule}
         onRenameSchedule={renameSchedule}
+      />
+
+      <MigrationDialog
+        open={migrationOpen}
+        onClose={() => setMigrationOpen(false)}        
+        loadedYearId={yearId}
+        years={years}        
+        activeSchedule={schedule}
+        schedules={schedules}
+        onMigrateYear={migrateYear}
       />
     </div>
   )
