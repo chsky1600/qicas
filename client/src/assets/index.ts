@@ -5,6 +5,8 @@ import edit from './pencil-line-duotone.svg'
 import save from './floppy-disk-duotone.svg'
 import userExport from './export-duotone.svg'
 import logout from './door-open-duotone.svg'
+import checkBox from './square-bold.svg'
+import checkedBox from './check-square-bold.svg'
 
 // Icons imported from:
 // https://phosphoricons.com/
@@ -20,4 +22,6 @@ export {
   save,
   userExport,
   logout,
+  checkBox,
+  checkedBox,
 }
