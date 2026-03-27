@@ -75,8 +75,17 @@ export default function MigrationDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-lg shadow-xl w-[500px] max-h-[70vh] flex flex-col">
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
+    <DialogContent
+        id="saved-schedules-dialog"
+        showCloseButton={false}
+        onInteractOutside={(e) => {
+          const target = e.target as Element
+          if (target.closest?.("#driver-popover-content")) e.preventDefault()
+        }}
+        className="p-0 gap-0 w-[700px] max-h-[70vh] h-auto flex flex-col rounded-lg overflow-hidden"
+      >
+      <div className="bg-white rounded-lg shadow-xl flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">          
           <h2 className="text-white font-semibold text-base">Creating {newName} Academic year</h2>       
           <button onClick={onClose} className="text-white hover:text-gray-300">
@@ -135,6 +144,7 @@ export default function MigrationDialog({
           </ul>          
         </div>
       </div>
-    </div>
+    </DialogContent>
+    </Dialog>
   )
 }
