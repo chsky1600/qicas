@@ -169,18 +169,10 @@ export default function SchedulePage() {
         open={migrationOpen}
         onClose={() => setMigrationOpen(false)}        
         loadedYearId={yearId}
-        years={years}
+        years={years}        
+        activeSchedule={schedule}
         schedules={schedules}
         onMigrateYear={migrateYear}
-        //activeSchedule={schedule}
-        //schedules={schedules}
-        //courses={courses}
-        //courseRules={courseRules}
-        //onAddSchedule={addSchedule}
-        //onCopySchedule={copySchedule}
-        //onDeleteSavedSchedule={deleteSavedSchedule}
-        //onSwitchSchedule={switchSchedule}
-        //onRenameSchedule={renameSchedule}
       />
     </div>
   )

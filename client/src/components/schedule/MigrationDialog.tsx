@@ -1,23 +1,16 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { X } from "lucide-react"
 import type { Year, Schedule } from "@/features/schedule/types"
+import * as icon from '@/assets/index'
 
 interface Props {
   open: boolean
   onClose: () => void
   years: Year[]
   loadedYearId: string
+  activeSchedule: Schedule | null
   schedules: Schedule[]
   onMigrateYear: (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]) => Promise<void>
-  /*activeSchedule: Schedule | null
-  schedules: Schedule[]
-  courses: Course[]
-  courseRules: CourseRule[]
-  onAddSchedule: () => Promise<Schedule | undefined>
-  onCopySchedule: (schedule: Schedule) => Promise<Schedule | undefined>
-  onDeleteSavedSchedule: (id: string) => Promise<void>
-  onSwitchSchedule: (id: string) => Promise<void>
-  onRenameSchedule: (scheduleId: string, newName: string)  => Promise<void>*/
 }
 
 
@@ -42,21 +35,10 @@ function mustBeLatestYear(latestYearName: string, onClose: () => void) {
 }
 
 export default function MigrationDialog({
-  open, onClose, years, loadedYearId, schedules, onMigrateYear
-  //activeSchedule, schedules, courses, courseRules,
-  //onAddSchedule, onCopySchedule, onDeleteSavedSchedule, onSwitchSchedule,
-  //onRenameSchedule,
+  open, onClose, years, loadedYearId, activeSchedule, schedules, onMigrateYear
 }: Props) {
   const [scheduleIds, setScheduleIds] = useState(new Set<string>());
   const latestYear = years.reduce((max, obj) => obj.start_year > max.start_year ? obj : max)
-
-  useEffect(() => {
-    if (open) {
-      // we check the above^ to prove that schedules is for the latest schedule
-      // convert them into a set for fast and easy iterability
-      setScheduleIds(new Set(schedules.map(s => s.id)));      
-    }
-  }, [open])
 
   if (!open) return null
   // if loadedYearId is not latest, inform user they must switch to latest year
@@ -78,37 +60,73 @@ export default function MigrationDialog({
   const newName = newYear + "-" + (newYear + 1)
   const newId = "Y" + newYear
 
+  function handleSelectAll() { 
+    setScheduleIds(new Set(schedules.map(s => s.id)));
+  }
+
+  function handleDeselectAll(){
+    setScheduleIds(new Set());
+  }
+
   function handleMigration(){
     const migratingSchedules = Array.from(scheduleIds.values())
     onMigrateYear(latestYear.id, newId, newName, migratingSchedules)
+    onClose()
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-white rounded-lg shadow-xl w-[500px] max-h-[70vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">          
-          <h2 className="text-white font-semibold text-base">Migrating to {newName} Academic year</h2>       
+          <h2 className="text-white font-semibold text-base">Creating {newName} Academic year</h2>       
           <button onClick={onClose} className="text-white hover:text-gray-300">
             <X size={18} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-3 space-y-3 ">
+          <div>
+            <span className="text-red-700 font-bold">Important!</span> You are about to create academic year {newName}. 
+            Once created, academic years cannot be deleted.
+            You will still be able to view and edit all previous academic years.
+          </div>
+          <div className="text-blue-400">Please select the schedule's from <b>{latestYear.name}</b> you would like to copy over to <b>{newName}</b>:
+          </div>
+
+          <div className="border-b-3 border-gray-500 my-1 flex justify-between">
+            <span>
+              {latestYear.name} Schedules
+            </span>
+
+            <div>
+              <button onClick={handleSelectAll} className="text-xs bg-gray-300 text-black m-1 px-1.5 py-0.5 rounded hover:bg-gray-400">
+                Select All
+              </button>
+              <button onClick={handleDeselectAll} className="text-xs bg-gray-300 text-black m-1 px-1.5 py-0.5 rounded hover:bg-gray-400">
+                Deselect All
+              </button>
+            </div>            
+          </div>
           <ul className="space-y-2">
-            {schedules.map(schedule => (
+            {schedules.map(s => (
               <li
-                key={schedule.id}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                key={s.id}
+                className="flex items-center justify-between p-2 rounded-lg border border-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                onClick={() => toggle(s.id)}
               >
-                <span className="text-gray-700 dark:text-gray-200">
-                  {schedule.name}
-                </span>
-            
-                <input
-                  type="checkbox"
-                  checked={scheduleIds.has(schedule.id)}
-                  onChange={() => toggle(schedule.id)}
-                  className="w-4 h-4 accent-blue-600 cursor-pointer"
-                />
+                <div>
+                  <span className="m-1 text-gray-700 dark:text-gray-200">
+                    {s.name}              
+                  </span>
+                  <span className="m-1 text-xs text-gray-400">                    
+                    {"created: " + new Date(s.date_created).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {s.is_rc && <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">RC</span>}
+                  {s.id === activeSchedule?.id && <span className="ml-2 text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded">Active</span>}
+                              
+                  <img src={scheduleIds.has(s.id) ? icon.checkedBox: icon.checkBox} alt="All Saved!" className="w-6 h-6" />
+                </div>
               </li>
             ))}
             <button onClick={handleMigration} className="w-full text-md bg-gray-800 text-white px-10 py-1 rounded hover:bg-gray-700">
