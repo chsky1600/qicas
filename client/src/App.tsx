@@ -1,5 +1,4 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import AssignmentPage from './pages/assignmentPage'
 import LoginPage from './pages/loginPage'
 import SchedulePage from './pages/schedulePage'
 
@@ -22,11 +21,6 @@ function App() {
         <Route path="/schedule" element={
           <AuthGuard>
             <SchedulePage />
-          </AuthGuard>
-        } />
-        <Route path="/assignments" element={
-          <AuthGuard>
-            <AssignmentPage />
           </AuthGuard>
         } />
 
