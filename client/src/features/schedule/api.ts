@@ -1,6 +1,6 @@
 import type {
   Course, Instructor, Schedule, Assignment,
-  InstructorRule, CourseRule, Year, Violation
+  InstructorRule, CourseRule, Year, Violation, Faculty
 } from "./types"
 
 const BASE = ""
@@ -41,7 +41,7 @@ export function getYears() {
 }
 
 export function migrateToNextYear(source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]){
-  return request<Year>("/faculty/migrate", {
+  return request<Faculty>("/faculty/migrate", {
     method: "POST",
     body: JSON.stringify({
       source_year_id, 

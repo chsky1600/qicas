@@ -409,14 +409,15 @@ export function useSchedule(): UseScheduleResult {
 
   const migrateYear = useCallback(async (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]) => {
     try {
-      const newYear = await api.migrateToNextYear(source_year_id, new_year_id, name, schedule_ids)
-      console.log(newYear)
-      changeYear(newYear.id)
+      await api.migrateToNextYear(source_year_id, new_year_id, name, schedule_ids)
+      const updatedYears = await api.getYears()
+      setYears(updatedYears)
+      changeYear(new_year_id)
     } catch (e) {
       console.log(e)
       setError((e as Error).message)
     }
-  }, [])
+  }, [changeYear])
 
   // ── export scheudle ─────────────────────────────────────────────────────────────
   function exportCSV() {

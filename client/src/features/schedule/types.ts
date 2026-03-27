@@ -93,6 +93,15 @@ export interface Violation {
   degree: ViolationDegree
 }
 
+export interface Faculty {
+  /** Unique identifier for this faculty */
+  id: string;
+  /** Display name of the faculty */
+  name: string;
+  /** Academic years managed by this faculty */
+  academic_years: Year[];
+}
+
 // ── Drag-drop UI types (frontend only) ───────────────────────────────────────
 
 export interface SectionDragData {
