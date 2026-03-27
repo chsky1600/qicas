@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemi, useMemo } from "react"
 import { X } from "lucide-react"
 import type { Schedule, Course, CourseRule } from "@/features/schedule/types"
 import { HelpTooltip } from "../ui/help-tooltip.tsx"
@@ -39,7 +39,10 @@ export default function SavedSchedulesDialog({
   const [renameValue, setRenameValue] = useState<string>("")
 
   const total = totalSections(courses, courseRules)
-  const sorted = [...schedules].sort((a, b) => b.date_created.localeCompare(a.date_created))
+
+  const sorted = useMemo(()=> {
+    return [...schedules].sort((a, b) => b.date_created.localeCompare(a.date_created))
+  }, [schedules])
 
   async function handleLoad(id: string) {
     await onSwitchSchedule(id)
