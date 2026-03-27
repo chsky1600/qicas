@@ -20,5 +20,5 @@ export default defineConfig({
       "/year": { target: "http://localhost:3000", changeOrigin: true },
       "/faculty": { target: "http://localhost:3000", changeOrigin: true },
     },
-  },
+  },  
 })

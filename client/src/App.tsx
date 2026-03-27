@@ -1,8 +1,9 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import AssignmentPage from './pages/assignmentPage'
 import LoginPage from './pages/loginPage'
+import SchedulePage from './pages/schedulePage'
 import { AuthGuard, GuestGuard } from './components/authGuard'
 import SessionWarning from './components/sessionWarning'
+
 
 function App() {
   return (
@@ -18,7 +19,7 @@ function App() {
         } />
         <Route path="/schedule" element={
           <AuthGuard>
-            <AssignmentPage />
+            <SchedulePage />
           </AuthGuard>
         } />
 

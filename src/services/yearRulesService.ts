@@ -105,7 +105,11 @@ export async function addCourseRule(
     throw new ServiceError(409, "Course rule id already exists");
   }
   year.course_rules.push(rule);
-  await faculty.save();
+  await FacultyModel.updateOne(
+    { id: faculty_id, "academic_years.id": year_id },
+    { $push: { "academic_years.$[y].course_rules": rule } },
+    { arrayFilters: [{ "y.id": year_id }] }
+  )
   return rule;
 }
 
@@ -136,7 +140,11 @@ export async function updateCourseRuleByID(
   const safeUpdates = updates ?? {};
   const updated: CourseRule = { ...base, ...safeUpdates, id: rule_id };
   year.course_rules[index] = updated;
-  await faculty.save();
+  await FacultyModel.updateOne(
+    { id: faculty_id, "academic_years.id": year_id },
+    { $set: { "academic_years.$[y].course_rules.$[r]": updated } },
+    { arrayFilters: [{ "y.id": year_id }, { "r.id": rule_id }] }
+  )
   return updated;
 }
 
@@ -160,7 +168,11 @@ export async function deleteCourseRuleByID(
     throw new ServiceError(404, "Course rule not found");
   }
   const [removed] = year.course_rules.splice(index, 1);
-  await faculty.save();
+  await FacultyModel.updateOne(
+    { id: faculty_id, "academic_years.id": year_id },
+    { $pull: { "academic_years.$[y].course_rules": { id: rule_id } } },
+    { arrayFilters: [{ "y.id": year_id }] }
+  )
   return removed as CourseRule;
 }
 
@@ -222,7 +234,11 @@ export async function addInstructorRule(
     throw new ServiceError(409, "Instructor rule id already exists");
   }
   year.instructor_rules.push(rule);
-  await faculty.save();
+  await FacultyModel.updateOne(
+    { id: faculty_id, "academic_years.id": year_id },
+    { $push: { "academic_years.$[y].instructor_rules": rule } },
+    { arrayFilters: [{ "y.id": year_id }] }
+  )
   return rule;
 }
 
@@ -253,7 +269,11 @@ export async function updateInstructorRuleByID(
   const safeUpdates = updates ?? {};
   const updated: InstructorRule = { ...base, ...safeUpdates, id: rule_id };
   year.instructor_rules[index] = updated;
-  await faculty.save();
+  await FacultyModel.updateOne(
+    { id: faculty_id, "academic_years.id": year_id },
+    { $set: { "academic_years.$[y].instructor_rules.$[r]": updated } },
+    { arrayFilters: [{ "y.id": year_id }, { "r.id": rule_id }] }
+  )
   return updated;
 }
 
@@ -277,6 +297,10 @@ export async function deleteInstructorRuleByID(
     throw new ServiceError(404, "Instructor rule not found");
   }
   const [removed] = year.instructor_rules.splice(index, 1);
-  await faculty.save();
+  await FacultyModel.updateOne(
+    { id: faculty_id, "academic_years.id": year_id },
+    { $pull: { "academic_years.$[y].instructor_rules": { id: rule_id } } },
+    { arrayFilters: [{ "y.id": year_id }] }
+  )
   return removed as InstructorRule;
 }

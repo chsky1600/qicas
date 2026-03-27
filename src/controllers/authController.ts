@@ -144,7 +144,7 @@ export const refreshToken = async (req : Request, res : Response) => {
     }
 }
 
-// verification middleware
+// verification middleware 
 export const verifyToken = async (req : Request, res : Response, next: NextFunction) => {
 
     const tokenFromCookies = (req as any).cookies?.token as string | undefined;
