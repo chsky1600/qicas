@@ -384,12 +384,15 @@ export function useSchedule(): UseScheduleResult {
     setYearId(newYearId)
     yearIdRef.current = newYearId
     setLoading(true)
+    setSchedule(null)
+    scheduleRef.current = null
     try {
       const schedulesData = await api.getSchedules(newYearId)
       const workingSchedule = schedulesData[0]
         ? await api.setWorkingSchedule(schedulesData[0].id)
         : null
-      await loadYear(newYearId, workingSchedule)
+      const validSchedule = workingSchedule?.year_id === newYearId ? workingSchedule : schedulesData[0] ?? null
+      await loadYear(newYearId, validSchedule)
     } catch (e) {
       setError((e as Error).message)
     } finally {
