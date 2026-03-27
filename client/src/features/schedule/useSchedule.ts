@@ -64,6 +64,7 @@ export function useSchedule(): UseScheduleResult {
   const instructorRulesRef = useRef(instructorRules)
   const courseRulesRef = useRef(courseRules)
   const coursesRef = useRef(courses)
+  const lastSchedulePerYear = useRef<Record<string, string>>({})
   useEffect(() => { scheduleRef.current = schedule }, [schedule])
   useEffect(() => { yearIdRef.current = yearId }, [yearId])
   useEffect(() => { instructorRulesRef.current = instructorRules }, [instructorRules])
@@ -355,6 +356,7 @@ export function useSchedule(): UseScheduleResult {
     const newSchedule = await api.setWorkingSchedule(scheduleId)
     setSchedule(newSchedule)
     scheduleRef.current = newSchedule
+    lastSchedulePerYear.current[yr] = scheduleId
     const result = await api.validateSchedule(yr, newSchedule.id)
     setViolations(result.validationResult.violations)
   }, [])
@@ -388,10 +390,14 @@ export function useSchedule(): UseScheduleResult {
     scheduleRef.current = null
     try {
       const schedulesData = await api.getSchedules(newYearId)
-      const workingSchedule = schedulesData[0]
-        ? await api.setWorkingSchedule(schedulesData[0].id)
+      const lastUsedId = lastSchedulePerYear.current[newYearId]
+      const targetSchedule = lastUsedId
+        ? schedulesData.find(s => s.id === lastUsedId) ?? schedulesData[0]
+        : schedulesData[0]
+      const workingSchedule = targetSchedule
+        ? await api.setWorkingSchedule(targetSchedule.id)
         : null
-      const validSchedule = workingSchedule?.year_id === newYearId ? workingSchedule : schedulesData[0] ?? null
+      const validSchedule = workingSchedule?.year_id === newYearId ? workingSchedule : targetSchedule ?? null
       await loadYear(newYearId, validSchedule)
     } catch (e) {
       setError((e as Error).message)
