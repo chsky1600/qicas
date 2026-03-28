@@ -91,7 +91,7 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
       </div>
 
       <div id="courses-panel-list" className="overflow-y-auto flex-1">
-        <Table className="[&_th]:px-3 [&_td]:px-3">
+        <Table className="[&_th]:px-3 [&_td]:px-3 select-none">
           <TableHeader>
             <TableRow>
               <TableHead className="text-xs text-center">Course Code</TableHead>
@@ -110,7 +110,7 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
               </TableCell>
             </TableRow>
             {showUnassigned && unassigned.map(({ course, section, rule }) => (
-              <CourseRow key={section.id} course={course} section={section} rule={rule} assignments={assignments} />
+              <CourseRow key={section.id} course={course} section={section} rule={rule} assignments={assignments} isAdmin={isAdmin} />
             ))}
 
             {assigned.length > 0 && (
@@ -124,7 +124,7 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
                   </TableCell>
                 </TableRow>
                 {showAssigned && assigned.map(({ course, section, rule }) => (
-                  <CourseRow key={section.id} course={course} section={section} rule={rule} assignments={assignments} />
+                  <CourseRow key={section.id} course={course} section={section} rule={rule} assignments={assignments} isAdmin={isAdmin} />
                 ))}
               </>
             )}

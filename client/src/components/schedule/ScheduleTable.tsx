@@ -56,7 +56,7 @@ export default function ScheduleTable({
 
   return (
     <div id="schedule-table" className="flex-1 overflow-auto">
-      <table className="w-full border-collapse text-left">
+      <table className="w-full border-collapse text-left select-none">
         <thead className="sticky top-0 z-10">
           <tr>
             <th className="px-3 py-3 text-sm font-semibold text-gray-700 w-72 bg-gray-100">
@@ -98,6 +98,7 @@ export default function ScheduleTable({
               courseRules={courseRules}
               assignments={assignments}
               violations={violations}
+              isAdmin={isAdmin}
             />
           ))}
         </tbody>
