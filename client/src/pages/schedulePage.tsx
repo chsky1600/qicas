@@ -28,7 +28,7 @@ export default function SchedulePage() {
     addSchedule, copySchedule, deleteSavedSchedule, switchSchedule, renameSchedule,
     changeYear, migrateYear,
     exportCSV,
-    validationMode, setValidationMode, validateNow
+    validationMode, setValidationMode, validateNow, validationStale
   } = useSchedule()
 
   const [propertiesOpen, setPropertiesOpen] = useState(false)
@@ -121,6 +121,7 @@ export default function SchedulePage() {
         validationMode={validationMode}
         setValidationMode={setValidationMode}
         validateNow={validateNow}
+        validationStale={validationStale}
       />
 
       {admin ? (

@@ -17,12 +17,13 @@ interface Props {
   validationMode: ValidationMode
   setValidationMode: (mode: ValidationMode) => void
   validateNow: () => Promise<void>
+  validationStale: boolean
 }
 
 export default function Toolbar({
   years, yearId, schedule, saving,
   onChangeYear, onOpenProperties, onOpenSnapshots, onExportCSV, onStartTutorial, onOpenMigration,
-  isAdmin, validationMode, setValidationMode, validateNow
+  isAdmin, validationMode, setValidationMode, validateNow, validationStale
 }: Props) {
   const navigate = useNavigate();
 
@@ -77,7 +78,7 @@ export default function Toolbar({
         {isAdmin && (validationMode === "auto" ? (
           <div className="relative group">
             <button className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors">
-              Validate: Auto
+              <img src={icon.lightning} alt="Validate" className="w-6 h-6"/>Validate: Auto
             </button>
             <div className="absolute top-full left-0 w-full pt-0.5 hidden group-hover:block">
               <button
@@ -92,9 +93,9 @@ export default function Toolbar({
           <div className="relative group">
             <button
               onClick={validateNow}
-              className="flex items-center justify-center gap-2 bg-green-700 text-white border border-green-600 px-4 py-2 rounded text-sm cursor-pointer hover:bg-green-600 transition-colors"
+              className={`flex items-center justify-center gap-2 text-white px-4 py-2 rounded text-sm cursor-pointer transition-colors ${validationStale ? "bg-green-700 border border-green-600 hover:bg-green-600" : "bg-[#1a1a1a] border border-[#444] hover:bg-[#3c3c3c]"}`}
             >
-              Validate
+              <img src={icon.lightning} alt="Validate" className="w-6 h-6"/>Validate
             </button>
             <div className="absolute top-full left-0 w-full pt-0.5 hidden group-hover:block">
               <button

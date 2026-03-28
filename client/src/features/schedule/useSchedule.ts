@@ -46,6 +46,7 @@ export interface UseScheduleResult {
   validationMode: ValidationMode
   setValidationMode: (mode: ValidationMode) => void
   validateNow: () => Promise<void>
+  validationStale: boolean
 }
 
 export function useSchedule(): UseScheduleResult {
@@ -61,7 +62,12 @@ export function useSchedule(): UseScheduleResult {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [validationMode, setValidationMode] = useState<ValidationMode>("auto")
+  const [validationMode, setValidationModeRaw] = useState<ValidationMode>("auto")
+  const [validationStale, setValidationStale] = useState(false)
+  const setValidationMode = useCallback((mode: ValidationMode) => {
+    setValidationModeRaw(mode)
+    setValidationStale(false)
+  }, [])
 
   // Refs so async callbacks always read latest values
   const scheduleRef = useRef(schedule)
@@ -97,7 +103,7 @@ export function useSchedule(): UseScheduleResult {
   }, [])
 
   const triggerRevalidate = useCallback(() => {
-    if (validationModeRef.current === "manual") return
+    if (validationModeRef.current === "manual") { setValidationStale(true); return }
     if (revalidateTimeout.current) clearTimeout(revalidateTimeout.current)
     revalidateTimeout.current = setTimeout(revalidate, 500)
   }, [revalidate])
@@ -512,13 +518,14 @@ export function useSchedule(): UseScheduleResult {
 
   const validateNow = useCallback(async () => {
     await revalidate()
+    setValidationStale(false)
   }, [revalidate])
 
   return {
     years, yearId, courses, courseRules, instructors, instructorRules,
     schedules, schedule, assignments, violations,
     saving, loading, error,
-    validationMode, setValidationMode, validateNow,
+    validationMode, setValidationMode, validateNow, validationStale,
     assign, unassign,
     createInstructor, updateInstructor, dropInstructor,
     createCourse, updateCourse, dropCourse,
