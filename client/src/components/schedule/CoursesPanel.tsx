@@ -92,9 +92,8 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
           <TableHeader>
             <TableRow>
               <TableHead className="text-xs text-center">Course Code</TableHead>
-              <TableHead className="text-xs text-center">Section #</TableHead>
               <TableHead className="text-xs text-center">Availability</TableHead>
-              <TableHead className="text-xs text-center">Cap.</TableHead>
+              <TableHead className="text-xs text-center">Capacity</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

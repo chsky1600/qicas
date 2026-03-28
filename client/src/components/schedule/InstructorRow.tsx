@@ -17,7 +17,6 @@ interface Props {
 
 export default function InstructorRow({ instructor, rule, courses, courseRules, assignments, violations }: Props) {
   const [showViolations, setShowViolations] = useState(false)
-
   const fallAssignments = assignments
     .filter(a => a.instructor_id === instructor.id && a.term === "Fall")
     .sort((a, b) => {
@@ -115,7 +114,8 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
               </div>
             </HoverCardTrigger>
             <HoverCardContent className="flex w-64 flex-col gap-0.5 bg-gray-200">
-              <p>{instructor.notes[0].content.trim()}
+              <p>
+                {instructor.notes[0].content.trim()}
               </p>
             </HoverCardContent>
           </HoverCard>
