@@ -16,11 +16,12 @@ interface Props {
   assignments: Assignment[]
   violations: Violation[]
   onAddInstructor: () => void
+  isAdmin: boolean
 }
 
 export default function ScheduleTable({
   instructors, instructorRules, courses, courseRules,
-  assignments, violations, onAddInstructor,
+  assignments, violations, onAddInstructor, isAdmin,
 }: Props) {
   const [search, setSearch] = useState("")
   const [sortBy, setSortBy] = useState<SortBy>(null)
@@ -75,9 +76,11 @@ export default function ScheduleTable({
                       setRankFilter(rank)
                     }}
                   />
-                  <button onClick={onAddInstructor} className="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700 font-normal">
-                    Add +
-                  </button>
+                  {isAdmin && (
+                    <button onClick={onAddInstructor} className="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700 font-normal">
+                      Add +
+                    </button>
+                  )}
                 </div>
               </div>
             </th>

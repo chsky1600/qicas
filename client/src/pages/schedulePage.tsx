@@ -140,6 +140,7 @@ export default function SchedulePage() {
               courseRules={courseRules}
               assignments={assignments}
               onAddCourse={() => { setPropertiesMode("courses"); setPropertiesOpen(true) }}
+              isAdmin={admin}
             />
             <ScheduleTable
               instructors={instructors}
@@ -149,6 +150,7 @@ export default function SchedulePage() {
               assignments={assignments}
               violations={violations}
               onAddInstructor={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
+              isAdmin={admin}
             />
           </div>
           <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
@@ -166,6 +168,7 @@ export default function SchedulePage() {
             courseRules={courseRules}
             assignments={assignments}
             onAddCourse={() => { setPropertiesMode("courses"); setPropertiesOpen(true) }}
+            isAdmin={admin}
           />
           <ScheduleTable
             instructors={instructors}
@@ -175,6 +178,7 @@ export default function SchedulePage() {
             assignments={assignments}
             violations={violations}
             onAddInstructor={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
+            isAdmin={admin}
           />
         </div>
       )}

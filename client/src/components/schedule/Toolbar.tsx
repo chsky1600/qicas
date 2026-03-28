@@ -43,7 +43,7 @@ export default function Toolbar({
           {years.map(y => (
             <option key={y.id} value={y.id}>{y.name}</option>
           ))}
-          <option key={migrate} value={migrate}>New Year +</option>
+          {isAdmin && <option key={migrate} value={migrate}>New Year +</option>}
         </select>
         <div className="flex items-center gap-2">
           {schedule && <span id="toolbar-active-schedule" className="text-white text-sm">{schedule.name}</span>}

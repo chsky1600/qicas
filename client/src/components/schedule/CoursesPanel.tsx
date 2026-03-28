@@ -19,9 +19,10 @@ interface Props {
   courseRules: CourseRule[]
   assignments: Assignment[]
   onAddCourse: () => void
+  isAdmin: boolean
 }
 
-export default function CoursesPanel({ courses, courseRules, assignments, onAddCourse }: Props) {
+export default function CoursesPanel({ courses, courseRules, assignments, onAddCourse, isAdmin }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: "panel", data: { type: "panel" } })
   const [search, setSearch] = useState("")
   const [showUnassigned, setShowUnassigned] = useState(true)
@@ -65,9 +66,11 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
             description="Lists all active courses for the year. Drag a chip onto an instructor's Fall or Winter cell to assign it. Drag it back here to unassign."
           />
         </div>
-        <button id="courses-panel-add" onClick={onAddCourse} className="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">
-          Add +
-        </button>
+        {isAdmin && (
+          <button id="courses-panel-add" onClick={onAddCourse} className="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">
+            Add +
+          </button>
+        )}
       </div>
 
       <div className="px-3 py-2 border-b border-gray-200 flex items-center gap-2">
