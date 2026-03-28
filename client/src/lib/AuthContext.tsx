@@ -23,7 +23,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 // when less than this much time remains, the next API call triggers a silent refresh
-const REFRESH_THRESHOLD_MS = 3 * 60 * 1000 // TEMP: 3 min for testing (halfway through 6m token)
+const REFRESH_THRESHOLD_MS = 60 * 60 * 1000 // 60 min, halfway through the 2h token
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()

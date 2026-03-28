@@ -14,7 +14,7 @@ const secret: Uint8Array = new TextEncoder().encode(
 );
 
 const alg = 'HS256'
-const TOKEN_MAX_AGE_MS = 6 * 60 * 1000 // TEMP: 6 minutes for testing
+const TOKEN_MAX_AGE_MS = 2 * 60 * 60 * 1000 // 2 hours, matches JWT exp
 
 const cookieOpts = {
   httpOnly: true,
@@ -62,7 +62,7 @@ export const getToken = async (req : Request, res : Response) => {
                     .setProtectedHeader({alg})
                     .setIssuedAt()
                     .setIssuer('qicas')
-                    .setExpirationTime('6m')
+                    .setExpirationTime('2h')
                     .sign(secret)
 
                 res.cookie("token", jwt, cookieOpts)
@@ -144,7 +144,7 @@ export const refreshToken = async (req : Request, res : Response) => {
             .setProtectedHeader({alg})
             .setIssuedAt()
             .setIssuer('qicas')
-            .setExpirationTime('6m')
+            .setExpirationTime('2h')
             .sign(secret)
 
         res.cookie("token", jwt, cookieOpts)
@@ -173,7 +173,7 @@ export const verifyToken = async (req : Request, res : Response, next: NextFunct
         try {
             const { payload } = await jose.jwtVerify(token, secret, {
                 issuer: 'qicas',
-                maxTokenAge: '6m'
+                maxTokenAge: '2h'
             });
             if (!req.body) req.body = {};
             req.body.faculty_id = payload.faculty_id;
