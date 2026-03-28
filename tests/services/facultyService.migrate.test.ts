@@ -18,6 +18,7 @@ const seedFaculty = {
     {
       id: sourceYearId,
       name: "2026–2027 Academic Year",
+      start_year: 2026,
       schedules: [
         {
           id: "SCH001",
@@ -34,6 +35,14 @@ const seedFaculty = {
               term: "Fall",
             },
           ],
+        },
+        {
+          id: "SCH002",
+          name: "Winter 2026 Schedule",
+          year_id: sourceYearId,
+          date_created: new Date("2026-03-01T10:00:00.000Z"),
+          is_rc: false,
+          assignments: [],
         },
       ],
       courses: [
@@ -162,5 +171,123 @@ describe("migrateFacultyToNewYear (deep copy)", () => {
     expect(err).toBeTruthy();
     expect(err.status).toBe(409);
     expect(err.message).toBe("Academic year already exists");
+  });
+
+  test("migrated year has start_year incremented by 1", async () => {
+    const result = await migrateFacultyToNewYear(
+      facultyId, facultyId, sourceYearId, newYearId
+    );
+
+    const source = result.academic_years.find((y) => y.id === sourceYearId);
+    const copy = result.academic_years.find((y) => y.id === newYearId);
+    expect(source!.start_year).toBe(2026);
+    expect(copy!.start_year).toBe(2027);
+  });
+
+  test("omitting schedule_ids produces empty schedules (unchanged behavior)", async () => {
+    const result = await migrateFacultyToNewYear(
+      facultyId, facultyId, sourceYearId, newYearId
+    );
+
+    const copy = result.academic_years.find((y) => y.id === newYearId);
+    expect(copy!.schedules.length).toBe(0);
+  });
+
+  test("empty schedule_ids array produces empty schedules", async () => {
+    const result = await migrateFacultyToNewYear(
+      facultyId, facultyId, sourceYearId, newYearId, undefined, []
+    );
+
+    const copy = result.academic_years.find((y) => y.id === newYearId);
+    expect(copy!.schedules.length).toBe(0);
+  });
+
+  test("schedule_ids cherry-picks only matching schedules", async () => {
+    const result = await migrateFacultyToNewYear(
+      facultyId, facultyId, sourceYearId, newYearId, undefined, ["SCH001"]
+    );
+
+    const copy = result.academic_years.find((y) => y.id === newYearId);
+    expect(copy!.schedules.length).toBe(1);
+    expect(copy!.schedules[0].assignments.length).toBe(1);
+  });
+
+  test("cloned schedules have year_id updated to new year", async () => {
+    const result = await migrateFacultyToNewYear(
+      facultyId, facultyId, sourceYearId, newYearId, undefined, ["SCH001"]
+    );
+
+    const copy = result.academic_years.find((y) => y.id === newYearId);
+    expect(copy!.schedules[0].year_id).toBe(newYearId);
+  });
+
+  test("multiple schedule_ids picks all matching", async () => {
+    const result = await migrateFacultyToNewYear(
+      facultyId, facultyId, sourceYearId, newYearId, undefined, ["SCH001", "SCH002"]
+    );
+
+    const copy = result.academic_years.find((y) => y.id === newYearId);
+    expect(copy!.schedules.length).toBe(2);
+  });
+
+  test("non-existent schedule_ids are silently ignored", async () => {
+    const result = await migrateFacultyToNewYear(
+      facultyId, facultyId, sourceYearId, newYearId, undefined, ["NONEXISTENT"]
+    );
+
+    const copy = result.academic_years.find((y) => y.id === newYearId);
+    expect(copy!.schedules.length).toBe(0);
+  });
+
+  test("mixed valid and non-existent schedule_ids picks only valid ones", async () => {
+    const result = await migrateFacultyToNewYear(
+      facultyId, facultyId, sourceYearId, newYearId, undefined, ["SCH001", "NONEXISTENT"]
+    );
+
+    const copy = result.academic_years.find((y) => y.id === newYearId);
+    expect(copy!.schedules.length).toBe(1);
+  });
+
+  test("cloned schedule assignments preserve field values", async () => {
+    const result = await migrateFacultyToNewYear(
+      facultyId, facultyId, sourceYearId, newYearId, undefined, ["SCH001"]
+    );
+
+    const copy = result.academic_years.find((y) => y.id === newYearId);
+    const assignment = copy!.schedules[0].assignments[0];
+    expect(assignment.id).toBe("A001");
+    expect(assignment.instructor_id).toBe("I001");
+    expect(assignment.section_id).toBe("SEC001");
+    expect(assignment.course_code).toBe("CISC101");
+    expect(assignment.term).toBe("Fall");
+  });
+
+  test("cloned schedules get fresh Mongo _id fields", async () => {
+    const result = await migrateFacultyToNewYear(
+      facultyId, facultyId, sourceYearId, newYearId, undefined, ["SCH001"]
+    );
+
+    const source = result.academic_years.find((y) => y.id === sourceYearId);
+    const copy = result.academic_years.find((y) => y.id === newYearId);
+    const sourceId = (source!.schedules[0] as any)._id?.toString();
+    const copyId = (copy!.schedules[0] as any)._id?.toString();
+    expect(copyId).not.toBe(sourceId);
+  });
+
+  test("cloned schedules do not share references with source", async () => {
+    await migrateFacultyToNewYear(
+      facultyId, facultyId, sourceYearId, newYearId, undefined, ["SCH001"]
+    );
+
+    await FacultyModel.updateOne(
+      { id: facultyId, "academic_years.id": newYearId },
+      { $set: { "academic_years.$.schedules.0.name": "Modified" } }
+    );
+
+    const reloaded = await FacultyModel.findOne({ id: facultyId }).lean();
+    const source = reloaded!.academic_years.find((y) => y.id === sourceYearId);
+    const copy = reloaded!.academic_years.find((y) => y.id === newYearId);
+    expect(source!.schedules[0].name).toBe("Fall 2026 Schedule");
+    expect(copy!.schedules[0].name).toBe("Modified");
   });
 });

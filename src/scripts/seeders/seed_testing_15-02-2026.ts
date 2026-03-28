@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 
 import { FacultyModel } from "../../db/models/faculty";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/qicas";
+const MONGODB_URI = process.env.MONGO_URI || "mongodb://localhost:27017/qicas";
 
 async function main() {
   await mongoose.connect(MONGODB_URI);
@@ -32,7 +32,7 @@ async function main() {
         name: "Bob Smith",
         email: "bob.smith@university.edu",
         password: bobHash,
-        role: "scheduler",
+        role: "support",
       },
     ],
 
@@ -42,6 +42,7 @@ async function main() {
       {
         id: "Y2026",
         name: "2026–2027 Academic Year",
+        start_year: 2026,
 
         schedules: [
           {

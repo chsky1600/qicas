@@ -30,7 +30,7 @@ async function main() {
         name: "Bob Smith",
         email: "bob.smith@university.edu",
         password: bobHash,
-        role: "scheduler",
+        role: "support",
       },
     ],
     current_working_schedule_id : "SCH001",
@@ -38,6 +38,7 @@ async function main() {
       {
         id: "Y2026",
         name: "2026-2027",
+        start_year: 2026,
 
         schedules: [
           {

@@ -1,4 +1,4 @@
-export type UserRole = "department_head" | "department_support";
+export type UserRole = "admin" | "support";
 
 export interface User {
   /** Unique identifier for this user */

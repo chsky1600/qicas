@@ -5,35 +5,19 @@ import * as mongoose from 'mongoose'
 import { UserModel } from "../db/models/user"
 import { JOSEError, JWTClaimValidationFailed } from "jose/errors"
 import { FacultyModel } from "../db/models/faculty"
-import { User } from "../types/user"
+import { User, UserRole } from "../types/user"
 
-// change to something 
-const secret : Uint8Array = new TextEncoder().encode('queensuniversity')
+// JWT signing/verifying secret.
+// Falls back to the historical default if `JWT_SECRET` is not provided.
+const secret: Uint8Array = new TextEncoder().encode(
+  process.env.JWT_SECRET ?? "queensuniversity"
+);
 
 const alg = 'HS256'
-
-// // ------------TO REMOVE------------
-// // await mongoose.connect("mongodb://127.0.0.1:27017/mongoose-app");
-// await mongoose.connect("mongodb://localhost:27017/qicas");
-
-// const testUser = await UserModel.create({
-//     id: "Test-Id-1",
-//     faculty_id: "F001",
-//     name: "Test-Name",
-//     email: "Test-Email",
-//     password: "Test-Password",
-//     role: "Test-Role"
-// });
-
-// await mongoose.disconnect();
-// // ------------REMOVE------------
 
 // change to lookup users in all faculty docs?
 const fetchUser = async (email : String): Promise<User | undefined> => {
     try {
-        // const user = await UserModel.findOne({email : email});
-        // return new Promise<UserModel | undefined>((resolve) => {
-        //     resolve(user ? user : undefined)})
 
         const faculty = await FacultyModel.findOne(
             { "users.email": email },
@@ -65,7 +49,7 @@ export const getToken = async (req : Request, res : Response) => {
             const match = await Bun.password.verify(password, user.password);
             if(match) {
 
-                const jwt = await new jose.SignJWT({'faculty_id': user.faculty_id})
+                const jwt = await new jose.SignJWT({'faculty_id': user.faculty_id, 'role': user.role})
                     .setProtectedHeader({alg})
                     .setIssuedAt()
                     .setIssuer('qicas')
@@ -138,6 +122,29 @@ export const changePassword = async (req : Request, res : Response) => {
     }
 }
 
+export const refreshToken = async (req : Request, res : Response) => {
+    const faculty_id = req.body.faculty_id
+    const role = req.body.role
+    if (!faculty_id || !role) {
+        res.sendStatus(401)
+        return
+    }
+
+    try {
+        const jwt = await new jose.SignJWT({'faculty_id': faculty_id, 'role': role})
+            .setProtectedHeader({alg})
+            .setIssuedAt()
+            .setIssuer('qicas')
+            .setExpirationTime('2h')
+            .sign(secret)
+
+        res.cookie("token", jwt)
+        res.sendStatus(200)
+    } catch (err: any) {
+        res.status(500).json({ error: err.message })
+    }
+}
+
 // verification middleware 
 export const verifyToken = async (req : Request, res : Response, next: NextFunction) => {
 
@@ -161,6 +168,7 @@ export const verifyToken = async (req : Request, res : Response, next: NextFunct
             console.log(protectedHeader)
             if (!req.body) req.body = {};
             req.body.faculty_id = payload.faculty_id;
+            req.body.role = payload.role;
             next();
             return
         } catch (err) {
@@ -172,3 +180,15 @@ export const verifyToken = async (req : Request, res : Response, next: NextFunct
 
     res.sendStatus(401)
 }
+
+// role authorization middleware (must be chained after verifyToken)
+export const requireRole = (...allowed: UserRole[]) => {
+    return (req: Request, res: Response, next: NextFunction) => {
+        const role = req.body.role;
+        if (!role || !allowed.includes(role)) {
+            res.status(403).json({ error: "Insufficient permissions" });
+            return;
+        }
+        next();
+    };
+};

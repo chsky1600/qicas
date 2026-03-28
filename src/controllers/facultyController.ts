@@ -198,24 +198,26 @@ export const migrateFacultyToNewYear = async (
   res: Response
 ) => {
   const faculty_id = requireFaculty(req, res);
-  if (!faculty_id) return;
-  const target_id = req.params.faculty_id;
-  if (!target_id) return res.status(400).json({ error: "Missing faculty_id" });
+  if (!faculty_id) return res.status(400).json({ error: "Missing faculty_id" });
 
-  const { source_year_id, new_year_id, name } = req.body ?? {};
+  const { source_year_id, new_year_id, name, schedule_ids } = req.body ?? {};
   if (!source_year_id || !new_year_id) {
     return res.status(400).json({ error: "Missing source_year_id or new_year_id" });
+  }
+  if (schedule_ids !== undefined && !Array.isArray(schedule_ids)) {
+    return res.status(400).json({ error: "schedule_ids must be an array of strings" });
   }
 
   try {
     const updated = await migrateFacultyToNewYearSvc(
       faculty_id,
-      target_id,
+      faculty_id,
       source_year_id,
       new_year_id,
-      name
+      name,
+      schedule_ids
     );
-    res.status(201).json(updated);
+    res.json(updated);
   } catch (err) {
     handleError(err, res);
   }

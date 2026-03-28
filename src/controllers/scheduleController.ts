@@ -89,8 +89,9 @@ export const getSchedules = async (req : Request, res : Response) => {
     }
 }
 
-// takes in a schedule, and overrides the currently saved one with the same ID
-// router.put("/schedule/:year",saveSchedule)
+/** takes in a schedule, and overrides the currently saved one with the same ID
+*    router.put("/schedule/:year",saveSchedule)
+*/
 export const saveSchedule = async (req : Request, res : Response) => {
     try {
         const year_id : string = req.params.year as string;
@@ -192,7 +193,7 @@ export const createSnapshot = async (req : Request, res : Response) => {
             id: newScheduleId,
             year_id: year_id,
             date_created: new Date(),
-            name: `${schedule.name} (Copy)`,
+            name: schedule.name,
         };
 
         const result = await FacultyModel.updateOne(
@@ -223,42 +224,25 @@ export const deleteSchedule = async (req: Request, res: Response) => {
         const schedule_id: string = req.params.schedule_id as string;
         const faculty_id: string = req.body.faculty_id;
 
-        const faculty = await FacultyModel.findOne({ id: faculty_id });
-        if (!faculty) {
-            res.status(404).json({ error: "Faculty not found" });
-            return;
-        }
-
-        let removed = false;
-        faculty.academic_years = faculty.academic_years.map((year: any) => {
-            const nextSchedules = year.schedules.filter((schedule: Schedule) => {
-                if (schedule.id === schedule_id) {
-                    removed = true;
-                    return false;
+        const result = await FacultyModel.updateOne(
+            { id: faculty_id },
+            {
+                $pull: {
+                    "academic_years.$[].schedules": { id: schedule_id }
                 }
-                return true;
-            });
-
-            if (nextSchedules.length === year.schedules.length) {
-                return year;
             }
+        );
 
-            return {
-                ...year.toObject(),
-                schedules: nextSchedules,
-            };
-        }) as any;
-
-        if (!removed) {
+        if (result.modifiedCount === 0) {
             res.status(404).json({ error: "Schedule not found" });
             return;
         }
 
-        if (faculty.current_working_schedule_id === schedule_id) {
-            faculty.set("current_working_schedule_id", undefined);
-        }
+        await FacultyModel.updateOne(
+            { id: faculty_id, current_working_schedule_id: schedule_id },
+            { $unset: { current_working_schedule_id: "" } }
+        );
 
-        await faculty.save();
         res.sendStatus(204);
     } catch (err: any) {
         res.status(500).json({ error: err.message });

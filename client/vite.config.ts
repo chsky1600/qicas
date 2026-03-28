@@ -11,4 +11,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      "/auth": { target: "http://localhost:3000", changeOrigin: true },
+      "/courses": { target: "http://localhost:3000", changeOrigin: true },
+      "/instructors": { target: "http://localhost:3000", changeOrigin: true },
+      "/schedule/": { target: "http://localhost:3000", changeOrigin: true },
+      "/year": { target: "http://localhost:3000", changeOrigin: true },
+      "/faculty": { target: "http://localhost:3000", changeOrigin: true },
+    },
+  },  
 })
