@@ -5,6 +5,15 @@ import type {
 
 const BASE = ""
 
+// auth hooks registered by AuthContext at mount
+let _onActivity: (() => void) | null = null
+let _on401: (() => void) | null = null
+
+export function registerAuthHooks(onActivity: () => void, on401: () => void) {
+  _onActivity = onActivity
+  _on401 = on401
+}
+
 // ── Helper ──────────────────────────────────────────────────────────────────────
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -13,6 +22,11 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     cache: "no-store",
     ...options,
   })
+  if (res.status === 401) {
+    _on401?.()
+    throw new Error("Session expired")
+  }
+  _onActivity?.()
   if (!res.ok) throw new Error(`${options?.method ?? "GET"} ${path} → ${res.status}`)
   if (res.status === 204 || res.status === 201) return undefined as T
   return res.json()

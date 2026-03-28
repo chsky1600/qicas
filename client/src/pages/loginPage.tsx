@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react"
 import { useNavigate } from "react-router-dom"
+import { useAuth } from "@/lib/AuthContext"
 import { Button } from "@/components/ui/button"
 import queensLogo from "@/assets/queens_logo_blue.png"
 import deptArt from "@/assets/dept_of_french studies1.png"
@@ -9,6 +10,7 @@ const inputClass =
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const { fetchSession } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -33,6 +35,12 @@ export default function LoginPage() {
         return
       }
 
+      // hydrate auth context with the new session before navigating
+      const ok = await fetchSession()
+      if (!ok) {
+        setError("Unable to establish session")
+        return
+      }
       navigate("/schedule", { replace: true })
     } catch {
       setError("Unable to reach server")

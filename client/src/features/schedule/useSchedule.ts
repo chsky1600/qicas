@@ -129,8 +129,13 @@ export function useSchedule(): UseScheduleResult {
     scheduleRef.current = workingSchedule
 
     if (workingSchedule) {
-      const result = await api.validateSchedule(yr, workingSchedule.id)
-      setViolations(result.validationResult.violations)
+      try {
+        const result = await api.validateSchedule(yr, workingSchedule.id)
+        setViolations(result.validationResult.violations)
+      } catch {
+        // support users get 403 on validate, just skip
+        setViolations([])
+      }
     } else {
         setViolations([])
     }
@@ -371,8 +376,12 @@ export function useSchedule(): UseScheduleResult {
     setSchedule(newSchedule)
     scheduleRef.current = newSchedule
     lastSchedulePerYear.current[yr] = scheduleId
-    const result = await api.validateSchedule(yr, newSchedule.id)
-    setViolations(result.validationResult.violations)
+    try {
+      const result = await api.validateSchedule(yr, newSchedule.id)
+      setViolations(result.validationResult.violations)
+    } catch {
+      setViolations([])
+    }
   }, [])
 
   const renameSchedule = async (scheduleId: string, newName: string) => {
