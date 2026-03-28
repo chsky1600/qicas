@@ -1,8 +1,9 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { X } from "lucide-react"
 import type { Year, Schedule } from "@/features/schedule/types"
 import * as icon from '@/assets/index'
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { toast } from "sonner"
 
 interface Props {
   open: boolean
@@ -14,37 +15,26 @@ interface Props {
   onMigrateYear: (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]) => Promise<void>
 }
 
-
-function mustBeLatestYear(latestYearName: string, onClose: () => void) {
-  return(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-lg w-[500px] shadow-xl flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 bg-red-400 rounded-t-lg">          
-          <h2 className="text-white font-semibold text-base"><b>Invalid!</b></h2>
-          <button onClick={onClose} className="text-white hover:text-gray-300">
-            <X size={18} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          To create a new academic year you must have the latest year open. 
-
-          Please open <b>{latestYearName}</b> and try again.
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function MigrationDialog({
   open, onClose, years, loadedYearId, activeSchedule, schedules, onMigrateYear
 }: Props) {
   const [confirmMigration, setConfirmMigration] = useState(false);
   const [scheduleIds, setScheduleIds] = useState(new Set<string>());
   const latestYear = years.reduce((max, obj) => obj.start_year > max.start_year ? obj : max)
+  
 
-  if (!open) return null
-  // if loadedYearId is not latest, inform user they must switch to latest year
-  if (loadedYearId !== latestYear.id) return mustBeLatestYear(latestYear.name, onClose)
+  useEffect(() => {
+    if(open && loadedYearId !== latestYear.id){
+      toast.warning(`To create a new academic year you must have the latest year open.`, {
+        duration: 8000,
+        description: <span>Please open <b>{latestYear.name}</b> and try again.</span>,
+        descriptionClassName: '!text-black',
+      })
+    }
+    onClose()
+  }, [open, loadedYearId, latestYear.id])
+
+  if (!open || loadedYearId !== latestYear.id) return null
   
   function toggle(id: string){
     setScheduleIds(prev => {
@@ -88,12 +78,12 @@ export default function MigrationDialog({
         className="p-0 gap-0 w-1/2 h-auto flex flex-col rounded-lg overflow-hidden"
       >
       <div className="bg-white rounded-lg shadow-xl flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">          
-          <h2 className="text-white font-semibold text-base">Creating {newName} Academic year</h2>       
+        <DialogTitle className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
+          <span className="text-white font-semibold text-base">Creating {newName} Academic year</span>       
           <button onClick={onClose} className="text-white hover:text-gray-300">
             <X size={18} />
           </button>
-        </div>
+        </DialogTitle>
         { !confirmMigration ?
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
           <h4><span className="text-red-700 font-bold">Important!</span> You are about to create academic year <b>{newName}</b></h4>
@@ -142,7 +132,7 @@ export default function MigrationDialog({
               </li>
             ))}
             <button onClick={() => setConfirmMigration(true)} className="w-full text-md bg-gray-800 text-white px-10 py-1 rounded hover:bg-gray-500">
-              Create new schedule
+              Create new academic year
             </button>
           </ul>
         </div>
