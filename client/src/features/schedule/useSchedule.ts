@@ -435,85 +435,98 @@ export function useSchedule(): UseScheduleResult {
   // ── export scheudle ─────────────────────────────────────────────────────────────
   function exportCSV() {
     let scheduleName;
-    if (!schedule) scheduleName = "Schedule"
-    else scheduleName = schedule.name
-
+    if (!schedule) scheduleName = "Schedule";
+    else scheduleName = schedule.name;
+  
     interface row {
-      data: string[]
-      fallAssign: string[]
-      wintAssign: string[]
+      data: string[];
+      fallAssign: string[];
+      wintAssign: string[];
     }
-
+  
+    const now = new Date();
+    const timestamp = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, "0"),
+      String(now.getDate()).padStart(2, "0"),
+      String(now.getHours()).padStart(2, "0"),
+      String(now.getMinutes()).padStart(2, "0"),
+    ].join("-");
+  
     // there must be at least 1
-    let maxFallAssigned = 1 
-
-    const courseMap = new Map<string, Course>()
-    for (const c of courses){
-      courseMap.set(c.code, c)
+    let maxFallAssigned = 1;
+  
+    const courseMap = new Map<string, Course>();
+    for (const c of courses) {
+      courseMap.set(c.code, c);
     }
-
-    const exportMap = new Map<string, row>()
+  
+    const exportMap = new Map<string, row>();
     for (const a of assignments) {
-      let csvRow = exportMap.get(a.instructor_id)
-      if (!csvRow){
-        const i = instructors.find(i => i.id === a.instructor_id) 
-        if (!i) continue
-
-        exportMap.set(a.instructor_id, 
-          {
-            data: [RANK_DISPLAY[i.rank].short + " " + i.name], 
-            fallAssign: [], 
-            wintAssign: []
-          })
-        csvRow = exportMap.get(a.instructor_id)
+      let csvRow = exportMap.get(a.instructor_id);
+      if (!csvRow) {
+        const i = instructors.find(i => i.id === a.instructor_id);
+        if (!i) continue;
+  
+        exportMap.set(a.instructor_id, {
+          data: [RANK_DISPLAY[i.rank].short + " " + i.name],
+          fallAssign: [],
+          wintAssign: [],
+        });
+        csvRow = exportMap.get(a.instructor_id);
       }
-
-      const c = courseMap.get(a.course_code)
-      if (!c) continue
-      let courseString = a.course_code
+  
+      const c = courseMap.get(a.course_code);
+      if (!c) continue;
+  
+      let courseString = a.course_code;
       if (c.sections.length > 1) {
-        const s = c.sections.find(s => s.id === a.section_id) ?? {id: "", number: 1, capacity: 0}
-        courseString += "-" + s.number
+        const s = c.sections.find(s => s.id === a.section_id) ?? { id: "", number: 1, capacity: 0 };
+        courseString += "-" + s.number;
       }
-
-      if(a.term == "Fall"){
-        if (!csvRow) continue
-        csvRow.fallAssign.push(courseString)
-        if (csvRow.fallAssign.length > maxFallAssigned) maxFallAssigned = csvRow.fallAssign.length
+  
+      if (a.term == "Fall") {
+        if (!csvRow) continue;
+        csvRow.fallAssign.push(courseString);
+        if (csvRow.fallAssign.length > maxFallAssigned) {
+          maxFallAssigned = csvRow.fallAssign.length;
+        }
       }
-      if(a.term == "Winter"){
-        if (!csvRow) continue
-        csvRow.wintAssign.push(courseString)
+  
+      if (a.term == "Winter") {
+        if (!csvRow) continue;
+        csvRow.wintAssign.push(courseString);
       }
     }
-
+  
     let csv: string = `${scheduleName},`;
-
-    let fallPadding = ","
-    while (fallPadding.length < maxFallAssigned) fallPadding += ","
-    csv = csv + "Fall" + fallPadding + "Winter,\n"
-
+  
+    let fallPadding = ",";
+    while (fallPadding.length < maxFallAssigned) fallPadding += ",";
+    csv = csv + "Fall" + fallPadding + "Winter,\n";
+  
     exportMap.forEach((row) => {
       const sortedFall = row.fallAssign.sort((a, b) => a.localeCompare(b));
       const sortedWint = row.wintAssign.sort((a, b) => a.localeCompare(b));
-
-      while (sortedFall.length < maxFallAssigned) sortedFall.push("")
-
-      const combinedRow = row.data
-      combinedRow.push(...sortedFall)
-      combinedRow.push(...sortedWint)
-
+  
+      while (sortedFall.length < maxFallAssigned) sortedFall.push("");
+  
+      const combinedRow = [...row.data];
+      combinedRow.push(...sortedFall);
+      combinedRow.push(...sortedWint);
+  
       csv += combinedRow.join(",") + "\n";
-    })
-
-    const blob = new Blob([csv], { type: "text/csv" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    if (scheduleName) a.download = `${scheduleName}.csv`
-    else a.download = `schedule.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+    });
+  
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+  
+    a.download = `${scheduleName}-${timestamp}.csv`;
+  
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   const validatingRef = useRef(false)
