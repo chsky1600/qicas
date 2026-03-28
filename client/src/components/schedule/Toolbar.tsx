@@ -1,6 +1,5 @@
 import type { Year, Schedule, ValidationMode } from "@/features/schedule/types"
 import * as icon from '@/assets/index'
-import { useNavigate } from 'react-router-dom';
 
 interface Props {
   years: Year[]
@@ -13,6 +12,7 @@ interface Props {
   onExportCSV: () => void
   onStartTutorial: () => void
   onOpenMigration: () => void
+  onLogout: () => void
   isAdmin: boolean
   validationMode: ValidationMode
   setValidationMode: (mode: ValidationMode) => void
@@ -23,14 +23,8 @@ interface Props {
 export default function Toolbar({
   years, yearId, schedule, saving,
   onChangeYear, onOpenProperties, onOpenSnapshots, onExportCSV, onStartTutorial, onOpenMigration,
-  isAdmin, validationMode, setValidationMode, validateNow, validationStale
+  onLogout, isAdmin, validationMode, setValidationMode, validateNow, validationStale
 }: Props) {
-  const navigate = useNavigate();
-
-  function handleLogout() {
-    document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    navigate("/login", { replace: true });
-  }
   const migrate = "migrate"
 
   return (
@@ -49,7 +43,7 @@ export default function Toolbar({
           {years.map(y => (
             <option key={y.id} value={y.id}>{y.name}</option>
           ))}
-          <option key={migrate} value={migrate}>New Year +</option>
+          {isAdmin && <option key={migrate} value={migrate}>New Year +</option>}
         </select>
         <div className="flex items-center gap-2">
           {schedule && <span id="toolbar-active-schedule" className="text-white text-sm">{schedule.name}</span>}
@@ -101,7 +95,7 @@ export default function Toolbar({
             </div>
           </div>
         ))}
-        <button onClick={handleLogout} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none">
+        <button onClick={onLogout} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none">
           <img src={icon.logout} alt="Settings" className="w-6 h-6"/>Logout
         </button>
       </div>

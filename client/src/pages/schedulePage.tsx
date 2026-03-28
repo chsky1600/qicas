@@ -5,7 +5,7 @@ import type { DragEndEvent, DragStartEvent, DragOverEvent } from "@dnd-kit/core"
 import { useSchedule } from "@/features/schedule/useSchedule"
 import { useTutorial } from "@/features/schedule/useTutorial"
 import type { SectionDragData, InstructorDropData, PanelDropData } from "@/features/schedule/types"
-import { isAdmin } from "@/lib/auth"
+import { useAuth } from "@/lib/AuthContext"
 import Toolbar from "@/components/schedule/Toolbar"
 import CoursesPanel from "@/components/schedule/CoursesPanel"
 import ScheduleTable from "@/components/schedule/ScheduleTable"
@@ -16,7 +16,7 @@ import SectionChip from "@/components/schedule/SectionChip"
 import { Toaster } from "@/components/ui/sonner"
 
 export default function SchedulePage() {
-  const admin = isAdmin()
+  const { isAdmin: admin, logout } = useAuth()
   const {
     years, yearId, courses, courseRules,
     instructors, instructorRules,
@@ -124,6 +124,7 @@ export default function SchedulePage() {
         onExportCSV={exportCSV}
         onStartTutorial={startTutorial}
         onOpenMigration={() => setMigrationOpen(true)}
+        onLogout={logout}
         isAdmin={admin}
         validationMode={validationMode}
         setValidationMode={setValidationMode}
@@ -139,6 +140,7 @@ export default function SchedulePage() {
               courseRules={courseRules}
               assignments={assignments}
               onAddCourse={() => { setPropertiesMode("courses"); setPropertiesOpen(true) }}
+              isAdmin={admin}
             />
             <ScheduleTable
               instructors={instructors}
@@ -148,6 +150,7 @@ export default function SchedulePage() {
               assignments={assignments}
               violations={violations}
               onAddInstructor={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
+              isAdmin={admin}
             />
           </div>
           <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
@@ -165,6 +168,7 @@ export default function SchedulePage() {
             courseRules={courseRules}
             assignments={assignments}
             onAddCourse={() => { setPropertiesMode("courses"); setPropertiesOpen(true) }}
+            isAdmin={admin}
           />
           <ScheduleTable
             instructors={instructors}
@@ -174,6 +178,7 @@ export default function SchedulePage() {
             assignments={assignments}
             violations={violations}
             onAddInstructor={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
+            isAdmin={admin}
           />
         </div>
       )}

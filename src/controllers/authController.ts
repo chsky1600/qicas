@@ -14,6 +14,15 @@ const secret: Uint8Array = new TextEncoder().encode(
 );
 
 const alg = 'HS256'
+const TOKEN_MAX_AGE_MS = 2 * 60 * 60 * 1000 // 2 hours, matches JWT exp
+
+const cookieOpts = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  maxAge: TOKEN_MAX_AGE_MS,
+  path: "/",
+}
 
 // change to lookup users in all faculty docs?
 const fetchUser = async (email : String): Promise<User | undefined> => {
@@ -56,10 +65,10 @@ export const getToken = async (req : Request, res : Response) => {
                     .setExpirationTime('2h')
                     .sign(secret)
 
-                res.cookie("token",jwt)
+                res.cookie("token", jwt, cookieOpts)
                 res.sendStatus(200)
             } else {
-                res.send('Invalid password.')
+                res.status(401).json({ error: "Invalid password" })
             }
         } else {
             console.log("user not found.")
@@ -138,8 +147,10 @@ export const refreshToken = async (req : Request, res : Response) => {
             .setExpirationTime('2h')
             .sign(secret)
 
-        res.cookie("token", jwt)
-        res.sendStatus(200)
+        res.cookie("token", jwt, cookieOpts)
+        // Return new expiry so frontend can update session state without a second round-trip
+        const payload = JSON.parse(atob(jwt.split(".")[1]!))
+        res.json({ faculty_id, role, exp: payload.exp })
     } catch (err: any) {
         res.status(500).json({ error: err.message })
     }
@@ -160,12 +171,10 @@ export const verifyToken = async (req : Request, res : Response, next: NextFunct
 
     if(token) {
         try {
-            const { payload, protectedHeader } = await jose.jwtVerify(token, secret, {
+            const { payload } = await jose.jwtVerify(token, secret, {
                 issuer: 'qicas',
-                maxTokenAge: 6000000000
+                maxTokenAge: '2h'
             });
-            console.log(payload)
-            console.log(protectedHeader)
             if (!req.body) req.body = {};
             req.body.faculty_id = payload.faculty_id;
             req.body.role = payload.role;
@@ -179,6 +188,38 @@ export const verifyToken = async (req : Request, res : Response, next: NextFunct
     } 
 
     res.sendStatus(401)
+}
+
+// returns session metadata so the frontend never needs to parse the JWT itself
+// must be chained after verifyToken
+export const getSession = async (req: Request, res: Response) => {
+    const { faculty_id, role } = req.body
+
+    // Decode the verified token to read `exp` without re-verifying
+    const token = (req as any).cookies?.token
+        || req.headers.cookie?.split(";").map(s => s.trim()).find(s => s.startsWith("token="))?.split("=")[1]
+
+    let exp: number | null = null
+    if (token) {
+        try {
+            const payload = JSON.parse(atob(token.split(".")[1]))
+            exp = payload.exp ?? null
+        } catch { /* token already verified by middleware, this is just a read */ }
+    }
+
+    res.json({ faculty_id, role, exp })
+}
+
+// clears the httpOnly auth cookie
+// must match the same options used when setting it (except maxAge/expires)
+export const logout = (_req: Request, res: Response) => {
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax" as const,
+        path: "/",
+    })
+    res.sendStatus(200)
 }
 
 // role authorization middleware (must be chained after verifyToken)
