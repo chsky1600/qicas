@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from "react"
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { snapCenterToCursor } from "@dnd-kit/modifiers"
-import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core"
+import type { DragEndEvent, DragStartEvent, DragOverEvent } from "@dnd-kit/core"
 import { useSchedule } from "@/features/schedule/useSchedule"
 import { useTutorial } from "@/features/schedule/useTutorial"
 import type { SectionDragData, InstructorDropData, PanelDropData } from "@/features/schedule/types"
+import { isAdmin } from "@/lib/auth"
 import Toolbar from "@/components/schedule/Toolbar"
 import CoursesPanel from "@/components/schedule/CoursesPanel"
 import ScheduleTable from "@/components/schedule/ScheduleTable"
@@ -15,6 +16,7 @@ import SectionChip from "@/components/schedule/SectionChip"
 import { Toaster } from "@/components/ui/sonner"
 
 export default function SchedulePage() {
+  const admin = isAdmin()
   const {
     years, yearId, courses, courseRules,
     instructors, instructorRules,
@@ -25,13 +27,15 @@ export default function SchedulePage() {
     createCourse, updateCourse, dropCourse, updateCourseRule,
     addSchedule, copySchedule, deleteSavedSchedule, switchSchedule, renameSchedule,
     changeYear, migrateYear,
-    exportCSV
+    exportCSV,
+    validationMode, setValidationMode, validateNow, validationStale
   } = useSchedule()
 
   const [propertiesOpen, setPropertiesOpen] = useState(false)
   const [snapshotsOpen, setSnapshotsOpen] = useState(false)
   const [migrationOpen, setMigrationOpen] = useState(false)
   const [dragging, setDragging] = useState<SectionDragData | null>(null)
+  const [overValid, setOverValid] = useState(false)
   const [propertiesMode, setPropertiesMode] = useState<"instructors" | "courses">("instructors")
   const { startTutorial } = useTutorial({
     courses, courseRules,
@@ -57,8 +61,14 @@ export default function SchedulePage() {
     setDragging(e.active.data.current as SectionDragData)
   }
 
+  function handleDragOver(e: DragOverEvent) {
+    const overData = e.over?.data.current as { type?: string } | undefined
+    setOverValid(overData?.type === "instructor")
+  }
+
   function handleDragEnd(e: DragEndEvent) {
     setDragging(null)
+    setOverValid(false)
     const drag = e.active.data.current as SectionDragData
     if (!e.over) return
 
@@ -101,7 +111,7 @@ export default function SchedulePage() {
   if (error) return <div className="flex items-center justify-center h-screen text-red-500">{error}</div>
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col h-screen">
       <Toaster position="top-center" />
       <Toolbar
         years={years}
@@ -114,9 +124,41 @@ export default function SchedulePage() {
         onExportCSV={exportCSV}
         onStartTutorial={startTutorial}
         onOpenMigration={() => setMigrationOpen(true)}
+        isAdmin={admin}
+        validationMode={validationMode}
+        setValidationMode={setValidationMode}
+        validateNow={validateNow}
+        validationStale={validationStale}
       />
 
-      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      {admin ? (
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+          <div className="flex flex-1 overflow-hidden">
+            <CoursesPanel
+              courses={courses}
+              courseRules={courseRules}
+              assignments={assignments}
+              onAddCourse={() => { setPropertiesMode("courses"); setPropertiesOpen(true) }}
+            />
+            <ScheduleTable
+              instructors={instructors}
+              instructorRules={instructorRules}
+              courses={courses}
+              courseRules={courseRules}
+              assignments={assignments}
+              violations={violations}
+              onAddInstructor={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
+            />
+          </div>
+          <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
+            {dragging && draggingSection ? (
+              <span className={`${overValid ? "bg-green-500" : "bg-gray-400"} text-white px-2 py-1 rounded text-sm cursor-grab select-none ${draggingRule?.is_external ? "outline-dashed outline-2 outline-offset-1 outline-blue-500" : ""}`}>
+                {dragging.courseCode}{draggingRule?.is_full_year ? (dragging.prevTerm === "Fall" ? "A" : "B") : ""}-{draggingSection.number}
+              </span>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      ) : (
         <div className="flex flex-1 overflow-hidden">
           <CoursesPanel
             courses={courses}
@@ -134,22 +176,7 @@ export default function SchedulePage() {
             onAddInstructor={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
           />
         </div>
-        <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
-          {dragging && draggingSection ? (
-            <SectionChip
-              courseCode={dragging.courseCode}
-              sectionId={dragging.sectionId}
-              sectionNum={draggingSection.number}
-              isFullYear={draggingRule?.is_full_year ?? false}
-              isExternal={draggingRule?.is_external ?? false}
-              assignmentId={dragging.assignmentId ?? ""}
-              prevInstructorId={dragging.prevInstructorId ?? ""}
-              prevTerm={dragging.prevTerm ?? "Fall"}
-              inViolation={null}
-            />
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+      )}
 
       <PropertiesDialog
         open={propertiesOpen}
@@ -182,6 +209,7 @@ export default function SchedulePage() {
         onDeleteSavedSchedule={deleteSavedSchedule}
         onSwitchSchedule={switchSchedule}
         onRenameSchedule={renameSchedule}
+        isAdmin={admin}
       />
 
       <MigrationDialog

@@ -12,6 +12,7 @@ import {
     validateSchedule,
     getWorkingSchedule
 } from "../controllers/scheduleController";
+import { requireRole } from "../controllers/authController";
 
 const router = express.Router();
 
@@ -20,14 +21,13 @@ router.put("/schedule/active/:schedule_id",setWorkingSchedule)
 router.get("/schedule/", getWorkingSchedule)
 
 router.get("/schedule/:year",getSchedules)
-router.put("/schedule/:year",saveSchedule)
-router.post("/schedule/:year", createSnapshot)
-router.delete("/schedule/:schedule_id", deleteSchedule)
+router.put("/schedule/:year", requireRole("admin"), saveSchedule)
+router.post("/schedule/:year", requireRole("admin"), createSnapshot)
+router.delete("/schedule/:schedule_id", requireRole("admin"), deleteSchedule)
 
-router.post("/schedule/:year/:schedule_id/assignments", addAssignment)
-router.delete("/schedule/:year/:schedule_id/assignments/:assignment_id", removeAssignment)
+router.post("/schedule/:year/:schedule_id/assignments", requireRole("admin"), addAssignment)
+router.delete("/schedule/:year/:schedule_id/assignments/:assignment_id", requireRole("admin"), removeAssignment)
 
-router.post("/schedule/:year/:schedule_id/validate",validateSchedule)
+router.post("/schedule/:year/:schedule_id/validate", requireRole("admin"), validateSchedule)
 
 export default router;
-

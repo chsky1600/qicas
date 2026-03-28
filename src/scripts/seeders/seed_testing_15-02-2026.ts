@@ -32,7 +32,7 @@ async function main() {
         name: "Bob Smith",
         email: "bob.smith@university.edu",
         password: bobHash,
-        role: "scheduler",
+        role: "support",
       },
     ],
 

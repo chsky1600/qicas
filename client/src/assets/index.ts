@@ -7,6 +7,7 @@ import userExport from './export-duotone.svg'
 import logout from './door-open-duotone.svg'
 import checkBox from './square-bold.svg'
 import checkedBox from './check-square-bold.svg'
+import lightning from './lightning-duotone.svg'
 
 // Icons imported from:
 // https://phosphoricons.com/
@@ -24,4 +25,5 @@ export {
   logout,
   checkBox,
   checkedBox,
+  lightning,
 }
