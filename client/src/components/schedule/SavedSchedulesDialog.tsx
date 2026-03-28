@@ -2,7 +2,7 @@ import { useState, useMemo } from "react"
 import { X } from "lucide-react"
 import type { Schedule, Course, CourseRule } from "@/features/schedule/types"
 import { HelpTooltip } from "../ui/help-tooltip.tsx"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 
 
 interface Props {
@@ -60,7 +60,7 @@ export default function SavedSchedulesDialog({
         }}
         className="p-0 gap-0 w-[700px] max-h-[70vh] h-auto flex flex-col rounded-lg overflow-hidden"
       >
-        <div className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
+        <DialogTitle className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
           <div className="flex items-center gap-2">
             <h2 className="text-white font-semibold text-base">Saved Schedules</h2>
             <button
@@ -78,7 +78,7 @@ export default function SavedSchedulesDialog({
           <button id="saved-schedules-dialog-close" onClick={onClose} className="text-white hover:text-gray-300">
             <X size={18} />
           </button>
-        </div>
+        </DialogTitle>
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {sorted.map(s => {
             const isActive = s.id === activeSchedule?.id
