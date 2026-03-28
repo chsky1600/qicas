@@ -23,7 +23,7 @@ export default function SectionChip({
   assignmentId, prevInstructorId, prevTerm, inViolation, isAdmin,
 }: Props) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `chip-${sectionId}-${prevTerm}`,
+    id: `chip-${assignmentId}`,
     data: {
       type: "section", source: "chip",
       sectionId, courseCode, assignmentId, prevInstructorId, prevTerm,
