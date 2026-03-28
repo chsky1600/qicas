@@ -245,9 +245,20 @@ export async function migrateFacultyToNewYear(
   // Cherry-pick requested schedules from the source year.  Assignment references
   // (instructor_id, course_code, etc.) stay valid because courses and instructors
   // are also cloned with the same application-level ids.
-  const pickedSchedules = schedule_ids?.length
-    ? source.schedules.filter(s => schedule_ids.includes(s.id))
-    : [];
+
+  let pickedSchedules = source.schedules.filter(s => schedule_ids?.includes(s.id))
+  console.log(pickedSchedules)
+   // if no schedules chosen to copy, populate with 1 empty schedule
+  if (pickedSchedules.length === 0) {
+    pickedSchedules = [{
+      id: "overwritten", // will be ovewritten
+      name: "New Schedule",
+      year_id: "overwritten",
+      date_created: new Date, // will be ovewritten
+      is_rc: false,
+      assignments: []
+    }]
+  }
 
   const clonedSchedules = cloneWithoutMongoIds(pickedSchedules).map(s => ({
     ...s,
