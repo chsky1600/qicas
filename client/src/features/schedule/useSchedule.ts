@@ -192,8 +192,6 @@ export function useSchedule(): UseScheduleResult {
     if (!sched || !yr) return
     setSaving(true)
 
-    const isFullYear = courseRulesRef.current.find(r => r.course_code === courseCode)?.is_full_year ?? false
-
     const newAssignment: Assignment = {
       id: crypto.randomUUID(),
       instructor_id: instructorId,
@@ -202,12 +200,10 @@ export function useSchedule(): UseScheduleResult {
       term,
     }
 
-    // Collect all assignments that must be removed
-    const toRemove = sched.assignments.filter(a => {
-      if (a.id === prevAssignmentId) return true
-      if (isFullYear) return a.section_id === sectionId && a.term === term // one per term slot
-      return a.section_id === sectionId // non-full year: only one chip ever
-    })
+    // only remove the specific assignment being moved, never other co-teaching assignments
+    const toRemove = prevAssignmentId
+      ? sched.assignments.filter(a => a.id === prevAssignmentId)
+      : []
 
     setSchedule(prev => {
       if (!prev) return prev
