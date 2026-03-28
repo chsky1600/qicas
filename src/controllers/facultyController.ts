@@ -10,6 +10,7 @@ import {
   migrateFacultyToNewYear as migrateFacultyToNewYearSvc,
   removeUserFromFacultyByID as removeUserFromFacultyByIDSvc,
 } from "../services/facultyService";
+import { FacultyModel } from "../db/models/faculty";
 
 /**
  * Extract faculty_id from the request body (set by auth middleware).
@@ -182,6 +183,18 @@ export const removeUserFromFacultyByID = async (
       user_id
     );
     res.json(updated);
+  } catch (err) {
+    handleError(err, res);
+  }
+};
+
+export const getCreditsPerCourse = async (req: Request, res: Response) => {
+  const faculty_id = requireFaculty(req, res);
+  if (!faculty_id) return;
+
+  try {
+    const doc = await FacultyModel.findOne({ id: faculty_id }, { credits_per_course: 1, _id: 0 }).lean();
+    res.json({ credits_per_course: doc?.credits_per_course ?? 1 });
   } catch (err) {
     handleError(err, res);
   }

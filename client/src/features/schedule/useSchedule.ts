@@ -43,6 +43,7 @@ export interface UseScheduleResult {
   updateInstructorRule: (ruleId: string, updates: Partial<InstructorRule>) => Promise<void>
   updateCourseRule: (ruleId: string, updates: Partial<CourseRule>) => Promise<void>
   exportCSV: () => void
+  creditsPerCourse: number
   validationMode: ValidationMode
   setValidationMode: (mode: ValidationMode) => void
   validateNow: () => Promise<void>
@@ -62,6 +63,7 @@ export function useSchedule(): UseScheduleResult {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [creditsPerCourse, setCreditsPerCourse] = useState(1)
   const [validationMode, setValidationModeRaw] = useState<ValidationMode>("auto")
   const [validationStale, setValidationStale] = useState(false)
   const setValidationMode = useCallback((mode: ValidationMode) => {
@@ -148,10 +150,12 @@ export function useSchedule(): UseScheduleResult {
       setLoading(true)
       setError(null)
 
-      const [yearsData, workingSchedule] = await Promise.all([
+      const [yearsData, workingSchedule, creditsData] = await Promise.all([
         api.getYears(),
         api.getWorkingSchedule(),
+        api.getCreditsPerCourse(),
       ])
+      setCreditsPerCourse(creditsData.credits_per_course)
 
       setYears(yearsData)
 
@@ -553,6 +557,7 @@ export function useSchedule(): UseScheduleResult {
     years, yearId, courses, courseRules, instructors, instructorRules,
     schedules, schedule, assignments, violations,
     saving, loading, error,
+    creditsPerCourse,
     validationMode, setValidationMode, validateNow, validationStale,
     assign, unassign,
     createInstructor, updateInstructor, dropInstructor,

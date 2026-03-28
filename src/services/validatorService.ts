@@ -520,10 +520,10 @@ export function checkScheduleRules(
   }
 
   // --- SW_IMBALANCE (Warning) ---
-  // Total available internal course sections != total instructor workload across the schedule.
+  // Total available internal section credits != total instructor workload across the schedule.
   const totalSections = ctx.course_rules
     .filter(cr => !cr.is_external)
-    .reduce((sum, cr) => sum + cr.sections_available.length * cr.terms_offered.length, 0);
+    .reduce((sum, cr) => sum + cr.workload_fulfillment * cr.sections_available.length * cr.terms_offered.length, 0);
 
   const totalWorkload = ctx.instructors.reduce((sum, instructor) => {
     const rule = ctx.instructor_rules.find(r => r.instructor_id === instructor.id);
