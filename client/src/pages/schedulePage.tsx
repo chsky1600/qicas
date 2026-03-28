@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react"
 import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from "@dnd-kit/core"
 import { snapCenterToCursor } from "@dnd-kit/modifiers"
-import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core"
+import type { DragEndEvent, DragStartEvent, DragOverEvent } from "@dnd-kit/core"
 import { useSchedule } from "@/features/schedule/useSchedule"
 import { useTutorial } from "@/features/schedule/useTutorial"
 import type { SectionDragData, InstructorDropData, PanelDropData } from "@/features/schedule/types"
@@ -35,6 +35,7 @@ export default function SchedulePage() {
   const [snapshotsOpen, setSnapshotsOpen] = useState(false)
   const [migrationOpen, setMigrationOpen] = useState(false)
   const [dragging, setDragging] = useState<SectionDragData | null>(null)
+  const [overValid, setOverValid] = useState(false)
   const [propertiesMode, setPropertiesMode] = useState<"instructors" | "courses">("instructors")
   const { startTutorial } = useTutorial({
     courses, courseRules,
@@ -60,8 +61,14 @@ export default function SchedulePage() {
     setDragging(e.active.data.current as SectionDragData)
   }
 
+  function handleDragOver(e: DragOverEvent) {
+    const overData = e.over?.data.current as { type?: string } | undefined
+    setOverValid(overData?.type === "instructor")
+  }
+
   function handleDragEnd(e: DragEndEvent) {
     setDragging(null)
+    setOverValid(false)
     const drag = e.active.data.current as SectionDragData
     if (!e.over) return
 
@@ -125,7 +132,7 @@ export default function SchedulePage() {
       />
 
       {admin ? (
-        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
           <div className="flex flex-1 overflow-hidden">
             <CoursesPanel
               courses={courses}
@@ -145,17 +152,9 @@ export default function SchedulePage() {
           </div>
           <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
             {dragging && draggingSection ? (
-              <SectionChip
-                courseCode={dragging.courseCode}
-                sectionId={dragging.sectionId}
-                sectionNum={draggingSection.number}
-                isFullYear={draggingRule?.is_full_year ?? false}
-                isExternal={draggingRule?.is_external ?? false}
-                assignmentId={dragging.assignmentId ?? ""}
-                prevInstructorId={dragging.prevInstructorId ?? ""}
-                prevTerm={dragging.prevTerm ?? "Fall"}
-                inViolation={null}
-              />
+              <span className={`${overValid ? "bg-green-500" : "bg-gray-400"} text-white px-2 py-1 rounded text-sm cursor-grab select-none ${draggingRule?.is_external ? "outline-dashed outline-2 outline-offset-1 outline-blue-500" : ""}`}>
+                {dragging.courseCode}{draggingRule?.is_full_year ? (dragging.prevTerm === "Fall" ? "A" : "B") : ""}-{draggingSection.number}
+              </span>
             ) : null}
           </DragOverlay>
         </DndContext>

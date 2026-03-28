@@ -516,9 +516,16 @@ export function useSchedule(): UseScheduleResult {
     URL.revokeObjectURL(url)
   }
 
+  const validatingRef = useRef(false)
   const validateNow = useCallback(async () => {
-    await revalidate()
-    setValidationStale(false)
+    if (validatingRef.current) return
+    validatingRef.current = true
+    try {
+      await revalidate()
+      setValidationStale(false)
+    } finally {
+      validatingRef.current = false
+    }
   }, [revalidate])
 
   return {

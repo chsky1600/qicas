@@ -75,7 +75,7 @@ export default function ScheduleTable({
                       setRankFilter(rank)
                     }}
                   />
-                  <button onClick={onAddInstructor} className="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700">
+                  <button onClick={onAddInstructor} className="text-xs bg-gray-800 text-white px-2 py-1 rounded hover:bg-gray-700 font-normal">
                     Add +
                   </button>
                 </div>
