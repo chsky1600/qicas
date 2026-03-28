@@ -17,6 +17,7 @@ interface Props {
   onDeleteSavedSchedule: (id: string) => Promise<void>
   onSwitchSchedule: (id: string) => Promise<void>
   onRenameSchedule: (scheduleId: string, newName: string)  => Promise<void>
+  isAdmin: boolean
 }
 
 function totalSections(courses: Course[], courseRules: CourseRule[]) {
@@ -32,7 +33,7 @@ function assignedCount(schedule: Schedule) {
 export default function SavedSchedulesDialog({
   open, onClose, activeSchedule, schedules, courses, courseRules,
   onAddSchedule, onCopySchedule, onDeleteSavedSchedule, onSwitchSchedule,
-  onRenameSchedule,
+  onRenameSchedule, isAdmin,
 }: Props) {
   const [loading, setLoading] = useState(false)
   const [renameId, setRenameId] = useState<string|null>(null)
@@ -67,13 +68,15 @@ export default function SavedSchedulesDialog({
               title="Saved Schedules"
               description="Save multiple versions of a schedule for the same year. Load one to make it active, copy it as a starting point, rename it, or delete it."
             />
-            <button
-              id="saved-schedules-add"
-              onClick={onAddSchedule}
-              className="text-xs bg-white text-black font-semibold px-2 py-1 rounded hover:bg-gray-200"
-            >
-              Add+
-            </button>
+            {isAdmin && (
+              <button
+                id="saved-schedules-add"
+                onClick={onAddSchedule}
+                className="text-xs bg-white text-black font-semibold px-2 py-1 rounded hover:bg-gray-200"
+              >
+                Add+
+              </button>
+            )}
           </div>          
           <button id="saved-schedules-dialog-close" onClick={onClose} className="text-white hover:text-gray-300">
             <X size={18} />
@@ -110,7 +113,7 @@ export default function SavedSchedulesDialog({
                       </div>
                     </>
                     :
-                    <span onDoubleClick={() => {setRenameValue(s.name); setRenameId(s.id)}} className="font-medium text-sm">{s.name}</span>
+                    <span onDoubleClick={isAdmin ? () => {setRenameValue(s.name); setRenameId(s.id)} : undefined} className="font-medium text-sm">{s.name}</span>
                   }
                   <div className="flex items-center">              
                     {s.is_rc && <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">RC</span>}
@@ -128,34 +131,40 @@ export default function SavedSchedulesDialog({
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">{count}/{total} sections assigned ({pct}%)</span>
                   <div className="flex gap-2">
-                  <button
-                    onClick={() => {setRenameValue(s.name); setRenameId(s.id)}}
-                    className="text-xs bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
-                  >
-                    Rename
-                  </button>
-                  <button
-                    onClick={() => {onCopySchedule(s)}}
-                    className="text-xs bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
-                  >
-                    Copy
-                  </button>
+                  {isAdmin && (
+                    <button
+                      onClick={() => {setRenameValue(s.name); setRenameId(s.id)}}
+                      className="text-xs bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
+                    >
+                      Rename
+                    </button>
+                  )}
+                  {isAdmin && (
+                    <button
+                      onClick={() => {onCopySchedule(s)}}
+                      className="text-xs bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
+                    >
+                      Copy
+                    </button>
+                  )}
                   {!isActive && (
-                    <>                      
+                    <>
                       <button
                         onClick={() => handleLoad(s.id)}
                         className="text-xs bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
                       >
                         Load
                       </button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`Do you want to delete "${s.name}"?`))onDeleteSavedSchedule(s.id)
-                        }}
-                        className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-                      >
-                        Delete
-                      </button>
+                      {isAdmin && (
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Do you want to delete "${s.name}"?`))onDeleteSavedSchedule(s.id)
+                          }}
+                          className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </>
                   )}
                   </div>

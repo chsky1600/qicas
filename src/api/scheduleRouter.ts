@@ -28,6 +28,6 @@ router.delete("/schedule/:schedule_id", requireRole("admin"), deleteSchedule)
 router.post("/schedule/:year/:schedule_id/assignments", requireRole("admin"), addAssignment)
 router.delete("/schedule/:year/:schedule_id/assignments/:assignment_id", requireRole("admin"), removeAssignment)
 
-router.post("/schedule/:year/:schedule_id/validate",validateSchedule)
+router.post("/schedule/:year/:schedule_id/validate", requireRole("admin"), validateSchedule)
 
 export default router;

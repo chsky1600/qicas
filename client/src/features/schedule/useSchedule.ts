@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import * as api from "./api"
 import type {
   Year, Course, Instructor, Schedule, Assignment,
-  InstructorRule, CourseRule, Violation, Term
+  InstructorRule, CourseRule, Violation, Term, ValidationMode
 } from "./types"
 import  {
   RANK_DISPLAY
@@ -43,6 +43,9 @@ export interface UseScheduleResult {
   updateInstructorRule: (ruleId: string, updates: Partial<InstructorRule>) => Promise<void>
   updateCourseRule: (ruleId: string, updates: Partial<CourseRule>) => Promise<void>
   exportCSV: () => void
+  validationMode: ValidationMode
+  setValidationMode: (mode: ValidationMode) => void
+  validateNow: () => Promise<void>
 }
 
 export function useSchedule(): UseScheduleResult {
@@ -58,6 +61,7 @@ export function useSchedule(): UseScheduleResult {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [validationMode, setValidationMode] = useState<ValidationMode>("auto")
 
   // Refs so async callbacks always read latest values
   const scheduleRef = useRef(schedule)
@@ -71,6 +75,8 @@ export function useSchedule(): UseScheduleResult {
   useEffect(() => { instructorRulesRef.current = instructorRules }, [instructorRules])
   useEffect(() => { courseRulesRef.current = courseRules }, [courseRules])
   useEffect(() => { coursesRef.current = courses}, [courses])
+  const validationModeRef = useRef(validationMode)
+  useEffect(() => { validationModeRef.current = validationMode }, [validationMode])
 
   const assignments = useMemo(() => schedule?.assignments ?? [], [schedule])
 
@@ -91,6 +97,7 @@ export function useSchedule(): UseScheduleResult {
   }, [])
 
   const triggerRevalidate = useCallback(() => {
+    if (validationModeRef.current === "manual") return
     if (revalidateTimeout.current) clearTimeout(revalidateTimeout.current)
     revalidateTimeout.current = setTimeout(revalidate, 500)
   }, [revalidate])
@@ -503,10 +510,15 @@ export function useSchedule(): UseScheduleResult {
     URL.revokeObjectURL(url)
   }
 
+  const validateNow = useCallback(async () => {
+    await revalidate()
+  }, [revalidate])
+
   return {
     years, yearId, courses, courseRules, instructors, instructorRules,
     schedules, schedule, assignments, violations,
     saving, loading, error,
+    validationMode, setValidationMode, validateNow,
     assign, unassign,
     createInstructor, updateInstructor, dropInstructor,
     createCourse, updateCourse, dropCourse,
