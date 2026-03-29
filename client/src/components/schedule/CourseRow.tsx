@@ -21,7 +21,7 @@ export default function CourseRow({ course, section, rule, assignments, isAdmin 
   const assignment = assignments.find(a => a.section_id === section.id)
 
   // Tailwind decoration for courses paid for externally
-  const externalDecoration = rule?.is_external ? "underline decoration-dashed decoration-blue-500 underline-offset-1 decoration-2" : ""
+  const externalDecoration = rule?.is_external ? "underline decoration-dashed decoration-blue-500 underline-offset-1.5 decoration-2" : ""
 
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `panel-${section.id}`,
@@ -35,15 +35,19 @@ export default function CourseRow({ course, section, rule, assignments, isAdmin 
     } satisfies SectionDragData,
   })
 
+  const chipName = course.code + "-" + section.number
+
   return (
     <TableRow
       ref={setNodeRef} {...listeners} {...attributes}
       style={{ opacity: isDragging ? 0.3 : 1, transform: undefined, cursor: isAdmin ? "grab" : "default" }}
     >
       <TableCell className="text-center">
-        <span className={`bg-gray-100 border border-gray-300 rounded px-2 py-1 text-sm ${externalDecoration}`}>{course.code}</span>
+        
+        <span className={`bg-gray-100 border border-gray-300 rounded px-2 py-1 text-sm ${externalDecoration}`}>
+          {chipName}
+        </span>
       </TableCell>
-      <TableCell className="text-center text-sm">{section.number}</TableCell>
       <TableCell className="text-center text-sm">{getAvailability(rule)}</TableCell>
       <TableCell className="text-center text-sm">{section.capacity}</TableCell>
     </TableRow>

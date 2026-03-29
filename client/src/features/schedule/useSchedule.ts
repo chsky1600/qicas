@@ -439,9 +439,7 @@ export function useSchedule(): UseScheduleResult {
 
   // ── export scheudle ─────────────────────────────────────────────────────────────
   function exportCSV() {
-    let scheduleName;
-    if (!schedule) scheduleName = "Schedule";
-    else scheduleName = schedule.name;
+    const scheduleName = schedule?.name ?? "Schedule"
   
     interface row {
       data: string[];
@@ -460,26 +458,33 @@ export function useSchedule(): UseScheduleResult {
   
     // there must be at least 1
     let maxFallAssigned = 1;
-  
+    
+    // fast reference between course codes and respective courses
     const courseMap = new Map<string, Course>();
     for (const c of courses) {
       courseMap.set(c.code, c);
     }
-  
+
+    // built for faster reference of which instructors are dropped
+    const instructorDropedSet = new Set<string>();
+    for (const ir of instructorRules){
+      if (ir.dropped) instructorDropedSet.add(ir.instructor_id)
+    }
+    
     const exportMap = new Map<string, row>();
-    for (const a of assignments) {
-      let csvRow = exportMap.get(a.instructor_id);
-      if (!csvRow) {
-        const i = instructors.find(i => i.id === a.instructor_id);
-        if (!i) continue;
-  
-        exportMap.set(a.instructor_id, {
+    for (const i of instructors) {
+      const dropped = instructorDropedSet.has(i.id)
+      if (!dropped) exportMap.set(i.id, {
           data: [RANK_DISPLAY[i.rank].short + " " + i.name],
           fallAssign: [],
           wintAssign: [],
-        });
-        csvRow = exportMap.get(a.instructor_id);
-      }
+        }
+      )
+    }
+
+    for (const a of assignments) {
+      const csvRow = exportMap.get(a.instructor_id);
+      if (!csvRow) continue
   
       const c = courseMap.get(a.course_code);
       if (!c) continue;
@@ -490,16 +495,14 @@ export function useSchedule(): UseScheduleResult {
         courseString += "-" + s.number;
       }
   
-      if (a.term == "Fall") {
-        if (!csvRow) continue;
+      if (a.term === "Fall") {
         csvRow.fallAssign.push(courseString);
         if (csvRow.fallAssign.length > maxFallAssigned) {
           maxFallAssigned = csvRow.fallAssign.length;
         }
       }
   
-      if (a.term == "Winter") {
-        if (!csvRow) continue;
+      else if (a.term === "Winter") {
         csvRow.wintAssign.push(courseString);
       }
     }

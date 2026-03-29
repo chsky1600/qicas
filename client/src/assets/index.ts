@@ -7,6 +7,7 @@ import userExport from './export-duotone.svg'
 import logout from './door-open-duotone.svg'
 import checkBox from './square-bold.svg'
 import checkedBox from './check-square-bold.svg'
+import notes from './note.svg'
 import lightning from './lightning-duotone.svg'
 
 // Icons imported from:
@@ -25,5 +26,6 @@ export {
   logout,
   checkBox,
   checkedBox,
+  notes,
   lightning,
 }
