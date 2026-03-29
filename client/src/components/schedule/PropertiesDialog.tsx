@@ -145,12 +145,13 @@ export default function PropertiesDialog({
   }
 
   async function handleSave() {
+    if (saving) return
     setSaving(true)
     try {
       if (mode === "instructors" && instrEdit && instrRuleEdit) {
         if (isNew) { await onCreateInstructor(instrEdit, instrRuleEdit); setIsNew(false) }
-        else { 
-          await Promise.all([ onUpdateInstructor(instrEdit), instrRuleEdit.id ? onUpdateInstructorRule(instrRuleEdit.id, instrRuleEdit) : Promise.resolve() ]) 
+        else {
+          await Promise.all([ onUpdateInstructor(instrEdit), instrRuleEdit.id ? onUpdateInstructorRule(instrRuleEdit.id, instrRuleEdit) : Promise.resolve() ])
         }
       } else if (mode === "courses" && courseEdit && courseRuleEdit) {
         // ensure courseRuleEdit and courseEdit align on coursecode
@@ -161,9 +162,11 @@ export default function PropertiesDialog({
         }
         else { await Promise.all([ onUpdateCourse(courseEdit), courseRuleEdit.id ? onUpdateCourseRule(courseRuleEdit.id, rule) : Promise.resolve()])}
       }
+    } catch (err) {
+      toast.error("Save failed")
     } finally {
       setChangeMade(false)
-      setSaving(false) 
+      setSaving(false)
     }
   }
 
@@ -237,11 +240,10 @@ export default function PropertiesDialog({
             <button onClick={handleDrop} className="bg-gray-800 text-white px-3 py-0.5 rounded-md border border-black font-semibold">Drop {itemType}</button>
           ))
         }
-        {changeMade &&
-          <button onClick={handleSave} disabled={saving} className="bg-green-700 text-white px-3 py-0.5 rounded-md border border-black font-semibold hover:opacity-90 disabled:opacity-50">
-            {saving ? "Saving…" : "Save Changes"}
-          </button>
-        }
+        <button onMouseDown={e => e.preventDefault()} onClick={handleSave} disabled={saving || !changeMade}
+          className={`bg-green-700 text-white px-3 py-0.5 rounded-md border border-black font-semibold hover:opacity-90 disabled:opacity-50 ${changeMade ? "" : "invisible"}`}>
+          {saving ? "Saving…" : "Save Changes"}
+        </button>
       </span>
     </div>
     )

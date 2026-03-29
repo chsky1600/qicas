@@ -10,7 +10,7 @@ function getAvailability(rule?: CourseRule): string {
 }
 
 function getWorkload(rule?: CourseRule): string {
-  if (!rule) return "—"
+  if (!rule || rule.workload_fulfillment == null) return "—"
   return rule.workload_fulfillment.toString()
 }
 
