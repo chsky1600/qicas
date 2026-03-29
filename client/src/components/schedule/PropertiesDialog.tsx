@@ -21,6 +21,7 @@ type Status = "current" | "dropped"
 interface Props {
   open: boolean
   defaultMode?: "instructors" | "courses"
+  contextAdd: boolean
   onClose: () => void
   instructors: Instructor[]
   instructorRules: InstructorRule[]
@@ -54,7 +55,7 @@ function blankCourseRule(courseCode: string): CourseRule {
 }
 
 export default function PropertiesDialog({
-  open, onClose, defaultMode,
+  open, onClose, defaultMode, contextAdd,
   instructors, instructorRules,
   courses, courseRules,
   assignments,
@@ -109,6 +110,13 @@ export default function PropertiesDialog({
     }
   }, [mode, selectedIndex, items, instructors, instructorRules, courses, courseRules, isNew])
 
+  useEffect(() => {
+    if (!open || !contextAdd) return
+    setStatus("current");
+    if (mode === "instructors") handleNewInstructor()      
+    else handleNewCourse()
+  }, [open, contextAdd])
+
   function handleNewInstructor() {
     const blank = blankInstructor()
     setIsNew(true)
@@ -130,7 +138,9 @@ export default function PropertiesDialog({
     try {
       if (mode === "instructors" && instrEdit && instrRuleEdit) {
         if (isNew) { await onCreateInstructor(instrEdit, instrRuleEdit); setIsNew(false) }
-        else { await Promise.all([ onUpdateInstructor(instrEdit), instrRuleEdit.id ? onUpdateInstructorRule(instrRuleEdit.id, instrRuleEdit) : Promise.resolve() ]) }
+        else { 
+          await Promise.all([ onUpdateInstructor(instrEdit), instrRuleEdit.id ? onUpdateInstructorRule(instrRuleEdit.id, instrRuleEdit) : Promise.resolve() ]) 
+        }
       } else if (mode === "courses" && courseEdit && courseRuleEdit) {
         // ensure courseRuleEdit and courseEdit align on coursecode
         const rule = { ...courseRuleEdit, course_code: courseEdit.code }
@@ -209,11 +219,13 @@ export default function PropertiesDialog({
     <div className="flex items-center gap-6 mb-3">
       <span className="text-2xl font-bold">{rightTitle}</span>
       <span className="flex items-center gap-4">
-        {isDropped ? (
-          <button onClick={handleRenew} className="bg-blue-800 text-white px-3 py-0.5 rounded-md border border-black font-semibold">Renew {itemType}</button>
-        ) : (
-          <button onClick={handleDrop} className="bg-gray-800 text-white px-3 py-0.5 rounded-md border border-black font-semibold">Drop {itemType}</button>
-        )}
+        {!isNew &&
+          (isDropped ? (
+            <button onClick={handleRenew} className="bg-blue-800 text-white px-3 py-0.5 rounded-md border border-black font-semibold">Renew {itemType}</button>
+          ) : (
+            <button onClick={handleDrop} className="bg-gray-800 text-white px-3 py-0.5 rounded-md border border-black font-semibold">Drop {itemType}</button>
+          ))
+        }
         {changeMade &&
           <button onClick={handleSave} disabled={saving} className="bg-green-700 text-white px-3 py-0.5 rounded-md border border-black font-semibold hover:opacity-90 disabled:opacity-50">
             {saving ? "Saving…" : "Save Changes"}
