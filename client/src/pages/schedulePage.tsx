@@ -12,7 +12,6 @@ import ScheduleTable from "@/components/schedule/ScheduleTable"
 import PropertiesDialog from "@/components/schedule/PropertiesDialog"
 import SavedSchedulesDialog from "@/components/schedule/SavedSchedulesDialog"
 import MigrationDialog from "@/components/schedule/MigrationDialog"
-import SectionChip from "@/components/schedule/SectionChip"
 import { Toaster } from "@/components/ui/sonner"
 
 export default function SchedulePage() {
@@ -229,6 +228,7 @@ export default function SchedulePage() {
         activeSchedule={schedule}
         schedules={schedules}
         onMigrateYear={migrateYear}
+        onOpenProperties={() => {setPropertiesMode("instructors"); setPropertiesOpen(true) }}
       />
     </div>
   )

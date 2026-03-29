@@ -146,33 +146,60 @@ export default function PropertiesDialog({
     setCourseRuleEdit(blankCourseRule(blank.code, cpc))
   }
 
+  async function handleInstructorSave() {
+    if (!instrEdit || !instrRuleEdit) return false
+    if (instrEdit.name.trim() === "") { 
+      toast.warning("All Instructors must have a name"); 
+      return false
+    }
+    try{
+      if (isNew) { await onCreateInstructor(instrEdit, instrRuleEdit); setIsNew(false)}
+      else {
+        await Promise.all([ onUpdateInstructor(instrEdit), instrRuleEdit.id ? onUpdateInstructorRule(instrRuleEdit.id, instrRuleEdit) : Promise.resolve() ])
+      }
+      return true
+    } catch (err) {
+      toast.error("Save failed")
+      return false
+    }    
+  }
+
+  async function handleCourseSave() {
+    if (!courseEdit || !courseRuleEdit) return false
+    const rule = { ...courseRuleEdit, course_code: courseEdit.code }
+    
+    if (courseEdit.name.trim() === "") {toast.warning("All Courses must have a name"); return false}
+    if (isNew && courseEdit.code.trim() === "") {toast.warning("All Courses must have a Course Code"); return false}
+    if (isNew && confirmCode !== courseEdit.code) {toast.warning("Re-enter the Course Code to confirm"); return false}
+    if (isNew && courses.some(c => c.code === courseEdit.code)) {toast.warning("This Course Code is already used by an existing course"); return false}
+
+    try {
+      if (isNew) {await onCreateCourse(courseEdit, rule); setIsNew(false)}
+      else { 
+        await Promise.all([ onUpdateCourse(courseEdit), courseRuleEdit.id ? onUpdateCourseRule(courseRuleEdit.id, rule) : Promise.resolve()])
+      }
+      return true
+    } catch (err) {
+      toast.error("Save failed")
+      return false
+    }   
+
+  }
+
   async function handleSave() {
     if (saving) return
     setSaving(true)
-    try {
-      let saved = false
-      if (mode === "instructors" && instrEdit && instrRuleEdit) {
-        if (isNew) { await onCreateInstructor(instrEdit, instrRuleEdit); setIsNew(false) }
-        else {
-          await Promise.all([ onUpdateInstructor(instrEdit), instrRuleEdit.id ? onUpdateInstructorRule(instrRuleEdit.id, instrRuleEdit) : Promise.resolve() ])
-        }
-        saved = true
-      } else if (mode === "courses" && courseEdit && courseRuleEdit) {
-        // ensure courseRuleEdit and courseEdit align on coursecode
-        const rule = { ...courseRuleEdit, course_code: courseEdit.code }
-        if (isNew) {
-          if (courseEdit.code.trim() === "") toast.warning("All Courses must have a Course Code")
-          else if (confirmCode !== courseEdit.code) toast.warning("Re-enter the Course Code to confirm")
-          else { await onCreateCourse(courseEdit, rule); setIsNew(false); saved = true }
-        }
-        else { await Promise.all([ onUpdateCourse(courseEdit), courseRuleEdit.id ? onUpdateCourseRule(courseRuleEdit.id, rule) : Promise.resolve()]); saved = true }
-      }
-      if (saved) setChangeMade(false)
-    } catch (err) {
-      toast.error("Save failed")
-    } finally {
-      setSaving(false)
+
+    
+    let saved = false
+    if (mode === "instructors") {
+      saved = await handleInstructorSave()
+    } else if (mode === "courses") {
+      saved = await handleCourseSave()
     }
+      
+    if (saved) setChangeMade(false)    
+    setSaving(false)    
   }
 
   async function handleDrop() {

@@ -13,10 +13,11 @@ interface Props {
   activeSchedule: Schedule | null
   schedules: Schedule[]
   onMigrateYear: (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]) => Promise<void>
+  onOpenProperties: () => void
 }
 
 export default function MigrationDialog({
-  open, onClose, years, loadedYearId, activeSchedule, schedules, onMigrateYear
+  open, onClose, years, loadedYearId, activeSchedule, schedules, onMigrateYear, onOpenProperties
 }: Props) {
   const [confirmMigration, setConfirmMigration] = useState(false);
   const [scheduleIds, setScheduleIds] = useState(new Set<string>());
@@ -60,10 +61,14 @@ export default function MigrationDialog({
     setScheduleIds(new Set());
   }
 
-  function handleMigration(){
+  async function handleMigration(): Promise<void> {
     const migratingSchedules = Array.from(scheduleIds.values())
-    onMigrateYear(latestYear.id, newId, newName, migratingSchedules)
     onClose()
+    await onMigrateYear(latestYear.id, newId, newName, migratingSchedules)
+    await onOpenProperties()
+    setTimeout(()=>{
+      toast.info(`You may now make any necessary changes for the ${newName} academic year`)
+    }, 500)
   }
 
   return (
