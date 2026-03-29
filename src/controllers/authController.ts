@@ -5,7 +5,7 @@ import * as mongoose from 'mongoose'
 import { UserModel } from "../db/models/user"
 import { JOSEError, JWTClaimValidationFailed } from "jose/errors"
 import { FacultyModel } from "../db/models/faculty"
-import { User } from "../types/user"
+import { User, UserRole } from "../types/user"
 
 // JWT signing/verifying secret.
 // Falls back to the historical default if `JWT_SECRET` is not provided.
@@ -14,6 +14,15 @@ const secret: Uint8Array = new TextEncoder().encode(
 );
 
 const alg = 'HS256'
+const TOKEN_MAX_AGE_MS = 2 * 60 * 60 * 1000 // 2 hours, matches JWT exp
+
+const cookieOpts = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  maxAge: TOKEN_MAX_AGE_MS,
+  path: "/",
+}
 
 // change to lookup users in all faculty docs?
 const fetchUser = async (email : String): Promise<User | undefined> => {
@@ -49,17 +58,17 @@ export const getToken = async (req : Request, res : Response) => {
             const match = await Bun.password.verify(password, user.password);
             if(match) {
 
-                const jwt = await new jose.SignJWT({'faculty_id': user.faculty_id})
+                const jwt = await new jose.SignJWT({'faculty_id': user.faculty_id, 'role': user.role})
                     .setProtectedHeader({alg})
                     .setIssuedAt()
                     .setIssuer('qicas')
                     .setExpirationTime('2h')
                     .sign(secret)
 
-                res.cookie("token",jwt)
+                res.cookie("token", jwt, cookieOpts)
                 res.sendStatus(200)
             } else {
-                res.send('Invalid password.')
+                res.status(401).json({ error: "Invalid password" })
             }
         } else {
             console.log("user not found.")
@@ -124,21 +133,24 @@ export const changePassword = async (req : Request, res : Response) => {
 
 export const refreshToken = async (req : Request, res : Response) => {
     const faculty_id = req.body.faculty_id
-    if (!faculty_id) {
+    const role = req.body.role
+    if (!faculty_id || !role) {
         res.sendStatus(401)
         return
     }
 
     try {
-        const jwt = await new jose.SignJWT({'faculty_id': faculty_id})
+        const jwt = await new jose.SignJWT({'faculty_id': faculty_id, 'role': role})
             .setProtectedHeader({alg})
             .setIssuedAt()
             .setIssuer('qicas')
             .setExpirationTime('2h')
             .sign(secret)
 
-        res.cookie("token", jwt)
-        res.sendStatus(200)
+        res.cookie("token", jwt, cookieOpts)
+        // Return new expiry so frontend can update session state without a second round-trip
+        const payload = JSON.parse(atob(jwt.split(".")[1]!))
+        res.json({ faculty_id, role, exp: payload.exp })
     } catch (err: any) {
         res.status(500).json({ error: err.message })
     }
@@ -159,14 +171,13 @@ export const verifyToken = async (req : Request, res : Response, next: NextFunct
 
     if(token) {
         try {
-            const { payload, protectedHeader } = await jose.jwtVerify(token, secret, {
+            const { payload } = await jose.jwtVerify(token, secret, {
                 issuer: 'qicas',
-                maxTokenAge: 6000000000
+                maxTokenAge: '2h'
             });
-            console.log(payload)
-            console.log(protectedHeader)
             if (!req.body) req.body = {};
             req.body.faculty_id = payload.faculty_id;
+            req.body.role = payload.role;
             next();
             return
         } catch (err) {
@@ -178,3 +189,47 @@ export const verifyToken = async (req : Request, res : Response, next: NextFunct
 
     res.sendStatus(401)
 }
+
+// returns session metadata so the frontend never needs to parse the JWT itself
+// must be chained after verifyToken
+export const getSession = async (req: Request, res: Response) => {
+    const { faculty_id, role } = req.body
+
+    // Decode the verified token to read `exp` without re-verifying
+    const token = (req as any).cookies?.token
+        || req.headers.cookie?.split(";").map(s => s.trim()).find(s => s.startsWith("token="))?.split("=")[1]
+
+    let exp: number | null = null
+    if (token) {
+        try {
+            const payload = JSON.parse(atob(token.split(".")[1]))
+            exp = payload.exp ?? null
+        } catch { /* token already verified by middleware, this is just a read */ }
+    }
+
+    res.json({ faculty_id, role, exp })
+}
+
+// clears the httpOnly auth cookie
+// must match the same options used when setting it (except maxAge/expires)
+export const logout = (_req: Request, res: Response) => {
+    res.clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax" as const,
+        path: "/",
+    })
+    res.sendStatus(200)
+}
+
+// role authorization middleware (must be chained after verifyToken)
+export const requireRole = (...allowed: UserRole[]) => {
+    return (req: Request, res: Response, next: NextFunction) => {
+        const role = req.body.role;
+        if (!role || !allowed.includes(role)) {
+            res.status(403).json({ error: "Insufficient permissions" });
+            return;
+        }
+        next();
+    };
+};

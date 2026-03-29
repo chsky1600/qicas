@@ -14,9 +14,10 @@ interface Props {
   section: Section
   rule: CourseRule | undefined
   assignments: Assignment[]
+  isAdmin: boolean
 }
 
-export default function CourseRow({ course, section, rule, assignments }: Props) {
+export default function CourseRow({ course, section, rule, assignments, isAdmin }: Props) {
   const assignment = assignments.find(a => a.section_id === section.id)
 
   // Tailwind decoration for courses paid for externally
@@ -39,7 +40,7 @@ export default function CourseRow({ course, section, rule, assignments }: Props)
   return (
     <TableRow
       ref={setNodeRef} {...listeners} {...attributes}
-      style={{ opacity: isDragging ? 0.3 : 1, transform: undefined, cursor: "grab" }}
+      style={{ opacity: isDragging ? 0.3 : 1, transform: undefined, cursor: isAdmin ? "grab" : "default" }}
     >
       <TableCell className="text-center">
         

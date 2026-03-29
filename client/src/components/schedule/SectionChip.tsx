@@ -15,14 +15,15 @@ interface Props {
   prevInstructorId: string
   prevTerm: Term
   inViolation: ViolationDegree | null
+  isAdmin: boolean
 }
 
 export default function SectionChip({
   courseCode, sectionId, sectionNum, isFullYear, isExternal,
-  assignmentId, prevInstructorId, prevTerm, inViolation,
+  assignmentId, prevInstructorId, prevTerm, inViolation, isAdmin,
 }: Props) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `chip-${sectionId}-${prevTerm}`,
+    id: `chip-${assignmentId}`,
     data: {
       type: "section", source: "chip",
       sectionId, courseCode, assignmentId, prevInstructorId, prevTerm,
@@ -38,7 +39,7 @@ export default function SectionChip({
     <span
       ref={setNodeRef} {...listeners} {...attributes}
       style={{ opacity: isDragging ? 0.3 : 1, transform: undefined }}
-      className={`${colour} ${externalDecoration} text-white px-2 py-1 rounded text-sm cursor-grab select-none`}
+      className={`${colour} ${externalDecoration} text-white px-2 py-1 rounded text-sm ${isAdmin ? "cursor-grab" : "cursor-default"} select-none`}
     >
       {courseCode}{suffix}-{sectionNum}
     </span>

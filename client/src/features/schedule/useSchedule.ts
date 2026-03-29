@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import * as api from "./api"
 import type {
   Year, Course, Instructor, Schedule, Assignment,
-  InstructorRule, CourseRule, Violation, Term
+  InstructorRule, CourseRule, Violation, Term, ValidationMode
 } from "./types"
 import  {
   RANK_DISPLAY
@@ -43,6 +43,10 @@ export interface UseScheduleResult {
   updateInstructorRule: (ruleId: string, updates: Partial<InstructorRule>) => Promise<void>
   updateCourseRule: (ruleId: string, updates: Partial<CourseRule>) => Promise<void>
   exportCSV: () => void
+  validationMode: ValidationMode
+  setValidationMode: (mode: ValidationMode) => void
+  validateNow: () => Promise<void>
+  validationStale: boolean
 }
 
 export function useSchedule(): UseScheduleResult {
@@ -58,6 +62,12 @@ export function useSchedule(): UseScheduleResult {
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [validationMode, setValidationModeRaw] = useState<ValidationMode>("auto")
+  const [validationStale, setValidationStale] = useState(false)
+  const setValidationMode = useCallback((mode: ValidationMode) => {
+    setValidationModeRaw(mode)
+    setValidationStale(false)
+  }, [])
 
   // Refs so async callbacks always read latest values
   const scheduleRef = useRef(schedule)
@@ -71,6 +81,8 @@ export function useSchedule(): UseScheduleResult {
   useEffect(() => { instructorRulesRef.current = instructorRules }, [instructorRules])
   useEffect(() => { courseRulesRef.current = courseRules }, [courseRules])
   useEffect(() => { coursesRef.current = courses}, [courses])
+  const validationModeRef = useRef(validationMode)
+  useEffect(() => { validationModeRef.current = validationMode }, [validationMode])
 
   const assignments = useMemo(() => schedule?.assignments ?? [], [schedule])
 
@@ -91,6 +103,7 @@ export function useSchedule(): UseScheduleResult {
   }, [])
 
   const triggerRevalidate = useCallback(() => {
+    if (validationModeRef.current === "manual") { setValidationStale(true); return }
     if (revalidateTimeout.current) clearTimeout(revalidateTimeout.current)
     revalidateTimeout.current = setTimeout(revalidate, 500)
   }, [revalidate])
@@ -116,8 +129,13 @@ export function useSchedule(): UseScheduleResult {
     scheduleRef.current = workingSchedule
 
     if (workingSchedule) {
-      const result = await api.validateSchedule(yr, workingSchedule.id)
-      setViolations(result.validationResult.violations)
+      try {
+        const result = await api.validateSchedule(yr, workingSchedule.id)
+        setViolations(result.validationResult.violations)
+      } catch {
+        // support users get 403 on validate, just skip
+        setViolations([])
+      }
     } else {
         setViolations([])
     }
@@ -174,8 +192,6 @@ export function useSchedule(): UseScheduleResult {
     if (!sched || !yr) return
     setSaving(true)
 
-    const isFullYear = courseRulesRef.current.find(r => r.course_code === courseCode)?.is_full_year ?? false
-
     const newAssignment: Assignment = {
       id: crypto.randomUUID(),
       instructor_id: instructorId,
@@ -184,12 +200,10 @@ export function useSchedule(): UseScheduleResult {
       term,
     }
 
-    // Collect all assignments that must be removed
-    const toRemove = sched.assignments.filter(a => {
-      if (a.id === prevAssignmentId) return true
-      if (isFullYear) return a.section_id === sectionId && a.term === term // one per term slot
-      return a.section_id === sectionId // non-full year: only one chip ever
-    })
+    // only remove the specific assignment being moved, never other co-teaching assignments
+    const toRemove = prevAssignmentId
+      ? sched.assignments.filter(a => a.id === prevAssignmentId)
+      : []
 
     setSchedule(prev => {
       if (!prev) return prev
@@ -358,8 +372,12 @@ export function useSchedule(): UseScheduleResult {
     setSchedule(newSchedule)
     scheduleRef.current = newSchedule
     lastSchedulePerYear.current[yr] = scheduleId
-    const result = await api.validateSchedule(yr, newSchedule.id)
-    setViolations(result.validationResult.violations)
+    try {
+      const result = await api.validateSchedule(yr, newSchedule.id)
+      setViolations(result.validationResult.violations)
+    } catch {
+      setViolations([])
+    }
   }, [])
 
   const renameSchedule = async (scheduleId: string, newName: string) => {
@@ -519,10 +537,23 @@ export function useSchedule(): UseScheduleResult {
     URL.revokeObjectURL(url);
   }
 
+  const validatingRef = useRef(false)
+  const validateNow = useCallback(async () => {
+    if (validatingRef.current) return
+    validatingRef.current = true
+    try {
+      await revalidate()
+      setValidationStale(false)
+    } finally {
+      validatingRef.current = false
+    }
+  }, [revalidate])
+
   return {
     years, yearId, courses, courseRules, instructors, instructorRules,
     schedules, schedule, assignments, violations,
     saving, loading, error,
+    validationMode, setValidationMode, validateNow, validationStale,
     assign, unassign,
     createInstructor, updateInstructor, dropInstructor,
     createCourse, updateCourse, dropCourse,

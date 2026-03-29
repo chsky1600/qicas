@@ -7,7 +7,7 @@ import {
   getInstructorByID,
   updateInstructor,
 } from "../controllers/instructorController";
-import { verifyToken } from "../controllers/authController";
+import { verifyToken, requireRole } from "../controllers/authController";
 
 const router = express.Router();
 
@@ -16,7 +16,7 @@ router.use(verifyToken)
 router.get("/instructors/:year", getAllInstructors);
 router.get("/instructors/:year/:instructor_id", getInstructorByID);
 router.get("/instructors/:year/:instructor_id/assignments", getInstructorAssignmentsByID);
-router.post("/instructors/:year", createInstructor);
-router.patch("/instructors/:year/:instructor_id", updateInstructor);
+router.post("/instructors/:year", requireRole("admin"), createInstructor);
+router.patch("/instructors/:year/:instructor_id", requireRole("admin"), updateInstructor);
 
 export default router;
