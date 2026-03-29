@@ -115,11 +115,7 @@ export const updateCourse = async (req : Request, res : Response) => {
         }
     );
 
-    if(result.modifiedCount > 0){
-        res.json(updatedCourse)
-    } else {
-        res.sendStatus(200)
-    }
+    res.json(updatedCourse)
 }
 
 // gets all schedule entries where this course is assigned

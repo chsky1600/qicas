@@ -3,6 +3,8 @@ import { useDroppable } from "@dnd-kit/core"
 import SectionChip from "./SectionChip"
 import type { Instructor, InstructorRule, Course, CourseRule, Assignment, Violation } from "@/features/schedule/types"
 import { RANK_DISPLAY } from "@/features/schedule/types"
+import * as icon from '@/assets/index'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 
 interface Props {
   instructor: Instructor
@@ -16,7 +18,6 @@ interface Props {
 
 export default function InstructorRow({ instructor, rule, courses, courseRules, assignments, violations, isAdmin }: Props) {
   const [showViolations, setShowViolations] = useState(false)
-
   const fallAssignments = assignments
     .filter(a => a.instructor_id === instructor.id && a.term === "Fall")
     .sort((a, b) => {
@@ -89,7 +90,7 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
       <tr className="border-b border-gray-200">
 
         {/* -- Info Col -- */}
-        <td className="px-3 py-2 text-sm whitespace-nowrap align-top">
+        <td className="px-3 py-2 text-sm whitespace-nowrap align-top relative">
           <div className="font-medium">{rankShort} {instructor.name}</div>
           <div className={`text-xs ${workloadExceeded ? "text-orange-500 font-semibold" : "text-gray-500"}`}>
             Workload: {assignedWorkload}/{baseWorkload}
@@ -105,6 +106,22 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
               </div>
             </div>
           )}
+          
+          {instructor?.notes[0] && instructor?.notes[0].content.trim() &&
+          <HoverCard openDelay={10} closeDelay={100}>
+            <HoverCardTrigger asChild>
+              <div className="absolute top-2 right-3 bg-gray-200 p-1 rounded-sm hover:bg-gray-300">           
+                <img src={icon.notes} alt="Settings" className="w-6 h-6"/>
+              </div>
+            </HoverCardTrigger>
+            <HoverCardContent className="flex w-64 flex-col gap-0.5 bg-gray-200">
+              <p>
+                {instructor.notes[0].content.trim()}
+              </p>
+            </HoverCardContent>
+          </HoverCard>
+          }
+          
         </td>
 
         {/* -- Fall Col -- */}

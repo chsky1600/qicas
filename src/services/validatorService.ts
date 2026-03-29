@@ -507,20 +507,22 @@ export function checkScheduleRules(
 
   if (allAtCapacity) {
     for (const cr of ctx.course_rules) {
-      if (cr.is_external) continue;
+      if (cr.is_external || cr.dropped) continue;
+      const course = ctx.courses.find(c => c.code === cr.course_code);
+      if (!course) continue;
 
       for (const term of cr.terms_offered) {
-        for (const sectionId of cr.sections_available) {
+        for (const sec of course.sections) {
           const assigned = schedule.assignments.some(
-            a => a.course_code === cr.course_code && a.section_id === sectionId && a.term === term
+            a => a.course_code === cr.course_code && a.section_id === sec.id && a.term === term
           );
           if (!assigned) {
             violations.push({
-              id: `v-section-unassigned-${cr.course_code}-${sectionId}-${term}`,
+              id: `v-section-unassigned-${cr.course_code}-${sec.id}-${term}`,
               type: "Schedule",
               offending_id: cr.course_code,
               code: "SECTION_UNASSIGNED",
-              message: `${cr.course_code} ${sectionLabel(ctx, cr.course_code, sectionId)} in ${term} is unassigned and all instructors are at capacity.`,
+              message: `${cr.course_code} section ${sec.number} in ${term} is unassigned and all instructors are at capacity.`,
               degree: "Error",
             });
           }
@@ -530,10 +532,14 @@ export function checkScheduleRules(
   }
 
   // --- SW_IMBALANCE (Warning) ---
-  // Total available internal course sections != total instructor workload across the schedule.
+  // Total available internal section credits != total instructor workload across the schedule.
   const totalSections = ctx.course_rules
-    .filter(cr => !cr.is_external)
-    .reduce((sum, cr) => sum + cr.sections_available.length * cr.terms_offered.length, 0);
+    .filter(cr => !cr.is_external && !cr.dropped)
+    .reduce((sum, cr) => {
+      const course = ctx.courses.find(c => c.code === cr.course_code)
+      const sectionCount = course?.sections.length ?? 0
+      return sum + cr.workload_fulfillment * sectionCount * cr.terms_offered.length
+    }, 0);
 
   const totalWorkload = ctx.instructors.reduce((sum, instructor) => {
     const rule = ctx.instructor_rules.find(r => r.instructor_id === instructor.id);
@@ -547,7 +553,7 @@ export function checkScheduleRules(
       type: "Schedule",
       offending_id: "schedule",
       code: "SW_IMBALANCE",
-      message: `Total internal sections (${totalSections}) does not match total instructor workload (${totalWorkload}).`,
+      message: `Schedule has ${totalSections} section credits available but a total instructor workload capacity of ${totalWorkload}. Adjust workloads or courses to balance.`,
       degree: "Warning",
     });
   }

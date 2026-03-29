@@ -14,4 +14,6 @@ export interface Faculty {
 
   current_working_schedule_id?: string
 
+  // workload weight per course section assignment, defaults to 1
+  credits_per_course: number
 }

@@ -29,7 +29,7 @@ export function ModeTogglePill<T extends string>({
   return (
     <div
       className={cn(
-        "flex items-center bg-white rounded-full p-[3px] shadow-inner",
+        "flex items-center gap-2 bg-white rounded-full p-[3px] shadow-inner",
         fullWidth && "w-[420px]",
         className
       )}

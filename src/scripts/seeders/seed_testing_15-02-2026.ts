@@ -37,6 +37,7 @@ async function main() {
     ],
 
     current_working_schedule_id : "SCH001",
+    credits_per_course: 1,
 
     academic_years: [
       {
@@ -51,6 +52,7 @@ async function main() {
             year_id: "Y2026",
             date_created: new Date("2026-02-01T10:00:00.000Z"),
             is_rc: false,
+            version: 1,
             assignments: [
               {
                 id: "A001",
@@ -74,6 +76,7 @@ async function main() {
             year_id: "Y2026",
             date_created: new Date("2026-11-15T15:30:00.000Z"),
             is_rc: true,
+            version: 1,
             assignments: [
               {
                 id: "A003",

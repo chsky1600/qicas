@@ -34,6 +34,7 @@ async function main() {
       },
     ],
     current_working_schedule_id : "SCH001",
+    credits_per_course: 1,
     academic_years: [
       {
         id: "Y2026",
@@ -47,6 +48,7 @@ async function main() {
             year_id: "Y2026",
             date_created: new Date("2026-02-01T10:00:00.000Z"),
             is_rc: false,
+            version: 1,
             assignments: [
               // Dr. Smith on CISC101-001 Fall + Winter -- CROSS_TERM_DUPLICATE
               { id: "A001", instructor_id: "inst-1", section_id: "s-1", course_code: "CISC101", term: "Fall" },

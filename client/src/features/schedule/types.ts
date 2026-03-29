@@ -1,3 +1,8 @@
+// ── Constants ───────────────────────────────────────────────────────────────
+
+// fallback credit weight per course when faculty setting is not available
+export const DEFAULT_CREDITS_PER_COURSE = 1
+
 // ── Backend types (mirror the API exactly) ────────────────────────────────────
 
 export type Term = "Fall" | "Winter"
@@ -57,6 +62,7 @@ export interface Schedule {
   date_created: string
   is_rc: boolean
   assignments: Assignment[]
+  version: number
 }
 
 export interface CourseRule {

@@ -28,8 +28,18 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
   _onActivity?.()
   if (!res.ok) throw new Error(`${options?.method ?? "GET"} ${path} → ${res.status}`)
-  if (res.status === 204 || res.status === 201) return undefined as T
-  return res.json()
+  
+  // these responses have no body
+  if (res.status === 204 || res.status === 205) return undefined as T
+
+  // if no content-type to return, dont return
+  const contentType = res.headers.get("content-type")
+  if (!contentType || !contentType.includes("application/json")) return undefined as T
+
+  // process body as text, only if it exists parse to object
+  const text = await res.text()
+  if (!text) return undefined as T
+  return JSON.parse(text)
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -52,6 +62,10 @@ export function changePassword(email: string, current_password: string, new_pass
 
 export function getYears() {
   return request<Year[]>("/year")
+}
+
+export function getCreditsPerCourse() {
+  return request<{ credits_per_course: number }>("/faculty/credits")
 }
 
 export function migrateToNextYear(source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]){
@@ -168,11 +182,15 @@ export function setWorkingSchedule(scheduleId: string) {
   return request<Schedule>(`/schedule/active/${scheduleId}`, { method: "PUT" })
 }
 
-export function saveSchedule(year: string, schedule: Schedule) {
-  return request<void>(`/schedule/${year}`, { 
-    method: "PUT",  
-    body: JSON.stringify({ schedule: schedule }),
+export function renameSchedule(year: string, scheduleId: string, name: string) {
+  return request<void>(`/schedule/${year}`, {
+    method: "PUT",
+    body: JSON.stringify({ schedule_id: scheduleId, name }),
   })
+}
+
+export function getScheduleVersion(year: string, scheduleId: string) {
+  return request<{ version: number }>(`/schedule/${year}/${scheduleId}/version`)
 }
 
 export function createSavedSchedule(year: string, schedule: Schedule) {

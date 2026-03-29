@@ -7,12 +7,14 @@ import {
     removeUserFromFacultyByID,
     getFacultyByID,
     deleteFacultyByID,
-    getFaculties
+    getFaculties,
+    getCreditsPerCourse
 } from "../controllers/facultyController";
 import { requireRole } from "../controllers/authController";
 
 const router = express.Router();
 
+router.get("/faculty/credits", getCreditsPerCourse)
 router.get("/faculty", getFaculties)
 router.post("/faculty", requireRole("admin"), createFaculty)
 
