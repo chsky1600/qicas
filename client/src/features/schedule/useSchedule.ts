@@ -140,7 +140,6 @@ export function useSchedule(): UseScheduleResult {
         const result = await api.validateSchedule(yr, workingSchedule.id)
         setViolations(result.validationResult.violations)
       } catch {
-        // support users get 403 on validate, just skip
         setViolations([])
       }
     } else {
