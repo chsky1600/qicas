@@ -204,7 +204,7 @@ export function useSchedule(): UseScheduleResult {
             scheduleRef.current = fresh
             localVersionRef.current = fresh.version ?? 0
             triggerRevalidate()
-            toast.info("Schedule updated by a registered admin")
+            toast.info("Schedule was updated by a registered admin")
           }
         }
       } catch {

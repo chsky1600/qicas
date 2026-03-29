@@ -334,7 +334,7 @@ export function checkInstructorRules(
     const assignedCodes = projected.assignments
       .filter(a => a.instructor_id === candidate.instructor_id)
       .map(a => a.course_code);
-    const missing = iRule.courses.filter(c => !assignedCodes.includes(c));
+    const missing = iRule.courses.filter(c => !assignedCodes.includes(c) && !iRule.declined_courses.includes(c));
     if (missing.length > 0) {
       violations.push({
         id: `v-tadj-unassigned-${candidate.instructor_id}`,

@@ -22,6 +22,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
         error: <OctagonXIcon className="size-4" />,
         loading: <Loader2Icon className="size-4 animate-spin" />,
       }}
+      toastOptions={{
+        style: { textAlign: "center", justifyContent: "center" },
+      }}
       style={
         {
           "--normal-bg": "var(--popover)",
