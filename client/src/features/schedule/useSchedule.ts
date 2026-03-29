@@ -274,14 +274,16 @@ export function useSchedule(): UseScheduleResult {
     if (!rule) return
     const updated = await api.updateInstructorRule(yr, rule.id, { dropped })
     setInstructorRules(prev => prev.map(r => r.id === rule.id ? updated : r))
-  }, [])
+    triggerRevalidate()
+  }, [triggerRevalidate])
 
   const updateInstructorRule = useCallback(async (ruleId: string, updates: Partial<InstructorRule>) => {
     const yr = yearIdRef.current
     if (!yr) return
     const updated = await api.updateInstructorRule(yr, ruleId, updates)
     setInstructorRules(prev => prev.map(r => r.id === ruleId ? updated : r))
-  }, [])
+    triggerRevalidate()
+  }, [triggerRevalidate])
 
 
   // ── Course actions ──────────────────────────────────────────────────────────
@@ -325,14 +327,16 @@ export function useSchedule(): UseScheduleResult {
         )
       }
     }
-  }, [])
+    triggerRevalidate()
+  }, [triggerRevalidate])
 
   const updateCourseRule = useCallback(async (ruleId: string, updates: Partial<CourseRule>) => {
     const yr = yearIdRef.current
     if (!yr) return
     const updated = await api.updateCourseRule(yr, ruleId, updates)
     setCourseRules(prev => prev.map(r => r.id === ruleId ? updated : r))
-  }, [])
+    triggerRevalidate()
+  }, [triggerRevalidate])
 
 
   // ── Schedule / snapshot actions ─────────────────────────────────────────────

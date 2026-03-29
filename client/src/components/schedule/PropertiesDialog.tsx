@@ -83,6 +83,7 @@ export default function PropertiesDialog({
   const [instrRuleEdit, setInstrRuleEdit] = useState<InstructorRule | null>(null)
   const [courseEdit, setCourseEdit] = useState<Course | null>(null)
   const [courseRuleEdit, setCourseRuleEdit] = useState<CourseRule | null>(null)
+  const [confirmCode, setConfirmCode] = useState("")
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   useEffect(() => { if (open) setMode(defaultMode ?? "instructors") }, [open, defaultMode])
@@ -140,6 +141,7 @@ export default function PropertiesDialog({
     const blank = blankCourse()
     setIsNew(true)
     setChangeMade(false)
+    setConfirmCode("")
     setCourseEdit(blank)
     setCourseRuleEdit(blankCourseRule(blank.code, cpc))
   }
@@ -148,24 +150,27 @@ export default function PropertiesDialog({
     if (saving) return
     setSaving(true)
     try {
+      let saved = false
       if (mode === "instructors" && instrEdit && instrRuleEdit) {
         if (isNew) { await onCreateInstructor(instrEdit, instrRuleEdit); setIsNew(false) }
         else {
           await Promise.all([ onUpdateInstructor(instrEdit), instrRuleEdit.id ? onUpdateInstructorRule(instrRuleEdit.id, instrRuleEdit) : Promise.resolve() ])
         }
+        saved = true
       } else if (mode === "courses" && courseEdit && courseRuleEdit) {
         // ensure courseRuleEdit and courseEdit align on coursecode
         const rule = { ...courseRuleEdit, course_code: courseEdit.code }
         if (isNew) {
           if (courseEdit.code.trim() === "") toast.warning("All Courses must have a Course Code")
-          else { await onCreateCourse(courseEdit, rule); setIsNew(false) }
+          else if (confirmCode !== courseEdit.code) toast.warning("Re-enter the Course Code to confirm")
+          else { await onCreateCourse(courseEdit, rule); setIsNew(false); saved = true }
         }
-        else { await Promise.all([ onUpdateCourse(courseEdit), courseRuleEdit.id ? onUpdateCourseRule(courseRuleEdit.id, rule) : Promise.resolve()])}
+        else { await Promise.all([ onUpdateCourse(courseEdit), courseRuleEdit.id ? onUpdateCourseRule(courseRuleEdit.id, rule) : Promise.resolve()]); saved = true }
       }
+      if (saved) setChangeMade(false)
     } catch (err) {
       toast.error("Save failed")
     } finally {
-      setChangeMade(false)
       setSaving(false)
     }
   }
@@ -318,7 +323,7 @@ export default function PropertiesDialog({
               {items.map((item, i) => (
                 
                 <div
-                  className={`hover:bg-gray-300 border "border-gray-300" px-3 py-1.5 text-sm`}        
+                  className={`hover:bg-gray-300 border border-gray-300 py-1.5 text-sm cursor-pointer ${!isNew && i === selectedIndex ? "bg-gray-200 pl-6 pr-3" : "px-3"}`}
                   onClick={() => { setSelectedIndex(i); setIsNew(false); setChangeMade(false) }}
                 >
                   {item.label}
@@ -344,7 +349,7 @@ export default function PropertiesDialog({
 
             {(noSelection && !isNew) ? (
               <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                Select an item from the list, or click New to create one.
+                Select an item from the list, or click Add to create one.
               </div>
             ) : null}
 
@@ -463,16 +468,23 @@ export default function PropertiesDialog({
                       }} />
                   </FormRow>
                   <FormRow label="Course Code" labelClassName="w-auto">
-                    <input id="course-code-field" className="w-24 border border-black rounded-md px-2 py-1 bg-white text-center focus:outline-none"
+                    <input id="course-code-field" className={`w-24 border border-black rounded-md px-2 py-1 text-center focus:outline-none ${isNew ? "bg-white" : "bg-[#ececec] text-gray-500 cursor-not-allowed"}`}
                       value={courseEdit.code} readOnly={!isNew}
                       onChange={e => {
                         if (!isNew) return
                         setChangeMade(true)
-                        const code = e.target.value.toUpperCase()
+                        const code = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "")
                         setCourseEdit(p => p ? { ...p, code } : p)
                         setCourseRuleEdit(p => p ? { ...p, course_code: code } : p)
                       }} />
                   </FormRow>
+                  {isNew && (
+                    <FormRow label="Confirm Code" labelClassName="w-auto">
+                      <input className={`w-24 border rounded-md px-2 py-1 text-center focus:outline-none ${confirmCode === courseEdit.code && courseEdit.code !== "" ? "border-green-500 bg-green-50" : "border-black bg-white"}`}
+                        value={confirmCode} placeholder="Re-enter"
+                        onChange={e => setConfirmCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} />
+                    </FormRow>
+                  )}
                 </div>
                 <div className="flex items-center gap-6 mb-4">
                   <FormRow label="Total Cap." labelClassName="w-auto">
@@ -589,7 +601,7 @@ export default function PropertiesDialog({
 
             {!isNew && items[selectedIndex] && mode === "instructors" && !instrEdit && (
               <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                Select an item from the list, or click New to create one.
+                Select an item from the list, or click Add to create one.
               </div>
             )}
           </div>

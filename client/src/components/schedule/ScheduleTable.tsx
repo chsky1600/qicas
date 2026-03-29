@@ -54,6 +54,8 @@ export default function ScheduleTable({
   else if (sortBy === "fulfillment-desc") rows = rows.sort((a, b) => b.fulfillmentPct - a.fulfillmentPct)
   else if (sortBy === "fulfillment-asc") rows = rows.sort((a, b) => a.fulfillmentPct - b.fulfillmentPct)
 
+  const scheduleViolations = violations.filter(v => v.type === "Schedule")
+
   return (
     <div id="schedule-table" className="flex-1 overflow-auto">
       <table className="w-full border-collapse text-left select-none">
@@ -87,6 +89,20 @@ export default function ScheduleTable({
             <th className="px-3 py-3 text-sm font-semibold text-gray-700 w-48 bg-orange-100 text-center">Fall</th>
             <th className="px-3 py-3 text-sm font-semibold text-gray-700 w-48 bg-cyan-100 text-center">Winter</th>
           </tr>
+          {scheduleViolations.length > 0 && (
+            <tr>
+              <td colSpan={3} className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                <ul className="space-y-0.5">
+                  {scheduleViolations.map(v => (
+                    <li key={v.id} className={`text-xs flex gap-2 ${v.degree === "Error" ? "text-red-600" : "text-orange-500"}`}>
+                      <span className="font-semibold">[{v.degree}]</span>
+                      <span>{v.message}</span>
+                    </li>
+                  ))}
+                </ul>
+              </td>
+            </tr>
+          )}
         </thead>
         <tbody>
           {rows.map(({ instructor, rule }) => (
