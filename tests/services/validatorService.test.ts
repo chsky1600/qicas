@@ -478,6 +478,22 @@ describe("checkInstructorRules", () => {
 
       expect(violations.filter(v => v.code === "TADJ_UNASSIGNED")).toHaveLength(0);
     });
+
+    test("does NOT fire for declined courses", () => {
+      // inst-5 (SRoR) has designated [CISC101, CISC490], declined CISC490, only assigned CISC101
+      const ctx = {
+        ...mockCtx,
+        instructor_rules: [
+          { ...mockCtx.instructor_rules[0], declined_courses: ["CISC490"] },
+        ],
+      };
+      const a = makeAssignment({ id: "a-1", instructor_id: "inst-5", course_code: "CISC101", section_id: "s-1", term: "Fall" });
+      const schedule = makeSchedule([a]);
+
+      const violations = checkInstructorRules(ctx, schedule, a);
+
+      expect(violations.filter(v => v.code === "TADJ_UNASSIGNED")).toHaveLength(0);
+    });
   });
 
   describe("TADJ_CONFLICT (WARNING)", () => {

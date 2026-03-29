@@ -187,7 +187,7 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
 
       {/* -- Violation Warnings -- */}
       {showViolations && (myViolations.length + fallCourseViolations.length + wintCourseViolations.length) > 0 && (
-        <tr className="border-b border-gray-100 bg-gray-50">
+        <tr className="border-b border-gray-100 bg-gray-50 select-text">
           <td colSpan={1} className="px-4 py-2 align-top">
             <ul className="space-y-0.5">
               {myViolations.map(v => (
