@@ -28,8 +28,18 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   }
   _onActivity?.()
   if (!res.ok) throw new Error(`${options?.method ?? "GET"} ${path} → ${res.status}`)
-  if (res.status === 204 || res.status === 201) return undefined as T
-  return res.json()
+  
+  // these responses have no body
+  if (res.status === 204 || res.status === 205) return undefined as T
+
+  // if no content-type to return, dont return
+  const contentType = res.headers.get("content-type")
+  if (!contentType || !contentType.includes("application/json")) return undefined as T
+
+  // process body as text, only if it exists parse to object
+  const text = await res.text()
+  if (!text) return undefined as T
+  return JSON.parse(text)
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
