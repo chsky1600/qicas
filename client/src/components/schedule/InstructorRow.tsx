@@ -14,9 +14,11 @@ interface Props {
   assignments: Assignment[]
   violations: Violation[]
   isAdmin: boolean
+  highlightedSectionId: string | null
+  onHighlight: (sectionId: string | null) => void
 }
 
-export default function InstructorRow({ instructor, rule, courses, courseRules, assignments, violations, isAdmin }: Props) {
+export default function InstructorRow({ instructor, rule, courses, courseRules, assignments, violations, isAdmin, highlightedSectionId, onHighlight }: Props) {
   const [showViolations, setShowViolations] = useState(false)
   const fallAssignments = assignments
     .filter(a => a.instructor_id === instructor.id && a.term === "Fall")
@@ -148,6 +150,8 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
                   prevTerm="Fall"
                   inViolation={chipViolations.find(v => v.degree === "Error") ? "Error" : chipViolations.find(v => v.degree === "Warning") ? "Warning" : chipViolations.find(v => v.degree === "Info") ? "Info" : null}
                   isAdmin={isAdmin}
+                  highlighted={highlightedSectionId === a.section_id}
+                  onHighlight={onHighlight}
                 />
               ) : null
             })}
@@ -171,13 +175,15 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
                   courseCode={a.course_code}
                   sectionId={a.section_id}
                   sectionNum={section.number}
-                  isFullYear={cRule?.is_full_year ?? false}                  
+                  isFullYear={cRule?.is_full_year ?? false}
                   isExternal={cRule?.is_external ?? false}
                   assignmentId={a.id}
                   prevInstructorId={instructor.id}
                   prevTerm="Winter"
                   inViolation={chipViolations.find(v => v.degree === "Error") ? "Error" : chipViolations.find(v => v.degree === "Warning") ? "Warning" : chipViolations.find(v => v.degree === "Info") ? "Info" : null}
                   isAdmin={isAdmin}
+                  highlighted={highlightedSectionId === a.section_id}
+                  onHighlight={onHighlight}
                 />
               ) : null
             })}
