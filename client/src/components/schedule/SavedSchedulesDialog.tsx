@@ -63,18 +63,7 @@ export default function SavedSchedulesDialog({
       >
         <DialogTitle className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
           <div className="flex items-center gap-2">
-            <h2 className="text-white font-semibold text-base">Saved Schedules</h2>
-            <button
-              id="saved-schedules-add"
-              onClick={onAddSchedule}
-              className="text-xs bg-white text-black font-semibold px-2 py-1 rounded hover:bg-gray-200"
-            >
-              Add+
-            </button>
-            <HelpTooltip
-              title="Saved Schedules"
-              description="Save multiple versions of a schedule for the same year. Load one to make it active, copy it as a starting point, rename it, or delete it."
-            />
+            <h2 className="text-white font-semibold text-base">Saved Schedules</h2>                       
             {isAdmin && (
               <button
                 id="saved-schedules-add"
@@ -84,6 +73,10 @@ export default function SavedSchedulesDialog({
                 Add+
               </button>
             )}
+            <HelpTooltip
+              title="Saved Schedules"
+              description="Save multiple versions of a schedule for the same year. Load one to make it active, copy it as a starting point, rename it, or delete it."
+            />
           </div>          
           <button id="saved-schedules-dialog-close" onClick={onClose} className="text-white hover:text-gray-300">
             <X size={18} />

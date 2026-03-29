@@ -9,6 +9,11 @@ function getAvailability(rule?: CourseRule): string {
   return rule.terms_offered[0] ?? "—"
 }
 
+function getWorkload(rule?: CourseRule): string {
+  if (!rule) return "—"
+  return rule.workload_fulfillment.toString()
+}
+
 interface Props {
   course: Course
   section: Section
@@ -49,6 +54,7 @@ export default function CourseRow({ course, section, rule, assignments, isAdmin 
         </span>
       </TableCell>
       <TableCell className="text-center text-sm">{getAvailability(rule)}</TableCell>
+      <TableCell className="text-center text-sm">{getWorkload(rule)}</TableCell>
       <TableCell className="text-center text-sm">{section.capacity}</TableCell>
     </TableRow>
   )

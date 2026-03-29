@@ -37,6 +37,7 @@ export default function SchedulePage() {
   const [dragging, setDragging] = useState<SectionDragData | null>(null)
   const [overValid, setOverValid] = useState(false)
   const [propertiesMode, setPropertiesMode] = useState<"instructors" | "courses">("instructors")
+  const [propertiesAdd, setPropertiesAdd] = useState(false) // flag to tell properties tab to make a new course/instructor on open
   const { startTutorial } = useTutorial({
     courses, courseRules,
     instructors, instructorRules,
@@ -139,7 +140,7 @@ export default function SchedulePage() {
               courses={courses}
               courseRules={courseRules}
               assignments={assignments}
-              onAddCourse={() => { setPropertiesMode("courses"); setPropertiesOpen(true) }}
+              onAddCourse={() => { setPropertiesMode("courses"); setPropertiesAdd(true); setPropertiesOpen(true) }}
               isAdmin={admin}
             />
             <ScheduleTable
@@ -149,7 +150,7 @@ export default function SchedulePage() {
               courseRules={courseRules}
               assignments={assignments}
               violations={violations}
-              onAddInstructor={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
+              onAddInstructor={() => { setPropertiesMode("instructors"); setPropertiesAdd(true); setPropertiesOpen(true) }}
               isAdmin={admin}
             />
           </div>
@@ -186,7 +187,8 @@ export default function SchedulePage() {
       <PropertiesDialog
         open={propertiesOpen}
         defaultMode={propertiesMode}
-        onClose={() => setPropertiesOpen(false)}
+        contextAdd={propertiesAdd}
+        onClose={() => {setPropertiesOpen(false); setPropertiesAdd(false)}}
         instructors={instructors}
         instructorRules={instructorRules}
         courses={courses}
