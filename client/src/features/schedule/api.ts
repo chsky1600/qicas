@@ -182,11 +182,15 @@ export function setWorkingSchedule(scheduleId: string) {
   return request<Schedule>(`/schedule/active/${scheduleId}`, { method: "PUT" })
 }
 
-export function saveSchedule(year: string, schedule: Schedule) {
-  return request<void>(`/schedule/${year}`, { 
-    method: "PUT",  
-    body: JSON.stringify({ schedule: schedule }),
+export function renameSchedule(year: string, scheduleId: string, name: string) {
+  return request<void>(`/schedule/${year}`, {
+    method: "PUT",
+    body: JSON.stringify({ schedule_id: scheduleId, name }),
   })
+}
+
+export function getScheduleVersion(year: string, scheduleId: string) {
+  return request<{ version: number }>(`/schedule/${year}/${scheduleId}/version`)
 }
 
 export function createSavedSchedule(year: string, schedule: Schedule) {
