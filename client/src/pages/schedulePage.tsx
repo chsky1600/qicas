@@ -28,6 +28,7 @@ export default function SchedulePage() {
     addSchedule, copySchedule, deleteSavedSchedule, switchSchedule, renameSchedule,
     changeYear, migrateYear,
     exportCSV,
+    creditsPerCourse,
     validationMode, setValidationMode, validateNow, validationStale
   } = useSchedule()
 
@@ -202,6 +203,7 @@ export default function SchedulePage() {
         onUpdateCourse={updateCourse}
         onDropCourse={dropCourse}
         onUpdateCourseRule={updateCourseRule}
+        creditsPerCourse={creditsPerCourse}
       />
 
       <SavedSchedulesDialog

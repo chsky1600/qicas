@@ -64,6 +64,10 @@ export function getYears() {
   return request<Year[]>("/year")
 }
 
+export function getCreditsPerCourse() {
+  return request<{ credits_per_course: number }>("/faculty/credits")
+}
+
 export function migrateToNextYear(source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]){
   return request<Faculty>("/faculty/migrate", {
     method: "POST",

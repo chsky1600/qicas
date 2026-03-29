@@ -34,6 +34,7 @@ async function main() {
       },
     ],
     current_working_schedule_id : "SCH001",
+    credits_per_course: 1,
     academic_years: [
       {
         id: "Y2026",

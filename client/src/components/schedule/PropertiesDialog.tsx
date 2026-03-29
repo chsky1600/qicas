@@ -13,7 +13,7 @@ import type {
   InstructorRank, Term, CourseLevel,
   Assignment
 } from "@/features/schedule/types"
-import { RANK_DISPLAY } from "@/features/schedule/types"
+import { RANK_DISPLAY, DEFAULT_CREDITS_PER_COURSE } from "@/features/schedule/types"
 
 type Mode = "instructors" | "courses"
 type Status = "current" | "dropped"
@@ -36,13 +36,21 @@ interface Props {
   onUpdateCourse: (course: Course) => Promise<void>
   onDropCourse: (code: string, dropped: boolean) => Promise<void>
   onUpdateCourseRule: (ruleId: string, updates: Partial<CourseRule>) => Promise<void>
+  creditsPerCourse?: number
+}
+
+// snap a value to the nearest multiple of step on blur
+function snapToStep(value: number, step: number, min = -Infinity): number {
+  if (isNaN(value)) return 0
+  const snapped = Math.round(value / step) * step
+  return Math.max(snapped, min)
 }
 
 const TERMS: Term[] = ["Fall", "Winter"]
 const LEVELS: CourseLevel[] = ["undergrad1", "undergrad2", "undergrad3", "undergrad4", "literature", "graduate"]
 
-function blankInstructor(): Instructor {
-  return { id: crypto.randomUUID(), name: "", email: "", workload: 2, rank: "AssistantProfessor", prev_taught: [], notes: [] }
+function blankInstructor(cpc: number): Instructor {
+  return { id: crypto.randomUUID(), name: "", email: "", workload: 2 * cpc, rank: "AssistantProfessor", prev_taught: [], notes: [] }
 }
 function blankInstructorRule(instructorId: string): InstructorRule {
   return { id: crypto.randomUUID(), instructor_id: instructorId, designations: [], workload_delta: 0, courses: [], declined_courses: [], dropped: false }
@@ -50,8 +58,8 @@ function blankInstructorRule(instructorId: string): InstructorRule {
 function blankCourse(): Course {
   return { id: crypto.randomUUID(), name: "", code: "", level: "undergrad1", year_introduced: String(new Date().getFullYear()), notes: [], sections: [{ id: crypto.randomUUID(), number: 1, capacity: 30 }], capacity: 30 }
 }
-function blankCourseRule(courseCode: string): CourseRule {
-  return { id: crypto.randomUUID(), course_code: courseCode, terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: [], is_external: false, dropped: false }
+function blankCourseRule(courseCode: string, cpc: number): CourseRule {
+  return { id: crypto.randomUUID(), course_code: courseCode, terms_offered: ["Fall"], workload_fulfillment: cpc, is_full_year: false, sections_available: [], is_external: false, dropped: false }
 }
 
 export default function PropertiesDialog({
@@ -61,7 +69,10 @@ export default function PropertiesDialog({
   assignments,
   onCreateInstructor, onUpdateInstructor, onDropInstructor, onUpdateInstructorRule,
   onCreateCourse, onUpdateCourse, onDropCourse, onUpdateCourseRule,
+  creditsPerCourse: creditsPerCourseProp,
 }: Props) {
+  const cpc = creditsPerCourseProp ?? DEFAULT_CREDITS_PER_COURSE
+  const step = cpc / 2
   const [mode, setMode] = useState<Mode>("instructors")
   const [status, setStatus] = useState<Status>("current")
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -72,6 +83,7 @@ export default function PropertiesDialog({
   const [instrRuleEdit, setInstrRuleEdit] = useState<InstructorRule | null>(null)
   const [courseEdit, setCourseEdit] = useState<Course | null>(null)
   const [courseRuleEdit, setCourseRuleEdit] = useState<CourseRule | null>(null)
+  const [confirmCode, setConfirmCode] = useState("")
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   useEffect(() => { if (open) setMode(defaultMode ?? "instructors") }, [open, defaultMode])
@@ -105,7 +117,7 @@ export default function PropertiesDialog({
       const id = items[selectedIndex]?.id
       const c = courses.find(x => x.id === id)
       setCourseEdit(c ? { ...c, sections: c.sections.map(s => ({ ...s })) } : null)
-      setCourseRuleEdit(c ? { ...(courseRules.find(r => r.course_code === c.code) ?? blankCourseRule(c.code)) } : null)
+      setCourseRuleEdit(c ? { ...(courseRules.find(r => r.course_code === c.code) ?? blankCourseRule(c.code, cpc)) } : null)
       setConfirmRemove(null)
     }
   }, [mode, selectedIndex, items, instructors, instructorRules, courses, courseRules, isNew])
@@ -118,7 +130,7 @@ export default function PropertiesDialog({
   }, [open, contextAdd])
 
   function handleNewInstructor() {
-    const blank = blankInstructor()
+    const blank = blankInstructor(cpc)
     setIsNew(true)
     setChangeMade(false)
     setInstrEdit(blank)
@@ -129,30 +141,37 @@ export default function PropertiesDialog({
     const blank = blankCourse()
     setIsNew(true)
     setChangeMade(false)
+    setConfirmCode("")
     setCourseEdit(blank)
-    setCourseRuleEdit(blankCourseRule(blank.code))
+    setCourseRuleEdit(blankCourseRule(blank.code, cpc))
   }
 
   async function handleSave() {
+    if (saving) return
     setSaving(true)
     try {
+      let saved = false
       if (mode === "instructors" && instrEdit && instrRuleEdit) {
         if (isNew) { await onCreateInstructor(instrEdit, instrRuleEdit); setIsNew(false) }
-        else { 
-          await Promise.all([ onUpdateInstructor(instrEdit), instrRuleEdit.id ? onUpdateInstructorRule(instrRuleEdit.id, instrRuleEdit) : Promise.resolve() ]) 
+        else {
+          await Promise.all([ onUpdateInstructor(instrEdit), instrRuleEdit.id ? onUpdateInstructorRule(instrRuleEdit.id, instrRuleEdit) : Promise.resolve() ])
         }
+        saved = true
       } else if (mode === "courses" && courseEdit && courseRuleEdit) {
         // ensure courseRuleEdit and courseEdit align on coursecode
         const rule = { ...courseRuleEdit, course_code: courseEdit.code }
         if (isNew) {
           if (courseEdit.code.trim() === "") toast.warning("All Courses must have a Course Code")
-          else { await onCreateCourse(courseEdit, rule); setIsNew(false) }
+          else if (confirmCode !== courseEdit.code) toast.warning("Re-enter the Course Code to confirm")
+          else { await onCreateCourse(courseEdit, rule); setIsNew(false); saved = true }
         }
-        else { await Promise.all([ onUpdateCourse(courseEdit), courseRuleEdit.id ? onUpdateCourseRule(courseRuleEdit.id, rule) : Promise.resolve()])}
+        else { await Promise.all([ onUpdateCourse(courseEdit), courseRuleEdit.id ? onUpdateCourseRule(courseRuleEdit.id, rule) : Promise.resolve()]); saved = true }
       }
+      if (saved) setChangeMade(false)
+    } catch (err) {
+      toast.error("Save failed")
     } finally {
-      setChangeMade(false)
-      setSaving(false) 
+      setSaving(false)
     }
   }
 
@@ -226,11 +245,10 @@ export default function PropertiesDialog({
             <button onClick={handleDrop} className="bg-gray-800 text-white px-3 py-0.5 rounded-md border border-black font-semibold">Drop {itemType}</button>
           ))
         }
-        {changeMade &&
-          <button onClick={handleSave} disabled={saving} className="bg-green-700 text-white px-3 py-0.5 rounded-md border border-black font-semibold hover:opacity-90 disabled:opacity-50">
-            {saving ? "Saving…" : "Save Changes"}
-          </button>
-        }
+        <button onMouseDown={e => e.preventDefault()} onClick={handleSave} disabled={saving || !changeMade}
+          className={`bg-green-700 text-white px-3 py-0.5 rounded-md border border-black font-semibold hover:opacity-90 disabled:opacity-50 ${changeMade ? "" : "invisible"}`}>
+          {saving ? "Saving…" : "Save Changes"}
+        </button>
       </span>
     </div>
     )
@@ -305,7 +323,7 @@ export default function PropertiesDialog({
               {items.map((item, i) => (
                 
                 <div
-                  className={`hover:bg-gray-300 border "border-gray-300" px-3 py-1.5 text-sm`}        
+                  className={`hover:bg-gray-300 border border-gray-300 py-1.5 text-sm cursor-pointer ${!isNew && i === selectedIndex ? "bg-gray-200 pl-6 pr-3" : "px-3"}`}
                   onClick={() => { setSelectedIndex(i); setIsNew(false); setChangeMade(false) }}
                 >
                   {item.label}
@@ -331,7 +349,7 @@ export default function PropertiesDialog({
 
             {(noSelection && !isNew) ? (
               <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                Select an item from the list, or click New to create one.
+                Select an item from the list, or click Add to create one.
               </div>
             ) : null}
 
@@ -373,22 +391,25 @@ export default function PropertiesDialog({
                     </select>
                   </FormRow>
                   <FormRow label="Workload" labelClassName="w-auto">
-                    <input className="w-12 border border-black rounded-md px-2 py-1 bg-white text-center" type="number"
+                    <input className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center" type="number" step={step} min={step}
                       value={instrEdit.workload}
                       onChange={e => {
                         setChangeMade(true)
-                        setInstrEdit(p => p ? { ...p, workload: Number(e.target.value) } : p)
-                      }} 
-                    />
+                        setInstrEdit(p => p ? { ...p, workload: e.target.value === "" ? step : Number(e.target.value) } : p)
+                      }}
+                      onBlur={() => setInstrEdit(p => p ? { ...p, workload: snapToStep(p.workload, step, step) } : p)} />
                   </FormRow>
                   <FormRow label="Modifier" labelClassName="w-auto">
-                    <input className="w-12 border border-black rounded-md px-2 py-1 bg-white text-center" type="number"
+                    <input className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center" type="number" step={step}
+                      min={-instrEdit.workload}
                       value={instrRuleEdit.workload_delta}
                       onChange={e => {
+                        const raw = e.target.value
+                        if (raw === "" || raw === "-") return
                         setChangeMade(true)
-                        setInstrRuleEdit(p => p ? { ...p, workload_delta: Number(e.target.value) } : p)
-                      }} 
-                    />
+                        setInstrRuleEdit(p => p ? { ...p, workload_delta: Number(raw) } : p)
+                      }}
+                      onBlur={() => setInstrRuleEdit(p => p ? { ...p, workload_delta: snapToStep(p.workload_delta, step, -instrEdit.workload) } : p)} />
                   </FormRow>
                 </div>
 
@@ -447,16 +468,23 @@ export default function PropertiesDialog({
                       }} />
                   </FormRow>
                   <FormRow label="Course Code" labelClassName="w-auto">
-                    <input id="course-code-field" className="w-24 border border-black rounded-md px-2 py-1 bg-white text-center focus:outline-none"
+                    <input id="course-code-field" className={`w-24 border border-black rounded-md px-2 py-1 text-center focus:outline-none ${isNew ? "bg-white" : "bg-[#ececec] text-gray-500 cursor-not-allowed"}`}
                       value={courseEdit.code} readOnly={!isNew}
                       onChange={e => {
                         if (!isNew) return
                         setChangeMade(true)
-                        const code = e.target.value.toUpperCase()
+                        const code = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "")
                         setCourseEdit(p => p ? { ...p, code } : p)
                         setCourseRuleEdit(p => p ? { ...p, course_code: code } : p)
                       }} />
                   </FormRow>
+                  {isNew && (
+                    <FormRow label="Confirm Code" labelClassName="w-auto">
+                      <input className={`w-24 border rounded-md px-2 py-1 text-center focus:outline-none ${confirmCode === courseEdit.code && courseEdit.code !== "" ? "border-green-500 bg-green-50" : "border-black bg-white"}`}
+                        value={confirmCode} placeholder="Re-enter"
+                        onChange={e => setConfirmCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))} />
+                    </FormRow>
+                  )}
                 </div>
                 <div className="flex items-center gap-6 mb-4">
                   <FormRow label="Total Cap." labelClassName="w-auto">
@@ -464,12 +492,13 @@ export default function PropertiesDialog({
                       readOnly value={courseEdit.sections.reduce((s, sec) => s + sec.capacity, 0)} />
                   </FormRow>
                   <FormRow label="Workload" labelClassName="w-auto">
-                    <input className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center" type="number" step="0.5"
+                    <input className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center" type="number" step={step} min={step}
                       value={courseRuleEdit.workload_fulfillment}
                       onChange={e => {
                         setChangeMade(true)
-                        setCourseRuleEdit(p => p ? { ...p, workload_fulfillment: Number(e.target.value) } : p)
-                        }} />
+                        setCourseRuleEdit(p => p ? { ...p, workload_fulfillment: e.target.value === "" ? step : Number(e.target.value) } : p)
+                      }}
+                      onBlur={() => setCourseRuleEdit(p => p ? { ...p, workload_fulfillment: snapToStep(p.workload_fulfillment, step, step) } : p)} />
                   </FormRow>
                   <FormRow label="Paid By" labelClassName="w-auto">
                     <select className="border border-black rounded-md px-1 py-1 bg-white"
@@ -572,7 +601,7 @@ export default function PropertiesDialog({
 
             {!isNew && items[selectedIndex] && mode === "instructors" && !instrEdit && (
               <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-                Select an item from the list, or click New to create one.
+                Select an item from the list, or click Add to create one.
               </div>
             )}
           </div>
