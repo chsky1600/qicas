@@ -204,7 +204,7 @@ export function useSchedule(): UseScheduleResult {
             scheduleRef.current = fresh
             localVersionRef.current = fresh.version ?? 0
             triggerRevalidate()
-            toast.info("Schedule updated by a registered admin")
+            toast.info("Schedule was updated by a registered admin")
           }
         }
       } catch {
@@ -513,8 +513,8 @@ export function useSchedule(): UseScheduleResult {
       now.getFullYear(),
       String(now.getMonth() + 1).padStart(2, "0"),
       String(now.getDate()).padStart(2, "0"),
-      String(now.getHours()).padStart(2, "0"),
-      String(now.getMinutes()).padStart(2, "0"),
+      String(now.getHours()).padStart(2, "0")+"h",
+      String(now.getMinutes()).padStart(2, "0")+"m",
     ].join("-");
   
     // there must be at least 1

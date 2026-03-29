@@ -229,6 +229,7 @@ export default function PropertiesDialog({
   }, [isNew, mode, items, selectedIndex])
 
   const noSelection = !isNew && items.length === 0
+  const showDesignated = mode === "instructors" && instrEdit && (instrEdit.rank === "TermAdjunctSRoR" || instrEdit.rank === "TermAdjunctGRoR")
   
   // used by both instructor and course properties tabs
   // abstracted here for clarity, and style unity
@@ -263,7 +264,7 @@ export default function PropertiesDialog({
           const target = e.target as Element
           if (target.closest?.("#driver-popover-content")) e.preventDefault()
         }}
-        className="w-[1100px] h-130 p-0 gap-0 border border-black rounded-md"
+        className={`w-[1100px] p-0 gap-0 border border-black rounded-md ${showDesignated ? "h-145" : "h-130"}`}
       >
         {/* Header */}
         <DialogTitle className="relative flex items-center justify-center bg-black text-white p-2 h-fit rounded-t-md">
@@ -290,7 +291,7 @@ export default function PropertiesDialog({
         </DialogTitle>
 
         {/* Body */}
-        <div className="flex bg-white h-120 rounded">
+        <div className={`flex bg-white rounded ${showDesignated ? "h-135" : "h-120"}`}>
 
           {/* Sidebar */}
           <div className="w-80 flex flex-col border-r border-black">
@@ -412,6 +413,72 @@ export default function PropertiesDialog({
                       onBlur={() => setInstrRuleEdit(p => p ? { ...p, workload_delta: snapToStep(p.workload_delta, step, -instrEdit.workload) } : p)} />
                   </FormRow>
                 </div>
+
+                {(instrEdit.rank === "TermAdjunctSRoR" || instrEdit.rank === "TermAdjunctGRoR") && (
+                  <SectionBox title="Designated Courses" className="w-full mb-5"
+                    action={
+                      <select className="text-xs border border-gray-300 rounded px-1" value=""
+                        onChange={e => {
+                          if (!e.target.value) return
+                          const code = e.target.value
+                          setChangeMade(true)
+                          setInstrRuleEdit(p => p ? { ...p, courses: [...p.courses, code] } : p)
+                          addPrevTaught(code)
+                        }}>
+                        <option value="">+ Add</option>
+                        {courses.filter(c => !instrRuleEdit.courses.includes(c.code)).map(c => (
+                          <option key={c.code} value={c.code}>{c.code}</option>
+                        ))}
+                      </select>
+                    }
+                  >
+                    <div className="space-y-2 text-sm">
+                      {instrRuleEdit.courses.length === 0 && (
+                        <div className="text-gray-400 text-xs">No designated courses</div>
+                      )}
+                      {instrRuleEdit.courses.map(code => {
+                        const course = courses.find(c => c.code === code)
+                        const isDeclined = instrRuleEdit.declined_courses.includes(code)
+                        return (
+                          <div key={code} className="flex items-center justify-between">
+                            <span className={isDeclined ? "line-through text-gray-400" : ""}>
+                              {code}{course ? ` - ${course.name}` : ""}
+                            </span>
+                            <span className="flex items-center gap-2">
+                              <button
+                                className={`text-xs px-2 py-0.5 rounded border ${isDeclined ? "bg-red-50 border-red-300 text-red-600" : "border-gray-300 text-gray-500 hover:border-red-300 hover:text-red-600"}`}
+                                onClick={() => {
+                                  setChangeMade(true)
+                                  setInstrRuleEdit(p => {
+                                    if (!p) return p
+                                    return {
+                                      ...p,
+                                      declined_courses: isDeclined
+                                        ? p.declined_courses.filter(c => c !== code)
+                                        : [...p.declined_courses, code]
+                                    }
+                                  })
+                                }}>
+                                {isDeclined ? "Declined" : "Decline"}
+                              </button>
+                              <IconControlButton aria-label={`Remove ${code}`}
+                                onClick={() => {
+                                  setChangeMade(true)
+                                  setInstrRuleEdit(p => p ? {
+                                    ...p,
+                                    courses: p.courses.filter(c => c !== code),
+                                    declined_courses: p.declined_courses.filter(c => c !== code)
+                                  } : p)
+                                }}>
+                                −
+                              </IconControlButton>
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </SectionBox>
+                )}
 
                 <div className="flex gap-8 mb-5">
                   <SectionBox title="Previously Taught" className="w-80"
