@@ -33,6 +33,34 @@ const cookieOpts = {
   path: "/",
 }
 
+const buildCookieHeader = (token: string) => {
+    const parts = [
+        `token=${encodeURIComponent(token)}`,
+        `Max-Age=${Math.floor(TOKEN_MAX_AGE_MS / 1000)}`,
+        "Path=/",
+        "HttpOnly",
+        "SameSite=Lax",
+    ]
+
+    if (cookieSecure) parts.push("Secure")
+
+    return parts.join("; ")
+}
+
+const buildExpiredCookieHeader = () => {
+    const parts = [
+        "token=",
+        "Max-Age=0",
+        "Path=/",
+        "HttpOnly",
+        "SameSite=Lax",
+    ]
+
+    if (cookieSecure) parts.push("Secure")
+
+    return parts.join("; ")
+}
+
 // change to lookup users in all faculty docs?
 const fetchUser = async (email : String): Promise<User | undefined> => {
     try {
@@ -74,7 +102,7 @@ export const getToken = async (req : Request, res : Response) => {
                     .setExpirationTime('2h')
                     .sign(secret)
 
-                res.cookie("token", jwt, cookieOpts)
+                res.setHeader("Set-Cookie", buildCookieHeader(jwt))
                 res.sendStatus(200)
             } else {
                 res.status(401).json({ error: "Invalid password" })
@@ -156,7 +184,7 @@ export const refreshToken = async (req : Request, res : Response) => {
             .setExpirationTime('2h')
             .sign(secret)
 
-        res.cookie("token", jwt, cookieOpts)
+        res.setHeader("Set-Cookie", buildCookieHeader(jwt))
         // Return new expiry so frontend can update session state without a second round-trip
         const payload = JSON.parse(atob(jwt.split(".")[1]!))
         res.json({ faculty_id, role, exp: payload.exp })
@@ -222,12 +250,7 @@ export const getSession = async (req: Request, res: Response) => {
 // clears the httpOnly auth cookie
 // must match the same options used when setting it (except maxAge/expires)
 export const logout = (_req: Request, res: Response) => {
-    res.clearCookie("token", {
-        httpOnly: true,
-        secure: cookieSecure,
-        sameSite: "lax" as const,
-        path: "/",
-    })
+    res.setHeader("Set-Cookie", buildExpiredCookieHeader())
     res.sendStatus(200)
 }
 
