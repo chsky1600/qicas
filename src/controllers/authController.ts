@@ -89,6 +89,8 @@ export const getToken = async (req : Request, res : Response) => {
     const email : string | undefined = req.body.email
     const password : string | undefined = req.body.password
 
+    console.log("[auth] login attempt", { email, hasPassword: Boolean(password) })
+
     if(email && password) {
         const user = await fetchUser(email)
         if(user){
@@ -102,16 +104,21 @@ export const getToken = async (req : Request, res : Response) => {
                     .setExpirationTime('2h')
                     .sign(secret)
 
-                res.setHeader("Set-Cookie", buildCookieHeader(jwt))
-                res.sendStatus(200)
+                const cookieHeader = buildCookieHeader(jwt)
+                console.log("[auth] login success", { email, faculty_id: user.faculty_id, role: user.role, cookieSecure })
+                res.setHeader("Set-Cookie", cookieHeader)
+                console.log("[auth] set-cookie header prepared", res.getHeader("Set-Cookie"))
+                res.status(200).json({ ok: true })
             } else {
+                console.log("[auth] login rejected: invalid password", { email })
                 res.status(401).json({ error: "Invalid password" })
             }
         } else {
-            console.log("user not found.")
+            console.log("[auth] login rejected: user not found", { email })
             res.sendStatus(404)
         }
     } else {
+        console.log("[auth] login rejected: missing email or password")
         res.sendStatus(400)
     }
 }
