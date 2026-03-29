@@ -2,6 +2,8 @@
 
 export type Term = "Fall" | "Winter"
 
+export type ValidationMode = "auto" | "manual"
+
 export type ViolationDegree = "Info" | "Warning" | "Error"
 
 export type CourseLevel =

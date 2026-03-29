@@ -13,9 +13,10 @@ interface Props {
   courseRules: CourseRule[]
   assignments: Assignment[]
   violations: Violation[]
+  isAdmin: boolean
 }
 
-export default function InstructorRow({ instructor, rule, courses, courseRules, assignments, violations }: Props) {
+export default function InstructorRow({ instructor, rule, courses, courseRules, assignments, violations, isAdmin }: Props) {
   const [showViolations, setShowViolations] = useState(false)
   const fallAssignments = assignments
     .filter(a => a.instructor_id === instructor.id && a.term === "Fall")
@@ -146,6 +147,7 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
                   prevInstructorId={instructor.id}
                   prevTerm="Fall"
                   inViolation={chipViolations.find(v => v.degree === "Error") ? "Error" : chipViolations.find(v => v.degree === "Warning") ? "Warning" : chipViolations.find(v => v.degree === "Info") ? "Info" : null}
+                  isAdmin={isAdmin}
                 />
               ) : null
             })}
@@ -175,6 +177,7 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
                   prevInstructorId={instructor.id}
                   prevTerm="Winter"
                   inViolation={chipViolations.find(v => v.degree === "Error") ? "Error" : chipViolations.find(v => v.degree === "Warning") ? "Warning" : chipViolations.find(v => v.degree === "Info") ? "Info" : null}
+                  isAdmin={isAdmin}
                 />
               ) : null
             })}

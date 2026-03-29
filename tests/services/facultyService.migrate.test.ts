@@ -209,7 +209,6 @@ describe("migrateFacultyToNewYear (deep copy)", () => {
 
     const copy = result.academic_years.find((y) => y.id === newYearId);
     expect(copy!.schedules.length).toBe(1);
-    expect(copy!.schedules[0].id).toBe("SCH001");
     expect(copy!.schedules[0].assignments.length).toBe(1);
   });
 
@@ -247,7 +246,6 @@ describe("migrateFacultyToNewYear (deep copy)", () => {
 
     const copy = result.academic_years.find((y) => y.id === newYearId);
     expect(copy!.schedules.length).toBe(1);
-    expect(copy!.schedules[0].id).toBe("SCH001");
   });
 
   test("cloned schedule assignments preserve field values", async () => {

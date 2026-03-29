@@ -1,20 +1,17 @@
 import { Navigate } from "react-router-dom"
 import type { ReactNode } from "react"
-
-function hasToken(): boolean {
-  return document.cookie.split(";").some(c => c.trim().startsWith("token="))
-}
+import { useAuth } from "@/lib/AuthContext"
 
 export function AuthGuard({ children }: { children: ReactNode }) {
-  if (!hasToken()) {
-    return <Navigate to="/login" replace />
-  }
+  const { authenticated, loading } = useAuth()
+  if (loading) return <div className="flex items-center justify-center h-screen text-gray-500">Loading…</div>
+  if (!authenticated) return <Navigate to="/login" replace />
   return <>{children}</>
 }
 
 export function GuestGuard({ children }: { children: ReactNode }) {
-  if (hasToken()) {
-    return <Navigate to="/schedule" replace />
-  }
+  const { authenticated, loading } = useAuth()
+  if (loading) return <div className="flex items-center justify-center h-screen text-gray-500">Loading…</div>
+  if (authenticated) return <Navigate to="/schedule" replace />
   return <>{children}</>
 }
