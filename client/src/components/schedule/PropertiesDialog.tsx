@@ -420,8 +420,10 @@ export default function PropertiesDialog({
                       <select className="text-xs border border-gray-300 rounded px-1" value=""
                         onChange={e => {
                           if (!e.target.value) return
+                          const code = e.target.value
                           setChangeMade(true)
-                          setInstrRuleEdit(p => p ? { ...p, courses: [...p.courses, e.target.value] } : p)
+                          setInstrRuleEdit(p => p ? { ...p, courses: [...p.courses, code] } : p)
+                          addPrevTaught(code)
                         }}>
                         <option value="">+ Add</option>
                         {courses.filter(c => !instrRuleEdit.courses.includes(c.code)).map(c => (
