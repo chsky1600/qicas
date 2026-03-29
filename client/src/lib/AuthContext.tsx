@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (remaining > REFRESH_THRESHOLD_MS) return
 
         refreshingRef.current = true
-        fetch("/auth/refresh", { method: "POST", credentials: "same-origin" })
+        fetch("/auth/refresh", { method: "POST", credentials: "include" })
           .then(res => res.ok ? res.json() : null)
           .then(data => { if (data) updateSession(data) })
           .catch(() => {})
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function init() {
       try {
-        const res = await fetch("/auth/me", { credentials: "same-origin", cache: "no-store" })
+        const res = await fetch("/auth/me", { credentials: "include", cache: "no-store" })
         if (res.ok && !cancelled) {
           const data: Session = await res.json()
           updateSession(data)
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(async () => {
-    try { await fetch("/auth/logout", { method: "POST", credentials: "same-origin" }) } catch {}
+    try { await fetch("/auth/logout", { method: "POST", credentials: "include" }) } catch {}
     setSession(null)
     sessionRef.current = null
     navigate("/login", { replace: true })
@@ -95,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // manual refresh, called by SessionWarning "Stay signed in"
   const refreshSession = useCallback(async (): Promise<boolean> => {
     try {
-      const res = await fetch("/auth/refresh", { method: "POST", credentials: "same-origin" })
+      const res = await fetch("/auth/refresh", { method: "POST", credentials: "include" })
       if (res.ok) {
         const data: Session = await res.json()
         updateSession(data)
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // hydrate session from server, call after POST /auth login
   const fetchSession = useCallback(async (): Promise<boolean> => {
     try {
-      const res = await fetch("/auth/me", { credentials: "same-origin", cache: "no-store" })
+      const res = await fetch("/auth/me", { credentials: "include", cache: "no-store" })
       if (res.ok) {
         const data: Session = await res.json()
         updateSession(data)

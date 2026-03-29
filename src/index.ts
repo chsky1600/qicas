@@ -15,8 +15,15 @@ import { connectDB } from "./db/connection";
 import { verifyToken } from "./controllers/authController";
 
 const app = express();
+const corsOrigins = process.env.CORS_ORIGIN
+  ?.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
-app.use(cors());
+app.use(cors({
+  origin: corsOrigins && corsOrigins.length > 0 ? corsOrigins : true,
+  credentials: true,
+}));
 app.use(express.json());
 app.use(cookieParser());
 

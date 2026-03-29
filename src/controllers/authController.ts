@@ -16,9 +16,18 @@ const secret: Uint8Array = new TextEncoder().encode(
 const alg = 'HS256'
 const TOKEN_MAX_AGE_MS = 2 * 60 * 60 * 1000 // 2 hours, matches JWT exp
 
+const parseBooleanEnv = (value: string | undefined): boolean | undefined => {
+    if (value === undefined) return undefined
+    if (value === "true") return true
+    if (value === "false") return false
+    return undefined
+}
+
+const cookieSecure = parseBooleanEnv(process.env.AUTH_COOKIE_SECURE) ?? false
+
 const cookieOpts = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  secure: cookieSecure,
   sameSite: "lax" as const,
   maxAge: TOKEN_MAX_AGE_MS,
   path: "/",
@@ -215,7 +224,7 @@ export const getSession = async (req: Request, res: Response) => {
 export const logout = (_req: Request, res: Response) => {
     res.clearCookie("token", {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: cookieSecure,
         sameSite: "lax" as const,
         path: "/",
     })
