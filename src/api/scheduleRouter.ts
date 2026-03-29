@@ -10,12 +10,14 @@ import {
     addAssignment,
     removeAssignment,
     validateSchedule,
-    getWorkingSchedule
+    getWorkingSchedule,
+    getScheduleVersion
 } from "../controllers/scheduleController";
 import { requireRole } from "../controllers/authController";
 
 const router = express.Router();
 
+router.get("/schedule/:year/:schedule_id/version", getScheduleVersion)
 router.get("/schedule/:year/:schedule_id",getScheduleByID)
 router.put("/schedule/active/:schedule_id",setWorkingSchedule)
 router.get("/schedule/", getWorkingSchedule)

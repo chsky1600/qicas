@@ -62,6 +62,7 @@ export interface Schedule {
   date_created: string
   is_rc: boolean
   assignments: Assignment[]
+  version: number
 }
 
 export interface CourseRule {
