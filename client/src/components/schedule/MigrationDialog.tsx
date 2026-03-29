@@ -30,8 +30,8 @@ export default function MigrationDialog({
         description: <span>Please open <b>{latestYear.name}</b> and try again.</span>,
         descriptionClassName: '!text-black',
       })
+      onClose()
     }
-    onClose()
   }, [open, loadedYearId, latestYear.id])
 
   if (!open || loadedYearId !== latestYear.id) return null
