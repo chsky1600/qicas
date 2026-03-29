@@ -247,7 +247,6 @@ export async function migrateFacultyToNewYear(
   // are also cloned with the same application-level ids.
 
   let pickedSchedules = source.schedules.filter(s => schedule_ids?.includes(s.id))
-  console.log(pickedSchedules)
    // if no schedules chosen to copy, populate with 1 empty schedule
   if (pickedSchedules.length === 0) {
     pickedSchedules = [{
