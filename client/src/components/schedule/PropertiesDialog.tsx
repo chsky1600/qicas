@@ -393,7 +393,7 @@ export default function PropertiesDialog({
                       onBlur={() => setInstrEdit(p => p ? { ...p, workload: snapToStep(p.workload, step, step) } : p)} />
                   </FormRow>
                   <FormRow label="Modifier" labelClassName="w-auto">
-                    <input className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center" type="number" step={cpc}
+                    <input className="w-16 border border-black rounded-md px-2 py-1 bg-white text-center" type="number" step={step}
                       min={-instrEdit.workload}
                       value={instrRuleEdit.workload_delta}
                       onChange={e => {
