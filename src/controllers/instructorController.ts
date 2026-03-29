@@ -88,7 +88,7 @@ export const updateInstructor = async (req: Request, res: Response) => {
     }
   );
 
-  if (result.modifiedCount === 0) {
+  if (result.matchedCount === 0) {
     return res.status(404).json({ error: "Faculty/year/instructor not found" });
   }
 
