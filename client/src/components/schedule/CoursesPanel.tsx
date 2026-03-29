@@ -20,9 +20,11 @@ interface Props {
   assignments: Assignment[]
   onAddCourse: () => void
   isAdmin: boolean
+  highlightedSectionId: string | null
+  onHighlight: (sectionId: string | null) => void
 }
 
-export default function CoursesPanel({ courses, courseRules, assignments, onAddCourse, isAdmin }: Props) {
+export default function CoursesPanel({ courses, courseRules, assignments, onAddCourse, isAdmin, highlightedSectionId, onHighlight }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: "panel", data: { type: "panel" } })
   const [search, setSearch] = useState("")
   const [showUnassigned, setShowUnassigned] = useState(true)
@@ -110,7 +112,7 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
               </TableCell>
             </TableRow>
             {showUnassigned && unassigned.map(({ course, section, rule }) => (
-              <CourseRow key={section.id} course={course} section={section} rule={rule} assignments={assignments} isAdmin={isAdmin} />
+              <CourseRow key={section.id} course={course} section={section} rule={rule} assignments={assignments} isAdmin={isAdmin} highlighted={highlightedSectionId === section.id} onHighlight={onHighlight} />
             ))}
 
             {assigned.length > 0 && (
@@ -124,7 +126,7 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
                   </TableCell>
                 </TableRow>
                 {showAssigned && assigned.map(({ course, section, rule }) => (
-                  <CourseRow key={section.id} course={course} section={section} rule={rule} assignments={assignments} isAdmin={isAdmin} />
+                  <CourseRow key={section.id} course={course} section={section} rule={rule} assignments={assignments} isAdmin={isAdmin} highlighted={highlightedSectionId === section.id} onHighlight={onHighlight} />
                 ))}
               </>
             )}
