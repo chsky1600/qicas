@@ -587,25 +587,26 @@ export function useSchedule(): UseScheduleResult {
 
   const PopulatePrevTaught = async (prev_Taught_Assignments: Assignment[]) => {
     const yr = yearIdRef.current
-    if (!yr || assignments.length === 0) return    
+    if (!yr || assignments.length === 0) return
+    
+    // get fresh copies of curent courses and instructors
+    const freshCourses = await api.getCourses(yr)
+    const freshInstructors = await api.getInstructors(yr)
 
-    const courseMap = new Map<string, Course>();
-    for (const c of courses) {
-      courseMap.set(c.code, c);
-    }
-
-    const instructorMap = new Map<string, Instructor>();
-    for (const i of instructors) {
-      instructorMap.set(i.id, i);
-    }    
+    const updatedInstructors = new Map<string, Instructor>();
     
     for (const a of prev_Taught_Assignments) {
-      const i = instructorMap.get(a.instructor_id)
-      const c = courseMap.get(a.course_code)
+      const i = (updatedInstructors.get(a.instructor_id) ??
+        freshInstructors.find(i => i.id === a.instructor_id))
+      const c = freshCourses.find(c => c.code === a.course_code)
       if (!i || !c) continue
       if(i.prev_taught.some(prevC => prevC.code === c.code)) continue
-      await updateInstructor({ ...i, prev_taught: [...i.prev_taught, c] })      
+      updatedInstructors.set( a.instructor_id, 
+        { ...i, prev_taught: [...i.prev_taught, c] }
+      )    
     }
+
+    await Promise.all([...updatedInstructors.values()].map(i => updateInstructor(i))) 
   }
 
   // ── export scheudle ─────────────────────────────────────────────────────────────
