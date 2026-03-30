@@ -30,6 +30,7 @@ export interface UseScheduleResult {
   unassign: (assignmentId: string) => Promise<void>
   createInstructor: (instructor: Instructor, rule: InstructorRule) => Promise<void>
   updateInstructor: (instructor: Instructor) => Promise<void>
+  addNote: (instructor: Instructor, content: string, userName: string) => Promise<void>
   dropInstructor: (instructorId: string, dropped: boolean) => Promise<void>
   createCourse: (course: Course, rule: CourseRule) => Promise<void>
   updateCourse: (course: Course) => Promise<void>
@@ -146,7 +147,6 @@ export function useSchedule(): UseScheduleResult {
         const result = await api.validateSchedule(yr, workingSchedule.id)
         setViolations(result.validationResult.violations)
       } catch {
-        // support users get 403 on validate, just skip
         setViolations([])
       }
     } else {
@@ -212,7 +212,7 @@ export function useSchedule(): UseScheduleResult {
             scheduleRef.current = fresh
             localVersionRef.current = fresh.version ?? 0
             triggerRevalidate()
-            toast.info("Schedule updated by a registered admin")
+            toast.info("Schedule was updated by a registered admin")
           }
         }
       } catch {
@@ -329,6 +329,15 @@ export function useSchedule(): UseScheduleResult {
     const yr = yearIdRef.current
     if (!yr) return
     const updated = await api.updateInstructor(yr, instructor.id, instructor)
+    setInstructors(prev => prev.map(i => i.id === instructor.id ? updated : i))
+  }, [])
+
+  const addNote = useCallback(async (instructor: Instructor, content: string, userName: string) => {
+    const yr = yearIdRef.current
+    if (!yr) return
+    const note = { content, created_by: userName, date_created: new Date().toISOString().split("T")[0] }
+    const withNote = { ...instructor, notes: [...instructor.notes, note] }
+    const updated = await api.updateInstructor(yr, instructor.id, withNote)
     setInstructors(prev => prev.map(i => i.id === instructor.id ? updated : i))
   }, [])
 
@@ -563,8 +572,8 @@ export function useSchedule(): UseScheduleResult {
       now.getFullYear(),
       String(now.getMonth() + 1).padStart(2, "0"),
       String(now.getDate()).padStart(2, "0"),
-      String(now.getHours()).padStart(2, "0"),
-      String(now.getMinutes()).padStart(2, "0"),
+      String(now.getHours()).padStart(2, "0")+"h",
+      String(now.getMinutes()).padStart(2, "0")+"m",
     ].join("-");
   
     // there must be at least 1
@@ -667,7 +676,7 @@ export function useSchedule(): UseScheduleResult {
     creditsPerCourse,
     validationMode, setValidationMode, validateNow, validationStale,
     assign, unassign,
-    createInstructor, updateInstructor, dropInstructor,
+    createInstructor, updateInstructor, addNote, dropInstructor,
     createCourse, updateCourse, dropCourse,
     createUserAccount, updateUserAccount, setTemporaryPassword, deleteUserAccount,
     addSchedule, copySchedule, switchSchedule, deleteSavedSchedule, renameSchedule,

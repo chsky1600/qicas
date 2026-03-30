@@ -16,11 +16,14 @@ interface Props {
   prevTerm: Term
   inViolation: ViolationDegree | null
   isAdmin: boolean
+  highlighted: boolean
+  onHighlight: (sectionId: string | null) => void
 }
 
 export default function SectionChip({
   courseCode, sectionId, sectionNum, isFullYear, isExternal,
   assignmentId, prevInstructorId, prevTerm, inViolation, isAdmin,
+  highlighted, onHighlight,
 }: Props) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `chip-${assignmentId}`,
@@ -33,13 +36,18 @@ export default function SectionChip({
   const suffix = isFullYear ? (prevTerm === "Fall" ? "A" : "B") : ""
   const colour = inViolation ? VIOLATION_COLOUR[inViolation] : "bg-green-500"
   // Tailwind decoration for courses paid for externally
-  const externalDecoration = isExternal ? "outline-dashed outline-2 outline-offset-1 outline-blue-500" : "text-white"
+  const externalOffset = isExternal && highlighted ? "outline-offset-3" : "outline-offset-1"
+  const externalDecoration = isExternal ? `outline-dashed outline-2 ${externalOffset} outline-blue-500` : "text-white"
+
+  const highlightRing = highlighted ? "ring-2 ring-black mx-0.5" : ""
 
   return (
     <span
       ref={setNodeRef} {...listeners} {...attributes}
       style={{ opacity: isDragging ? 0.3 : 1, transform: undefined }}
-      className={`${colour} ${externalDecoration} text-white px-2 py-1 rounded text-sm ${isAdmin ? "cursor-grab" : "cursor-default"} select-none`}
+      className={`${colour} ${externalDecoration} ${highlightRing} text-white px-2 py-1 rounded text-sm ${isAdmin ? "cursor-grab" : "cursor-default"} select-none`}
+      onMouseEnter={() => onHighlight(sectionId)}
+      onMouseLeave={() => onHighlight(null)}
     >
       {courseCode}{suffix}-{sectionNum}
     </span>

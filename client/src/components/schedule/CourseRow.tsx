@@ -20,9 +20,11 @@ interface Props {
   rule: CourseRule | undefined
   assignments: Assignment[]
   isAdmin: boolean
+  highlighted: boolean
+  onHighlight: (sectionId: string | null) => void
 }
 
-export default function CourseRow({ course, section, rule, assignments, isAdmin }: Props) {
+export default function CourseRow({ course, section, rule, assignments, isAdmin, highlighted, onHighlight }: Props) {
   const assignment = assignments.find(a => a.section_id === section.id)
 
   // Tailwind decoration for courses paid for externally
@@ -46,6 +48,9 @@ export default function CourseRow({ course, section, rule, assignments, isAdmin 
     <TableRow
       ref={setNodeRef} {...listeners} {...attributes}
       style={{ opacity: isDragging ? 0.3 : 1, transform: undefined, cursor: isAdmin ? "grab" : "default" }}
+      className={highlighted ? "bg-yellow-100" : ""}
+      onMouseEnter={() => onHighlight(section.id)}
+      onMouseLeave={() => onHighlight(null)}
     >
       <TableCell className="text-center">
         

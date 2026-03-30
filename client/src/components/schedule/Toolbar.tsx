@@ -17,6 +17,7 @@ interface Props {
   onOpenMigration: () => void
   onLogout: () => void
   isAdmin: boolean
+  userName: string | null
   validationMode: ValidationMode
   setValidationMode: (mode: ValidationMode) => void
   validateNow: () => Promise<void>
@@ -54,6 +55,7 @@ export default function Toolbar({
             <img src={icon.spin} alt="Saving..." className="w-8 h-8 animate-spin" /> :
             <img src={icon.cloudSave} alt="All Saved!" className="w-8 h-8" />
           }
+          {userName && <span className="text-sm text-gray-400">{new Date().getHours() >= 18 ? "Bonsoir" : "Bonjour"}, {userName.split(" ")[0]}</span>}
         </div>
       </div>
 
