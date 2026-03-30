@@ -270,6 +270,21 @@ export async function migrateFacultyToNewYear(
     course_rules: cloneWithoutMongoIds(source.course_rules),
   };
 
+  // Populate prev_taught for each instructor in the new year based on the RC schedule
+  const rcSchedule = source.schedules.find(s => s.is_rc)
+  if (rcSchedule) {
+    for (const assignment of rcSchedule.assignments) {
+      const instructor = newYear.instructors.find(i => i.id === assignment.instructor_id)
+      const course = newYear.courses.find(c => c.code === assignment.course_code)
+      if (instructor && course) {
+        const alreadyTaught = instructor.prev_taught.some(c => c.code === course.code)
+        if (!alreadyTaught) {
+          instructor.prev_taught.push(course)
+        }
+      }
+    }
+  }
+
   faculty.academic_years.push(newYear);
   await faculty.save();
   return faculty.toObject() as Faculty;

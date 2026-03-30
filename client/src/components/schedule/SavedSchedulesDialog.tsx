@@ -3,6 +3,7 @@ import { X } from "lucide-react"
 import type { Schedule, Course, CourseRule } from "@/features/schedule/types"
 import { HelpTooltip } from "../ui/help-tooltip.tsx"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import ConfirmDialog from "../ui/confirm-dialog.tsx"
 
 
 interface Props {
@@ -38,6 +39,7 @@ export default function SavedSchedulesDialog({
   const [loading, setLoading] = useState(false)
   const [renameId, setRenameId] = useState<string|null>(null)
   const [renameValue, setRenameValue] = useState<string>("")
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const total = totalSections(courses, courseRules)
 
@@ -158,9 +160,7 @@ export default function SavedSchedulesDialog({
                       </button>
                       {isAdmin && (
                         <button
-                          onClick={() => {
-                            if (window.confirm(`Do you want to delete "${s.name}"?`))onDeleteSavedSchedule(s.id)
-                          }}
+                          onClick={() => setConfirmDeleteId(s.id)}
                           className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
                         >
                           Delete
@@ -169,6 +169,14 @@ export default function SavedSchedulesDialog({
                     </>
                   )}
                   </div>
+                  <ConfirmDialog
+                    open={confirmDeleteId !== null}
+                    title="Delete Schedule"
+                    message={`Are you sure you want to delete "${schedules.find(s => s.id === confirmDeleteId)?.name}"? This cannot be undone.`}
+                    confirmLabel="Delete"
+                    onConfirm={() => { onDeleteSavedSchedule(confirmDeleteId!); setConfirmDeleteId(null) }}
+                    onCancel={() => setConfirmDeleteId(null)}
+                  />
                 </div>
               </div>
             )
