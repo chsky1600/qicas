@@ -1,13 +1,7 @@
 import { useCallback, useRef } from "react"
 import { driver } from "driver.js"
-import type { UseScheduleResult } from "./useSchedule"
 
-type TutorialDeps = Pick<
-  UseScheduleResult,
-  | "courses" | "courseRules"
-  | "instructors" | "instructorRules"
-  | "schedule" | "schedules"
-> & {
+type TutorialDeps = {
   role: "admin" | "support" | null
   onOpenProperties: () => void
   onCloseProperties: () => void

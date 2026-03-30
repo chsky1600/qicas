@@ -36,7 +36,6 @@ export default function SavedSchedulesDialog({
   onAddSchedule, onCopySchedule, onDeleteSavedSchedule, onSwitchSchedule,
   onRenameSchedule, isAdmin,
 }: Props) {
-  const [loading, setLoading] = useState(false)
   const [renameId, setRenameId] = useState<string|null>(null)
   const [renameValue, setRenameValue] = useState<string>("")
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
@@ -169,20 +168,21 @@ export default function SavedSchedulesDialog({
                     </>
                   )}
                   </div>
-                  <ConfirmDialog
-                    open={confirmDeleteId !== null}
-                    title="Delete Schedule"
-                    message={`Are you sure you want to delete "${schedules.find(s => s.id === confirmDeleteId)?.name}"? This cannot be undone.`}
-                    confirmLabel="Delete"
-                    onConfirm={() => { onDeleteSavedSchedule(confirmDeleteId!); setConfirmDeleteId(null) }}
-                    onCancel={() => setConfirmDeleteId(null)}
-                  />
                 </div>
               </div>
             )
           })}
         </div>
       </DialogContent>
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Delete Schedule"
+        message={`Are you sure you want to delete "${schedules.find(s => s.id === confirmDeleteId)?.name}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={() => { onDeleteSavedSchedule(confirmDeleteId!); setConfirmDeleteId(null) }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </Dialog>
   )
 }
+

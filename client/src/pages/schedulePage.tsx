@@ -59,9 +59,6 @@ export default function SchedulePage() {
   }, [])
 
   const { startTutorial } = useTutorial({
-    courses, courseRules,
-    instructors, instructorRules,
-    schedule, schedules,
     role,
     onOpenProperties: () => { setPropertiesMode("instructors"); setPropertiesOpen(true) },
     onCloseProperties: () => setPropertiesOpen(false),
