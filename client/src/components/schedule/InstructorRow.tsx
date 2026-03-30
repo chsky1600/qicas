@@ -1,11 +1,10 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { useDroppable } from "@dnd-kit/core"
+import * as Popover from "@radix-ui/react-popover"
 import SectionChip from "./SectionChip"
 import type { Instructor, InstructorRule, Course, CourseRule, Assignment, Violation } from "@/features/schedule/types"
 import { RANK_DISPLAY } from "@/features/schedule/types"
-import { useAuth } from "@/lib/AuthContext"
 import * as icon from '@/assets/index'
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 
 interface Props {
   instructor: Instructor
@@ -17,11 +16,24 @@ interface Props {
   isAdmin: boolean
   highlightedSectionId: string | null
   onHighlight: (sectionId: string | null) => void
+  onAddNote: (instructor: Instructor, content: string, userName: string) => Promise<void>
+  userName: string | null
 }
 
-export default function InstructorRow({ instructor, rule, courses, courseRules, assignments, violations, isAdmin, highlightedSectionId, onHighlight }: Props) {
-  const { userName } = useAuth()
+export default function InstructorRow({ instructor, rule, courses, courseRules, assignments, violations, isAdmin, highlightedSectionId, onHighlight, onAddNote, userName }: Props) {
   const [showViolations, setShowViolations] = useState(false)
+  const [noteOpen, setNoteOpen] = useState(false)
+  const [noteInput, setNoteInput] = useState("")
+  const [cellHovered, setCellHovered] = useState(false)
+  const noteCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function noteEnter() {
+    if (noteCloseTimer.current) { clearTimeout(noteCloseTimer.current); noteCloseTimer.current = null }
+    setNoteOpen(true)
+  }
+  function noteLeave() {
+    noteCloseTimer.current = setTimeout(() => { setNoteOpen(false); setNoteInput("") }, 150)
+  }
   const fallAssignments = assignments
     .filter(a => a.instructor_id === instructor.id && a.term === "Fall")
     .sort((a, b) => {
@@ -82,6 +94,8 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
   const warnCount = violationCounts.warn
   const errCount = violationCounts.err
 
+  const myNotes = userName ? instructor.notes.filter(n => n.content.trim() && n.created_by === userName) : []
+
   const { setNodeRef: fallRef, isOver: fallOver } = useDroppable({ id: `drop-${instructor.id}-Fall`, data: { type: "instructor", instructorId: instructor.id, term: "Fall" } })
   const { setNodeRef: wintRef, isOver: wintOver } = useDroppable({ id: `drop-${instructor.id}-Winter`, data: { type: "instructor", instructorId: instructor.id, term: "Winter" } })
 
@@ -94,7 +108,11 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
       <tr className="border-b border-gray-200">
 
         {/* -- Info Col -- */}
-        <td className="px-3 py-2 text-sm whitespace-nowrap align-top relative">
+        <td
+          className="px-3 py-2 text-sm whitespace-nowrap align-top relative"
+          onMouseEnter={() => setCellHovered(true)}
+          onMouseLeave={() => setCellHovered(false)}
+        >
           <div className="font-medium">{rankShort} {instructor.name}</div>
           <div className={`text-xs ${workloadExceeded ? "text-orange-500 font-semibold" : "text-gray-500"}`}>
             Workload: {assignedWorkload}/{baseWorkload}
@@ -110,26 +128,65 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
               </div>
             </div>
           )}
-          
-          {userName && instructor.notes.some(n => n.content.trim() && n.created_by === userName) &&
-          <HoverCard openDelay={10} closeDelay={100}>
-            <HoverCardTrigger asChild>
-              <div className="absolute top-2 right-3 bg-gray-200 p-1 rounded-sm hover:bg-gray-300">
-                <img src={icon.notes} alt="Notes" className="w-6 h-6"/>
-              </div>
-            </HoverCardTrigger>
-            <HoverCardContent className="flex w-64 flex-col gap-2 bg-gray-200">
-              <p className="text-xs text-gray-500 italic">Only visible to you</p>
-              {instructor.notes.filter(n => n.content.trim() && n.created_by === userName).map((note, i) => (
-                <div key={i}>
-                  <p className="text-sm whitespace-pre-wrap">{note.content.trim()}</p>
-                  {note.date_created && <p className="text-xs text-gray-500">{note.date_created}</p>}
+
+          {userName && (cellHovered || noteOpen || myNotes.length > 0) && (
+            <Popover.Root open={noteOpen} onOpenChange={o => { setNoteOpen(o); if (!o) setNoteInput("") }}>
+              <Popover.Trigger asChild>
+                <div
+                  onMouseEnter={noteEnter}
+                  onMouseLeave={noteLeave}
+                  className={`absolute top-2 right-3 p-1 rounded-sm cursor-pointer ${myNotes.length > 0 ? "bg-gray-200 hover:bg-gray-300" : "bg-gray-100 hover:bg-gray-200 opacity-40 hover:opacity-100"}`}
+                >
+                  <img src={icon.notes} alt="Notes" className="w-6 h-6"/>
                 </div>
-              ))}
-            </HoverCardContent>
-          </HoverCard>
-          }
-          
+              </Popover.Trigger>
+              <Popover.Portal>
+                <Popover.Content
+                  side="right"
+                  align="start"
+                  sideOffset={8}
+                  onMouseEnter={noteEnter}
+                  onMouseLeave={noteLeave}
+                  onOpenAutoFocus={e => e.preventDefault()}
+                  className="z-50 w-64 rounded-md border border-gray-200 bg-white shadow-lg p-3"
+                >
+                  <p className="text-xs text-gray-500 italic mb-2">Only visible to you</p>
+                  {myNotes.length > 0 && (
+                    <div className="flex flex-col gap-2 mb-2 max-h-48 overflow-y-auto">
+                      {myNotes.map((note, i) => (
+                        <div key={i} className="bg-gray-50 rounded p-2">
+                          <p className="text-sm whitespace-pre-wrap">{note.content.trim()}</p>
+                          {note.date_created && <p className="text-xs text-gray-400 mt-1">{note.date_created}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <textarea
+                    placeholder="Add a note..."
+                    value={noteInput}
+                    onChange={e => setNoteInput(e.target.value.slice(0, 200))}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault()
+                        if (noteInput.trim()) {
+                          onAddNote(instructor, noteInput.trim(), userName)
+                          setNoteInput("")
+                        }
+                      }
+                    }}
+                    rows={2}
+                    className="w-full text-sm border border-gray-200 rounded px-2 py-1 resize-none focus:outline-none focus:border-gray-400"
+                  />
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-xs text-gray-400">{noteInput.length}/200</span>
+                    <span className="text-xs text-gray-400">Enter to save</span>
+                  </div>
+                  <Popover.Arrow className="fill-white" />
+                </Popover.Content>
+              </Popover.Portal>
+            </Popover.Root>
+          )}
+
         </td>
 
         {/* -- Fall Col -- */}

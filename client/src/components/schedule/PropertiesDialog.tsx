@@ -512,11 +512,11 @@ export default function PropertiesDialog({
                     </div>
                   </SectionBox>
 
-                  <SectionBox title="Notes" className="flex-1" bodyClassName="p-0"
+                  <SectionBox title="Notes" className="flex-1 min-w-0" bodyClassName="p-0"
                     action={<span className="text-xs text-gray-600 font-normal italic">Only visible to you</span>}
                   >
-                    <div className="flex flex-col min-h-32">
-                      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                    <div className="flex flex-col min-h-32 overflow-hidden">
+                      <div className="flex-1 overflow-y-auto overflow-x-hidden p-2 space-y-2">
                         {instrEdit.notes.filter(n => n.created_by === userName).length === 0 && (
                           <div className="text-gray-500 text-xs p-1">No notes</div>
                         )}
@@ -524,7 +524,7 @@ export default function PropertiesDialog({
                           if (note.created_by !== userName) return null
                           return (
                             <div key={i} className="text-sm bg-gray-100 border border-gray-300 rounded p-2 relative group">
-                              <div className="pr-5 whitespace-pre-wrap">{note.content}</div>
+                              <div className="pr-5 whitespace-pre-wrap break-all">{note.content}</div>
                               {note.date_created && (
                                 <div className="text-xs text-gray-500 mt-1">{note.date_created}</div>
                               )}

@@ -23,7 +23,7 @@ export default function SchedulePage() {
     schedules, schedule, assignments, violations,
     saving, loading, error,
     assign, unassign,
-    createInstructor, updateInstructor, dropInstructor, updateInstructorRule,
+    createInstructor, updateInstructor, addNote, dropInstructor, updateInstructorRule,
     createCourse, updateCourse, dropCourse, updateCourseRule,
     addSchedule, copySchedule, deleteSavedSchedule, switchSchedule, renameSchedule,
     changeYear, migrateYear,
@@ -166,6 +166,8 @@ export default function SchedulePage() {
               isAdmin={admin}
               highlightedSectionId={highlightedSectionId}
               onHighlight={setHighlightedSectionId}
+              onAddNote={addNote}
+              userName={userName}
             />
           </div>
           <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
@@ -198,6 +200,8 @@ export default function SchedulePage() {
             isAdmin={admin}
             highlightedSectionId={highlightedSectionId}
             onHighlight={setHighlightedSectionId}
+            onAddNote={addNote}
+            userName={userName}
           />
         </div>
       )}

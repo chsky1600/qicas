@@ -29,6 +29,7 @@ export interface UseScheduleResult {
   unassign: (assignmentId: string) => Promise<void>
   createInstructor: (instructor: Instructor, rule: InstructorRule) => Promise<void>
   updateInstructor: (instructor: Instructor) => Promise<void>
+  addNote: (instructor: Instructor, content: string, userName: string) => Promise<void>
   dropInstructor: (instructorId: string, dropped: boolean) => Promise<void>
   createCourse: (course: Course, rule: CourseRule) => Promise<void>
   updateCourse: (course: Course) => Promise<void>
@@ -320,6 +321,15 @@ export function useSchedule(): UseScheduleResult {
     const yr = yearIdRef.current
     if (!yr) return
     const updated = await api.updateInstructor(yr, instructor.id, instructor)
+    setInstructors(prev => prev.map(i => i.id === instructor.id ? updated : i))
+  }, [])
+
+  const addNote = useCallback(async (instructor: Instructor, content: string, userName: string) => {
+    const yr = yearIdRef.current
+    if (!yr) return
+    const note = { content, created_by: userName, date_created: new Date().toISOString().split("T")[0] }
+    const withNote = { ...instructor, notes: [...instructor.notes, note] }
+    const updated = await api.updateInstructor(yr, instructor.id, withNote)
     setInstructors(prev => prev.map(i => i.id === instructor.id ? updated : i))
   }, [])
 
@@ -616,7 +626,7 @@ export function useSchedule(): UseScheduleResult {
     creditsPerCourse,
     validationMode, setValidationMode, validateNow, validationStale,
     assign, unassign,
-    createInstructor, updateInstructor, dropInstructor,
+    createInstructor, updateInstructor, addNote, dropInstructor,
     createCourse, updateCourse, dropCourse,
     addSchedule, copySchedule, switchSchedule, deleteSavedSchedule, renameSchedule,
     changeYear, migrateYear,

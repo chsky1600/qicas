@@ -19,12 +19,15 @@ interface Props {
   isAdmin: boolean
   highlightedSectionId: string | null
   onHighlight: (sectionId: string | null) => void
+  onAddNote: (instructor: any, content: string, userName: string) => Promise<void>
+  userName: string | null
 }
 
 export default function ScheduleTable({
   instructors, instructorRules, courses, courseRules,
   assignments, violations, onAddInstructor, isAdmin,
   highlightedSectionId, onHighlight,
+  onAddNote, userName,
 }: Props) {
   const [search, setSearch] = useState("")
   const [sortBy, setSortBy] = useState<SortBy>(null)
@@ -122,6 +125,8 @@ export default function ScheduleTable({
               isAdmin={isAdmin}
               highlightedSectionId={highlightedSectionId}
               onHighlight={onHighlight}
+              onAddNote={onAddNote}
+              userName={userName}
             />
           ))}
         </tbody>
