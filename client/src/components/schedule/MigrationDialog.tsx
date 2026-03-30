@@ -75,7 +75,6 @@ export default function MigrationDialog({
   async function handleMigration(): Promise<void> {
     const migratingSchedules = Array.from(selectedScheduleIds.values())
     onClose()
-    console.log(newName)
     await onMigrateYear(latestYear.id, newId, newName, migratingSchedules, releaseCandidateId)
     await onOpenProperties()
     setTimeout(()=>{

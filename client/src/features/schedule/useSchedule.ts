@@ -44,7 +44,7 @@ export interface UseScheduleResult {
   deleteSavedSchedule: (scheduleId: string) => Promise<void>
   renameSchedule: (scheduleId: string, newName: string)  => Promise<void>
   switchSchedule: (scheduleId: string) => Promise<void>
-  changeYear: (yearId: string) => Promise<void>
+  changeYear: (yearId: string, finalizeLoading?: boolean) => Promise<void>
   migrateYear: (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[], release_Candidate_Id?: string) => Promise<void>
   refresh: () => Promise<void>
   updateInstructorRule: (ruleId: string, updates: Partial<InstructorRule>) => Promise<void>
@@ -521,10 +521,10 @@ export function useSchedule(): UseScheduleResult {
   }
   // ── Year change ─────────────────────────────────────────────────────────────
 
-  const changeYear = useCallback(async (newYearId: string) => {
+  const changeYear = useCallback(async (newYearId: string, finalizeLoading: boolean = true) => {
     setYearId(newYearId)
     yearIdRef.current = newYearId
-    if (!loading) setLoading(true)
+    setLoading(true)
     setSchedule(null)
     scheduleRef.current = null
     try {
@@ -541,29 +541,38 @@ export function useSchedule(): UseScheduleResult {
     } catch (e) {
       setError((e as Error).message)
     } finally {
-      setLoading(false)
+      if(finalizeLoading) setLoading(false)
     }
   }, [loadYear])
 
   const migrateYear = useCallback(async (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[], release_Candidate_Id?: string) => {
-    if (!loading) setLoading(true)
+    setLoading(true)
     try {
       await api.migrateToNextYear(source_year_id, new_year_id, name, schedule_ids)
       const updatedYears = await api.getYears()
       setYears(updatedYears)
-      if(release_Candidate_Id && release_Candidate_Id.length > 0) await handleReleaseCandidate(release_Candidate_Id)
-      await changeYear(new_year_id)
+
+      let releaseCandidate: Schedule|null = null;
+      if (release_Candidate_Id){
+        releaseCandidate = await api.getSchedule(source_year_id, release_Candidate_Id)      
+      }
+
+      // add release candidate badge on prevYear schedule
+      if (releaseCandidate?.id) await tagReleaseCandidate(releaseCandidate.id)
+      await changeYear(new_year_id, false)
+      
+      // use assignments from release candidate to populate prev-taught of each instructor
+      if(releaseCandidate?.assignments) await PopulatePrevTaught(releaseCandidate?.assignments)
     } catch (e) {
-      console.log(e)
+      console.log("migrate failed", e)
       setError((e as Error).message)
     }
     setLoading(false)
-  }, [changeYear])
+  }, [changeYear, schedules])
 
-  const handleReleaseCandidate = useCallback(async (release_Candidate_Id: string) => {
+  const tagReleaseCandidate = async (release_Candidate_Id: string) => {
     const yr = yearIdRef.current
     if (!yr) return
-    schedules.find((s) => s.id == release_Candidate_Id)
     try {
       await api.setIsRCSchedule(yr, release_Candidate_Id, true)
       setSchedules(prev => prev.map(s => s.id === release_Candidate_Id ? { ...s, is_rc: true } : s))
@@ -572,8 +581,32 @@ export function useSchedule(): UseScheduleResult {
       }
     } catch (e) {
       console.log("setting RC failed", e)
+      return
     }
-  }, [changeYear])
+  }
+
+  const PopulatePrevTaught = async (prev_Taught_Assignments: Assignment[]) => {
+    const yr = yearIdRef.current
+    if (!yr || assignments.length === 0) return    
+
+    const courseMap = new Map<string, Course>();
+    for (const c of courses) {
+      courseMap.set(c.code, c);
+    }
+
+    const instructorMap = new Map<string, Instructor>();
+    for (const i of instructors) {
+      instructorMap.set(i.id, i);
+    }    
+    
+    for (const a of prev_Taught_Assignments) {
+      const i = instructorMap.get(a.instructor_id)
+      const c = courseMap.get(a.course_code)
+      if (!i || !c) continue
+      if(i.prev_taught.some(prevC => prevC.code === c.code)) continue
+      await updateInstructor({ ...i, prev_taught: [...i.prev_taught, c] })      
+    }
+  }
 
   // ── export scheudle ─────────────────────────────────────────────────────────────
   function exportCSV() {
