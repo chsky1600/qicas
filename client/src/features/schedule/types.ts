@@ -1,7 +1,7 @@
 // ── Constants ───────────────────────────────────────────────────────────────
 
 // fallback credit weight per course when faculty setting is not available
-export const DEFAULT_CREDITS_PER_COURSE = 3
+export const DEFAULT_CREDITS_PER_COURSE = 1
 
 // ── Backend types (mirror the API exactly) ────────────────────────────────────
 
