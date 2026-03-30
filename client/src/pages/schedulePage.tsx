@@ -18,7 +18,7 @@ import AccountDialog from "@/components/schedule/AccountDialog"
 import { Toaster } from "@/components/ui/sonner"
 
 export default function SchedulePage() {
-  const { isAdmin: admin, role, logout, fetchSession, userId, name: sessionName, email: sessionEmail } = useAuth()
+  const { isAdmin: admin, role, logout, fetchSession, userId, name: userName, email: userEmail } = useAuth()
   const {
     years, yearId, courses, courseRules,
     instructors, instructorRules, users,
@@ -138,6 +138,7 @@ export default function SchedulePage() {
         schedule={schedule}
         saving={saving}
         role={role}
+        userName={userName}
         onChangeYear={changeYear}
         onOpenProperties={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
         onOpenUsers={() => setUsersOpen(true)}
@@ -148,7 +149,6 @@ export default function SchedulePage() {
         onOpenMigration={() => setMigrationOpen(true)}
         onLogout={logout}
         isAdmin={admin}
-        userName={userName}
         validationMode={validationMode}
         setValidationMode={setValidationMode}
         validateNow={validateNow}
@@ -276,8 +276,8 @@ export default function SchedulePage() {
           const changedPassword = Boolean(newPassword)
           const currentUser = users.find((u) => u.id === userId)
           const profileChanged =
-            name !== (currentUser?.name ?? sessionName ?? "") ||
-            email !== (currentUser?.email ?? sessionEmail ?? "")
+            name !== (currentUser?.name ?? userName ?? "") ||
+            email !== (currentUser?.email ?? userEmail ?? "")
           await api.updateAccount({ name, email })
           if (changedPassword) {
             await api.changePassword(currentPassword, newPassword!)
@@ -304,13 +304,13 @@ export default function SchedulePage() {
       <AccountDialog
         open={accountOpen}
         onClose={() => setAccountOpen(false)}
-        name={sessionName ?? ""}
-        email={sessionEmail ?? ""}
+        name={userName ?? ""}
+        email={userEmail ?? ""}
         onSave={async ({ name, email, currentPassword, newPassword }) => {
           const changedPassword = Boolean(newPassword)
           const profileChanged =
-            name !== (sessionName ?? "") ||
-            email !== (sessionEmail ?? "")
+            name !== (userName ?? "") ||
+            email !== (userEmail ?? "")
           await api.updateAccount({ name, email })
           if (changedPassword) {
             await api.changePassword(currentPassword, newPassword!)

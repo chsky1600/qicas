@@ -27,7 +27,7 @@ interface Props {
 export default function Toolbar({
   years, yearId, schedule, saving,
   role, onChangeYear, onOpenProperties, onOpenUsers, onOpenAccount, onOpenSnapshots, onExportCSV, onStartTutorial, onOpenMigration,
-  onLogout, isAdmin, validationMode, setValidationMode, validateNow, validationStale
+  onLogout, isAdmin, userName, validationMode, setValidationMode, validateNow, validationStale
 }: Props) {
   const migrate = "migrate"
 
