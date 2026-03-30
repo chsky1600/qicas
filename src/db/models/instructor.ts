@@ -9,7 +9,7 @@ export const instructorSchema = new mongoose.Schema<Instructor>(
         id : {type : String, required: true},
         name: {type : String, required: true},
         workload : {type : Number, required: true},
-        email : {type : String, required: true},
+        email : {type : String, required: false},
         rank : {type : String, required: true},
         prev_taught : {type : [courseSchema], required: true},
         notes : {type : [noteSchema], required: true},
