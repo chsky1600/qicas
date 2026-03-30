@@ -13,4 +13,8 @@ export interface User {
   password: string;
   /** Authorization level determining edit vs read-only access */
   role: UserRole;
+  /** Whether the user must change their password before continuing */
+  must_change_password: boolean;
 }
+
+export type PublicUser = Omit<User, "password">;

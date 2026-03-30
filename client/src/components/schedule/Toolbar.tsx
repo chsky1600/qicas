@@ -6,8 +6,11 @@ interface Props {
   yearId: string
   schedule: Schedule | null
   saving: boolean
+  role: "admin" | "support" | null
   onChangeYear: (yearId: string) => void
   onOpenProperties: () => void
+  onOpenUsers: () => void
+  onOpenAccount: () => void
   onOpenSnapshots: () => void
   onExportCSV: () => void
   onStartTutorial: () => void
@@ -23,8 +26,8 @@ interface Props {
 
 export default function Toolbar({
   years, yearId, schedule, saving,
-  onChangeYear, onOpenProperties, onOpenSnapshots, onExportCSV, onStartTutorial, onOpenMigration,
-  onLogout, isAdmin, userName, validationMode, setValidationMode, validateNow, validationStale
+  role, onChangeYear, onOpenProperties, onOpenUsers, onOpenAccount, onOpenSnapshots, onExportCSV, onStartTutorial, onOpenMigration,
+  onLogout, isAdmin, validationMode, setValidationMode, validateNow, validationStale
 }: Props) {
   const migrate = "migrate"
 
@@ -63,6 +66,16 @@ export default function Toolbar({
         {isAdmin && (
           <button id="toolbar-edit-properties" onClick={onOpenProperties} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none">
             <img src={icon.edit} alt="Edit Properties" className="w-6 h-6"/>Edit Properties
+          </button>
+        )}
+        {role === "admin" && (
+          <button onClick={onOpenUsers} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none">
+            <img src={icon.users} alt="Users" className="w-6 h-6"/>Users
+          </button>
+        )}
+        {role === "support" && (
+          <button onClick={onOpenAccount} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none">
+            <img src={icon.user} alt="Account" className="w-6 h-6"/>Account
           </button>
         )}
         <button id="toolbar-saved-schedules" onClick={onOpenSnapshots} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none">

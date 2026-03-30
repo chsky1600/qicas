@@ -9,6 +9,8 @@ import checkBox from './square-bold.svg'
 import checkedBox from './check-square-bold.svg'
 import notes from './note.svg'
 import lightning from './lightning-duotone.svg'
+import user from './user-duotone.svg'
+import users from './users-duotone.svg'
 
 // Icons imported from:
 // https://phosphoricons.com/
@@ -28,4 +30,6 @@ export {
   checkedBox,
   notes,
   lightning,
+  user,
+  users,
 }

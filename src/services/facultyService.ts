@@ -1,5 +1,4 @@
 import { FacultyModel } from "../db/models/faculty";
-import { UserModel } from "../db/models/user";
 import type { AcademicYear, Faculty, User } from "../types";
 
 class ServiceError extends Error {
@@ -133,7 +132,8 @@ export async function deleteFacultyByID(
 }
 
 /**
- * Add an existing user to the faculty's embedded users list.
+ * Legacy helper for faculty-scoped users. Users are already embedded within the
+ * faculty document, so this only validates that the user exists in the faculty.
  *
  * @param faculty_id - Faculty identifier from JWT
  * @param target_id - Faculty id from route param
@@ -149,23 +149,15 @@ export async function addUserToFacultyByID(
     throw new ServiceError(404, "Faculty not found");
   }
 
-  const user = await UserModel.findOne({ id: user_id, faculty_id }).lean();
-  if (!user) {
-    throw new ServiceError(404, "User not found");
-  }
-
   const faculty = await FacultyModel.findOne({ id: faculty_id });
   if (!faculty) {
     throw new ServiceError(404, "Faculty not found");
   }
 
-  const already = faculty.users.some((u: User) => u.id === user_id);
-  if (already) {
-    throw new ServiceError(409, "User already in faculty");
+  const existing = faculty.users.find((u: User) => u.id === user_id);
+  if (!existing) {
+    throw new ServiceError(404, "User not found");
   }
-
-  faculty.users.push(user as User);
-  await faculty.save();
   return faculty.toObject() as Faculty;
 }
 
