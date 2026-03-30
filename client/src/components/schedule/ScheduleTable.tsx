@@ -23,15 +23,13 @@ interface Props {
   onHighlight: (sectionId: string | null) => void
   onAddNote: (instructor: any, content: string, userName: string) => Promise<void>
   userName: string | null
-  previewTarget: { instructorId: string, term: Term } | null
-  dragging: SectionDragData | null
 }
 
 export default function ScheduleTable({
   instructors, instructorRules, courses, courseRules,
   assignments, violations, onAddInstructor, isAdmin,
   highlightedSectionId, onHighlight,
-  onAddNote, userName, previewTarget, dragging,
+  onAddNote, userName,
 }: Props) {
   const [search, setSearch] = useState("")
   const [sortBy, setSortBy] = useState<SortBy>(null)
@@ -131,8 +129,6 @@ export default function ScheduleTable({
               onHighlight={onHighlight}
               onAddNote={onAddNote}
               userName={userName}
-              previewTarget={previewTarget}
-              dragging={dragging}
             />
           ))}
         </tbody>

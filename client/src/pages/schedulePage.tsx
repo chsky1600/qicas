@@ -5,7 +5,7 @@ import type { DragEndEvent, DragStartEvent, DragOverEvent } from "@dnd-kit/core"
 import { useSchedule } from "@/features/schedule/useSchedule"
 import * as api from "@/features/schedule/api"
 import { useTutorial } from "@/features/schedule/useTutorial"
-import type { SectionDragData, InstructorDropData, PanelDropData, Term } from "@/features/schedule/types"
+import type { SectionDragData, InstructorDropData, PanelDropData } from "@/features/schedule/types"
 import { useAuth } from "@/lib/AuthContext"
 import Toolbar from "@/components/schedule/Toolbar"
 import CoursesPanel from "@/components/schedule/CoursesPanel"
@@ -48,17 +48,6 @@ export default function SchedulePage() {
   const [highlightedSectionId, setHighlightedSectionId] = useState<string | null>(null)
   const [propertiesMode, setPropertiesMode] = useState<"instructors" | "courses">("instructors")
   const [propertiesAdd, setPropertiesAdd] = useState(false) // flag to tell properties tab to make a new course/instructor on open
-  const shiftHeldRef = useRef(false)
-  const [previewTarget, setPreviewTarget] = useState<{ instructorId: string; term: Term } | null>(null)
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { shiftHeldRef.current = e.shiftKey }
-    window.addEventListener('keydown', onKey)
-    window.addEventListener('keyup', onKey)
-    return () => {
-      window.removeEventListener('keydown', onKey)
-      window.removeEventListener('keyup', onKey)
-    }
-  }, [])
 
   const { startTutorial } = useTutorial({
     role,
@@ -106,23 +95,14 @@ export default function SchedulePage() {
   }
 
   function handleDragOver(e: DragOverEvent) {
-    const overData = e.over?.data.current as { type?: string; instructorId?: string; term?: Term } | undefined
+    const overData = e.over?.data.current as { type?: string } | undefined
     const isInstructor = overData?.type === "instructor"
-    if (isInstructor && shiftHeldRef.current && validationMode === "auto") {
-      setOverValid(false)
-      setPreviewTarget({ instructorId: overData.instructorId!, term: overData.term! })
-    } else {
-      setOverValid(isInstructor)
-      setPreviewTarget(null)
-    }
+    setOverValid(isInstructor)
   }
 
   function handleDragEnd(e: DragEndEvent) {
-    const wasShift = shiftHeldRef.current
     setDragging(null)
     setOverValid(false)
-    setPreviewTarget(null)
-    if (wasShift) return
 
     const drag = e.active.data.current as SectionDragData
     if (!e.over) return
@@ -209,8 +189,6 @@ export default function SchedulePage() {
               onHighlight={setHighlightedSectionId}
               onAddNote={addNote}
               userName={userName}
-              previewTarget={previewTarget}
-              dragging={dragging}
             />
           </div>
           <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
@@ -245,8 +223,6 @@ export default function SchedulePage() {
             onHighlight={setHighlightedSectionId}
             onAddNote={addNote}
             userName={userName}
-            previewTarget={previewTarget}
-            dragging={dragging}
           />
         </div>
       )}
