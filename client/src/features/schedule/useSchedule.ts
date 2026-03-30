@@ -562,13 +562,13 @@ export function useSchedule(): UseScheduleResult {
       await changeYear(new_year_id, false)
       
       // use assignments from release candidate to populate prev-taught of each instructor
-      if(releaseCandidate?.assignments) await PopulatePrevTaught(releaseCandidate?.assignments)
+      if(releaseCandidate?.assignments) await populatePrevTaught(releaseCandidate?.assignments)
     } catch (e) {
       console.log("migrate failed", e)
       setError((e as Error).message)
     }
     setLoading(false)
-  }, [changeYear, schedules])
+  }, [changeYear])
 
   const tagReleaseCandidate = async (release_Candidate_Id: string) => {
     const yr = yearIdRef.current
@@ -585,9 +585,9 @@ export function useSchedule(): UseScheduleResult {
     }
   }
 
-  const PopulatePrevTaught = async (prev_Taught_Assignments: Assignment[]) => {
+  const populatePrevTaught = async (prev_Taught_Assignments: Assignment[]) => {
     const yr = yearIdRef.current
-    if (!yr || assignments.length === 0) return
+    if (!yr || prev_Taught_Assignments.length === 0) return
     
     // get fresh copies of curent courses and instructors
     const freshCourses = await api.getCourses(yr)
