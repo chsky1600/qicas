@@ -14,10 +14,11 @@ interface Props {
   schedules: Schedule[]
   onMigrateYear: (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]) => Promise<void>
   onOpenProperties: () => void
+  skipYearCheck?: boolean
 }
 
 export default function MigrationDialog({
-  open, onClose, years, loadedYearId, activeSchedule, schedules, onMigrateYear, onOpenProperties
+  open, onClose, years, loadedYearId, activeSchedule, schedules, onMigrateYear, onOpenProperties, skipYearCheck
 }: Props) {
   const [confirmMigration, setConfirmMigration] = useState(false);
   const [scheduleIds, setScheduleIds] = useState(new Set<string>());
@@ -25,7 +26,7 @@ export default function MigrationDialog({
   
 
   useEffect(() => {
-    if(open && loadedYearId !== latestYear.id){
+    if(open && !skipYearCheck && loadedYearId !== latestYear.id){
       toast.warning(`To create a new academic year you must have the latest year open.`, {
         duration: 8000,
         description: <span>Please open <b>{latestYear.name}</b> and try again.</span>,
@@ -33,9 +34,9 @@ export default function MigrationDialog({
       })
       onClose()
     }
-  }, [open, loadedYearId, latestYear.id])
+  }, [open, loadedYearId, latestYear.id, skipYearCheck])
 
-  if (!open || loadedYearId !== latestYear.id) return null
+  if (!open || (!skipYearCheck && loadedYearId !== latestYear.id)) return null
   
   function toggle(id: string){
     setScheduleIds(prev => {
@@ -74,23 +75,27 @@ export default function MigrationDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
     <DialogContent
-        id="saved-schedules-dialog"
+        id="migration-dialog"
         showCloseButton={false}
         onInteractOutside={(e) => {
-          const target = e.target as Element
-          if (target.closest?.("#driver-popover-content")) e.preventDefault()
+          if (document.querySelector("#driver-popover-content")) e.preventDefault()
         }}
         className="p-0 gap-0 w-1/2 h-auto flex flex-col rounded-lg overflow-hidden"
       >
       <div className="bg-white rounded-lg shadow-xl flex flex-col">
         <DialogTitle className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
           <span className="text-white font-semibold text-base">Creating {newName} Academic year</span>       
-          <button onClick={onClose} className="text-white hover:text-gray-300">
+          <button id="migration-dialog-close" onClick={onClose} className="text-white hover:text-gray-300">
             <X size={18} />
           </button>
         </DialogTitle>
         { !confirmMigration ?
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
+          {skipYearCheck && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded px-3 py-2 text-sm text-yellow-800">
+              Tutorial mode - switch to the latest academic year to use this feature.
+            </div>
+          )}
           <h4><span className="text-red-700 font-bold">Important!</span> You are about to create academic year <b>{newName}</b></h4>
           <p>
             Once created, academic years <span className="text-red-700 font-bold">cannot be deleted</span>.
@@ -136,7 +141,7 @@ export default function MigrationDialog({
                 </div>
               </li>
             ))}
-            <button onClick={() => setConfirmMigration(true)} className="w-full text-md bg-gray-800 text-white px-10 py-1 rounded hover:bg-gray-500">
+            <button onClick={() => setConfirmMigration(true)} disabled={skipYearCheck} className="w-full text-md bg-gray-800 text-white px-10 py-1 rounded hover:bg-gray-500 disabled:cursor-not-allowed">
               Create new academic year
             </button>
           </ul>

@@ -402,7 +402,11 @@ export default function UserManagementDialog({
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose() }}>
       <DialogContent
+        id="users-dialog"
         showCloseButton={false}
+        onInteractOutside={(e) => {
+          if (document.querySelector("#driver-popover-content")) e.preventDefault()
+        }}
         className="flex w-[calc(100vw-2rem)] max-w-[980px] h-[calc(100vh-2rem)] max-h-[720px] flex-col p-0 gap-0 overflow-hidden rounded-lg"
       >
         <DialogDescription className="sr-only">
@@ -416,7 +420,7 @@ export default function UserManagementDialog({
               description="Use this panel to create users, update roles, and manage faculty access. Admins can promote, demote, and remove users here, but each faculty must always retain at least one admin."
             />
           </div>
-          <button onClick={onClose} className="text-white hover:text-gray-300">
+          <button id="users-dialog-close" onClick={onClose} className="text-white hover:text-gray-300">
             <X size={18} />
           </button>
         </div>

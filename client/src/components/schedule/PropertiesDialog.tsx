@@ -292,8 +292,7 @@ export default function PropertiesDialog({
         id="properties-dialog"
         showCloseButton={false}
         onInteractOutside={(e) => {
-          const target = e.target as Element
-          if (target.closest?.("#driver-popover-content")) e.preventDefault()
+          if (document.querySelector("#driver-popover-content")) e.preventDefault()
         }}
         className={`w-[1100px] p-0 gap-0 border border-black rounded-md ${showDesignated ? "h-145" : "h-130"}`}
       >
@@ -649,15 +648,21 @@ export default function PropertiesDialog({
                       onBlur={() => setCourseRuleEdit(p => p ? { ...p, workload_fulfillment: snapToStep(p.workload_fulfillment, step, step) } : p)} />
                   </FormRow>
                   <FormRow label="Paid By" labelClassName="w-auto">
-                    <select className="border border-black rounded-md px-1 py-1 bg-white"
-                      value={courseRuleEdit.is_external ? "faculty" : "department"}
-                      onChange={e => {
-                        setChangeMade(true)
-                        setCourseRuleEdit(p => p ? { ...p, is_external: e.target.value === "faculty" } : p)
-                      }}>
-                      <option value="department">Department (Internal)</option>
-                      <option value="faculty">Faculty (External)</option>
-                    </select>
+                    <div className="flex items-center gap-2">
+                      <select className="border border-black rounded-md px-1 py-1 bg-white"
+                        value={courseRuleEdit.is_external ? "faculty" : "department"}
+                        onChange={e => {
+                          setChangeMade(true)
+                          setCourseRuleEdit(p => p ? { ...p, is_external: e.target.value === "faculty" } : p)
+                        }}>
+                        <option value="department">Department (Internal)</option>
+                        <option value="faculty">Faculty (External)</option>
+                      </select>
+                      <HelpTooltip
+                        title="External Courses"
+                        description="Faculty-paid (external) courses appear with a dashed blue underline on their chips in the schedule and courses panel."
+                      />
+                    </div>
                   </FormRow>
                 </div>
 

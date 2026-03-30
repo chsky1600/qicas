@@ -11,7 +11,7 @@ const facultySchema = new mongoose.Schema<Faculty>(
         users : {type : [userSchema], required : true},
         academic_years: {type : [academicYearSchema], required: true},
         current_working_schedule_id : {type : String, required: false},
-        credits_per_course : {type : Number, required: true, default: 1, min: 0.5},
+        credits_per_course : {type : Number, required: true, default: 3, min: 0.5},
     }
 );
 

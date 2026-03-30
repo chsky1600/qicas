@@ -69,12 +69,12 @@ export default function Toolbar({
           </button>
         )}
         {role === "admin" && (
-          <button onClick={onOpenUsers} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none">
+          <button id="toolbar-users" onClick={onOpenUsers} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none">
             <img src={icon.users} alt="Users" className="w-6 h-6"/>Users
           </button>
         )}
         {role === "support" && (
-          <button onClick={onOpenAccount} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none">
+          <button id="toolbar-account" onClick={onOpenAccount} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none">
             <img src={icon.user} alt="Account" className="w-6 h-6"/>Account
           </button>
         )}
@@ -86,6 +86,7 @@ export default function Toolbar({
         </button>
         {isAdmin && (validationMode === "auto" ? (
           <button
+            id="toolbar-validation-mode"
             onClick={() => setValidationMode("manual")}
             className="group flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none"
           >
@@ -93,7 +94,7 @@ export default function Toolbar({
             <span className="hidden group-hover:inline">Switch to Manual</span>
           </button>
         ) : (
-          <div className="relative group">
+          <div id="toolbar-validation-mode" className="relative group">
             <button
               onClick={(e) => { (e.target as HTMLElement).blur(); validateNow() }}
               className={`flex items-center justify-center gap-2 text-white px-4 py-2 rounded text-sm cursor-pointer transition-colors bg-[#1a1a1a] border hover:bg-[#3c3c3c] focus:outline-none ${validationStale ? "border-green-500 animate-pulse" : "border-[#444]"}`}

@@ -56,8 +56,7 @@ export default function SavedSchedulesDialog({
         id="saved-schedules-dialog"
         showCloseButton={false}
         onInteractOutside={(e) => {
-          const target = e.target as Element
-          if (target.closest?.("#driver-popover-content")) e.preventDefault()
+          if (document.querySelector("#driver-popover-content")) e.preventDefault()
         }}
         className="p-0 gap-0 w-[700px] max-h-[70vh] h-auto flex flex-col rounded-lg overflow-hidden"
       >
