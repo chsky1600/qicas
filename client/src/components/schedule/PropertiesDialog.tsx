@@ -246,7 +246,11 @@ export default function PropertiesDialog({
   function removeSection(secId: string) {
     if (!courseEdit) return
     setChangeMade(true)
-    setCourseEdit(p => p ? { ...p, sections: p.sections.filter(s => s.id !== secId) } : p)
+    setCourseEdit(p => {
+      if (!p) return p
+      const filtered = p.sections.filter(s => s.id !== secId)
+      return { ...p, sections: filtered.map((s, i) => ({ ...s, number: i + 1 })) }
+    })
     setConfirmRemove(null)
   }
 
