@@ -65,7 +65,9 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
           <span className="font-semibold text-sm text-gray-700">Courses</span>
           <HelpTooltip
             title="Courses Panel"
-            description="Lists all active courses for the year. Drag a chip onto an instructor's Fall or Winter cell to assign it. Drag it back here to unassign."
+            description={isAdmin
+              ? "Lists all active courses for the year. Drag a chip onto an instructor's Fall or Winter cell to assign it. Drag it back here to unassign."
+              : "Lists all active courses for the year. Hover a row to highlight its chip on the schedule."}
           />
         </div>
         {isAdmin && (

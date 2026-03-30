@@ -16,14 +16,14 @@ import SectionChip from "@/components/schedule/SectionChip"
 import { Toaster } from "@/components/ui/sonner"
 
 export default function SchedulePage() {
-  const { isAdmin: admin, logout } = useAuth()
+  const { isAdmin: admin, userName, logout } = useAuth()
   const {
     years, yearId, courses, courseRules,
     instructors, instructorRules,
     schedules, schedule, assignments, violations,
     saving, loading, error,
     assign, unassign,
-    createInstructor, updateInstructor, dropInstructor, updateInstructorRule,
+    createInstructor, updateInstructor, addNote, dropInstructor, updateInstructorRule,
     createCourse, updateCourse, dropCourse, updateCourseRule,
     addSchedule, copySchedule, deleteSavedSchedule, switchSchedule, renameSchedule,
     changeYear, migrateYear,
@@ -136,6 +136,7 @@ export default function SchedulePage() {
         onOpenMigration={() => setMigrationOpen(true)}
         onLogout={logout}
         isAdmin={admin}
+        userName={userName}
         validationMode={validationMode}
         setValidationMode={setValidationMode}
         validateNow={validateNow}
@@ -165,6 +166,8 @@ export default function SchedulePage() {
               isAdmin={admin}
               highlightedSectionId={highlightedSectionId}
               onHighlight={setHighlightedSectionId}
+              onAddNote={addNote}
+              userName={userName}
             />
           </div>
           <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
@@ -197,6 +200,8 @@ export default function SchedulePage() {
             isAdmin={admin}
             highlightedSectionId={highlightedSectionId}
             onHighlight={setHighlightedSectionId}
+            onAddNote={addNote}
+            userName={userName}
           />
         </div>
       )}
@@ -220,6 +225,7 @@ export default function SchedulePage() {
         onDropCourse={dropCourse}
         onUpdateCourseRule={updateCourseRule}
         creditsPerCourse={creditsPerCourse}
+        userName={userName ?? "Unknown"}
       />
 
       <SavedSchedulesDialog
