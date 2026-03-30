@@ -16,7 +16,7 @@ import SectionChip from "@/components/schedule/SectionChip"
 import { Toaster } from "@/components/ui/sonner"
 
 export default function SchedulePage() {
-  const { isAdmin: admin, logout } = useAuth()
+  const { isAdmin: admin, userName, logout } = useAuth()
   const {
     years, yearId, courses, courseRules,
     instructors, instructorRules,
@@ -136,6 +136,7 @@ export default function SchedulePage() {
         onOpenMigration={() => setMigrationOpen(true)}
         onLogout={logout}
         isAdmin={admin}
+        userName={userName}
         validationMode={validationMode}
         setValidationMode={setValidationMode}
         validateNow={validateNow}
@@ -220,6 +221,7 @@ export default function SchedulePage() {
         onDropCourse={dropCourse}
         onUpdateCourseRule={updateCourseRule}
         creditsPerCourse={creditsPerCourse}
+        userName={userName ?? "Unknown"}
       />
 
       <SavedSchedulesDialog

@@ -3,6 +3,7 @@ import { useDroppable } from "@dnd-kit/core"
 import SectionChip from "./SectionChip"
 import type { Instructor, InstructorRule, Course, CourseRule, Assignment, Violation } from "@/features/schedule/types"
 import { RANK_DISPLAY } from "@/features/schedule/types"
+import { useAuth } from "@/lib/AuthContext"
 import * as icon from '@/assets/index'
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export default function InstructorRow({ instructor, rule, courses, courseRules, assignments, violations, isAdmin, highlightedSectionId, onHighlight }: Props) {
+  const { userName } = useAuth()
   const [showViolations, setShowViolations] = useState(false)
   const fallAssignments = assignments
     .filter(a => a.instructor_id === instructor.id && a.term === "Fall")
@@ -109,17 +111,21 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
             </div>
           )}
           
-          {instructor?.notes[0] && instructor?.notes[0].content.trim() &&
+          {userName && instructor.notes.some(n => n.content.trim() && n.created_by === userName) &&
           <HoverCard openDelay={10} closeDelay={100}>
             <HoverCardTrigger asChild>
-              <div className="absolute top-2 right-3 bg-gray-200 p-1 rounded-sm hover:bg-gray-300">           
-                <img src={icon.notes} alt="Settings" className="w-6 h-6"/>
+              <div className="absolute top-2 right-3 bg-gray-200 p-1 rounded-sm hover:bg-gray-300">
+                <img src={icon.notes} alt="Notes" className="w-6 h-6"/>
               </div>
             </HoverCardTrigger>
-            <HoverCardContent className="flex w-64 flex-col gap-0.5 bg-gray-200">
-              <p>
-                {instructor.notes[0].content.trim()}
-              </p>
+            <HoverCardContent className="flex w-64 flex-col gap-2 bg-gray-200">
+              <p className="text-xs text-gray-500 italic">Only visible to you</p>
+              {instructor.notes.filter(n => n.content.trim() && n.created_by === userName).map((note, i) => (
+                <div key={i}>
+                  <p className="text-sm whitespace-pre-wrap">{note.content.trim()}</p>
+                  {note.date_created && <p className="text-xs text-gray-500">{note.date_created}</p>}
+                </div>
+              ))}
             </HoverCardContent>
           </HoverCard>
           }

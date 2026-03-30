@@ -70,7 +70,9 @@ export default function ScheduleTable({
                   Instructor
                   <HelpTooltip
                     title="Schedule Table"
-                    description="Each row is an instructor. Drop chips in Fall or Winter to assign. Drag a chip back to the Courses panel to unassign, or to another row to reassign."
+                    description={isAdmin
+                      ? "Each row is an instructor. Drop chips in Fall or Winter to assign. Drag a chip back to the Courses panel to unassign, or to another row to reassign."
+                      : "Each row is an instructor with their Fall and Winter course assignments."}
                   />
                 </div>
                 <div className="flex items-center gap-1">

@@ -37,6 +37,7 @@ interface Props {
   onDropCourse: (code: string, dropped: boolean) => Promise<void>
   onUpdateCourseRule: (ruleId: string, updates: Partial<CourseRule>) => Promise<void>
   creditsPerCourse?: number
+  userName: string
 }
 
 // snap a value to the nearest multiple of step on blur
@@ -70,6 +71,7 @@ export default function PropertiesDialog({
   onCreateInstructor, onUpdateInstructor, onDropInstructor, onUpdateInstructorRule,
   onCreateCourse, onUpdateCourse, onDropCourse, onUpdateCourseRule,
   creditsPerCourse: creditsPerCourseProp,
+  userName,
 }: Props) {
   const cpc = creditsPerCourseProp ?? DEFAULT_CREDITS_PER_COURSE
   const step = cpc / 2
@@ -86,6 +88,7 @@ export default function PropertiesDialog({
   const [confirmCode, setConfirmCode] = useState("")
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [noteInput, setNoteInput] = useState("")
   useEffect(() => { if (open) setMode(defaultMode ?? "instructors") }, [open, defaultMode])
 
   const instrItems = useMemo(() =>
@@ -111,8 +114,9 @@ export default function PropertiesDialog({
     if (mode === "instructors") {
       const id = items[selectedIndex]?.id
       const i = instructors.find(x => x.id === id)
-      setInstrEdit(i ? { ...i, prev_taught: [...i.prev_taught] } : null)
+      setInstrEdit(i ? { ...i, prev_taught: [...i.prev_taught], notes: i.notes.map(n => ({ ...n })) } : null)
       setInstrRuleEdit(i ? { ...(instructorRules.find(r => r.instructor_id === i.id) ?? blankInstructorRule(i.id)) } : null)
+      setNoteInput("")
     } else {
       const id = items[selectedIndex]?.id
       const c = courses.find(x => x.id === id)
@@ -417,7 +421,7 @@ export default function PropertiesDialog({
                 {(instrEdit.rank === "TermAdjunctSRoR" || instrEdit.rank === "TermAdjunctGRoR") && (
                   <SectionBox title="Designated Courses" className="w-full mb-5"
                     action={
-                      <select className="text-xs border border-gray-300 rounded px-1" value=""
+                      <select className="text-xs border border-black rounded px-1 pr-0" value=""
                         onChange={e => {
                           if (!e.target.value) return
                           const code = e.target.value
@@ -483,7 +487,7 @@ export default function PropertiesDialog({
                 <div className="flex gap-8 mb-5">
                   <SectionBox title="Previously Taught" className="w-80"
                     action={
-                      <select className="text-xs border border-gray-300 rounded px-1" value=""
+                      <select className="text-xs border border-black rounded px-1 pr-0" value=""
                         onChange={e => { if (e.target.value) addPrevTaught(e.target.value) }}>
                         <option value="">+ Add</option>
                         {courses.filter(c => !instrEdit.prev_taught.some(p => p.code === c.code)).map(c => (
@@ -508,13 +512,63 @@ export default function PropertiesDialog({
                     </div>
                   </SectionBox>
 
-                  <SectionBox title="Notes" className="flex-1" bodyClassName="p-0">
-                    <textarea className="w-full h-32 p-3 text-sm outline-none resize-none" placeholder="Write here..."
-                      value={instrEdit.notes.map(n => n.content).join("\n")}
-                      onChange={e => {
-                        setChangeMade(true)
-                        setInstrEdit(p => p ? { ...p, notes: e.target.value ? [{ content: e.target.value }] : [] } : p)
-                      }} />
+                  <SectionBox title="Notes" className="flex-1" bodyClassName="p-0"
+                    action={<span className="text-xs text-gray-600 font-normal italic">Only visible to you</span>}
+                  >
+                    <div className="flex flex-col min-h-32">
+                      <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                        {instrEdit.notes.filter(n => n.created_by === userName).length === 0 && (
+                          <div className="text-gray-500 text-xs p-1">No notes</div>
+                        )}
+                        {instrEdit.notes.map((note, i) => {
+                          if (note.created_by !== userName) return null
+                          return (
+                            <div key={i} className="text-sm bg-gray-100 border border-gray-300 rounded p-2 relative group">
+                              <div className="pr-5 whitespace-pre-wrap">{note.content}</div>
+                              {note.date_created && (
+                                <div className="text-xs text-gray-500 mt-1">{note.date_created}</div>
+                              )}
+                              <button
+                                className="absolute top-1.5 right-1.5 text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 text-xs"
+                                onClick={() => {
+                                  setChangeMade(true)
+                                  setInstrEdit(p => p ? { ...p, notes: p.notes.filter((_, j) => j !== i) } : p)
+                                }}>
+                                <X size={14} />
+                              </button>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <div className="border-t border-gray-300">
+                        <div className="flex">
+                          <textarea className="flex-1 text-sm px-2 py-1.5 outline-none resize-none" rows={2} placeholder="Add a note..."
+                            maxLength={200}
+                            value={noteInput}
+                            onChange={e => setNoteInput(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === "Enter" && !e.shiftKey && noteInput.trim()) {
+                                e.preventDefault()
+                                setChangeMade(true)
+                                setInstrEdit(p => p ? { ...p, notes: [...p.notes, { content: noteInput.trim(), created_by: userName, date_created: new Date().toISOString().split("T")[0] }] } : p)
+                                setNoteInput("")
+                              }
+                            }} />
+                          <button
+                            className="px-3 text-sm font-medium text-gray-600 hover:text-black disabled:opacity-30 self-end pb-1.5"
+                            disabled={!noteInput.trim()}
+                            onClick={() => {
+                              if (!noteInput.trim()) return
+                              setChangeMade(true)
+                              setInstrEdit(p => p ? { ...p, notes: [...p.notes, { content: noteInput.trim(), created_by: userName, date_created: new Date().toISOString().split("T")[0] }] } : p)
+                              setNoteInput("")
+                            }}>
+                            Add
+                          </button>
+                        </div>
+                        <div className="text-xs text-gray-400 text-right px-2 pb-1">{noteInput.length}/200</div>
+                      </div>
+                    </div>
                   </SectionBox>
                 </div>
               </>
