@@ -1,6 +1,5 @@
 import { FacultyModel } from "../db/models/faculty";
-import { UserModel } from "../db/models/user";
-import type { User } from "../types";
+import type { User, UserRole } from "../types";
 
 class ServiceError extends Error {
   status: number;
@@ -15,6 +14,43 @@ export function isUserServiceError(err: unknown): err is ServiceError {
   return err instanceof ServiceError;
 }
 
+function assertValidRole(role: unknown): asserts role is UserRole {
+  if (role !== "admin" && role !== "support") {
+    throw new ServiceError(400, "Role must be admin or support");
+  }
+}
+
+function assertValidPassword(password: string) {
+  if (password.length < 8) {
+    throw new ServiceError(400, "Password must be at least 8 characters");
+  }
+}
+
+function omitUndefined<T extends Record<string, unknown>>(value: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, fieldValue]) => fieldValue !== undefined)
+  ) as Partial<T>;
+}
+
+async function countAdmins(faculty_id: string): Promise<number> {
+  const faculty = await FacultyModel.findOne(
+    { id: faculty_id },
+    { users: 1, _id: 0 }
+  ).lean();
+  if (!faculty) {
+    throw new ServiceError(404, "Faculty not found");
+  }
+  return faculty.users.filter((user: User) => user.role === "admin").length;
+}
+
+async function getFacultyDocument(faculty_id: string) {
+  const faculty = await FacultyModel.findOne({ id: faculty_id });
+  if (!faculty) {
+    throw new ServiceError(404, "Faculty not found");
+  }
+  return faculty;
+}
+
 /**
  * Get all users scoped to a faculty.
  *
@@ -22,7 +58,14 @@ export function isUserServiceError(err: unknown): err is ServiceError {
  * @returns Array of users for the faculty
  */
 export async function getAllUsers(faculty_id: string): Promise<User[]> {
-  return UserModel.find({ faculty_id }).lean();
+  const faculty = await FacultyModel.findOne(
+    { id: faculty_id },
+    { users: 1, _id: 0 }
+  ).lean();
+  if (!faculty) {
+    throw new ServiceError(404, "Faculty not found");
+  }
+  return faculty.users as User[];
 }
 
 /**
@@ -36,7 +79,14 @@ export async function getUserByID(
   faculty_id: string,
   user_id: string
 ): Promise<User> {
-  const user = await UserModel.findOne({ faculty_id, id: user_id }).lean();
+  const faculty = await FacultyModel.findOne(
+    { id: faculty_id },
+    { users: 1, _id: 0 }
+  ).lean();
+  if (!faculty) {
+    throw new ServiceError(404, "Faculty not found");
+  }
+  const user = faculty.users.find((candidate: User) => candidate.id === user_id);
   if (!user) {
     throw new ServiceError(404, "User not found");
   }
@@ -54,17 +104,24 @@ export async function createUser(
   faculty_id: string,
   user: User
 ): Promise<User> {
-  const exists = await UserModel.findOne({ faculty_id, id: user.id }).lean();
+  assertValidRole(user.role);
+  assertValidPassword(user.password);
+  const faculty = await getFacultyDocument(faculty_id);
+  const exists = faculty.users.some((candidate: User) => candidate.id === user.id);
   if (exists) {
     throw new ServiceError(409, "User id already exists");
   }
-  const created = await UserModel.create({ ...user, faculty_id });
-  const createdUser = created.toObject() as User;
 
-  await FacultyModel.updateOne(
-    { id: faculty_id, "users.id": { $ne: createdUser.id } },
-    { $push: { users: createdUser } }
-  );
+  const hashedPassword = await Bun.password.hash(user.password);
+  const createdUser = {
+    ...user,
+    faculty_id,
+    password: hashedPassword,
+    must_change_password: user.must_change_password ?? false,
+  } as User;
+
+  faculty.users.push(createdUser);
+  await faculty.save();
 
   return createdUser;
 }
@@ -83,25 +140,51 @@ export async function updateUserByID(
   updates: Partial<User>
 ): Promise<User> {
   const safeUpdates = updates ?? {};
-  const updated = await UserModel.findOneAndUpdate(
-    { faculty_id, id: user_id },
-    { $set: { ...safeUpdates, id: user_id, faculty_id } },
-    { new: true }
-  ).lean();
-  if (!updated) {
+  const faculty = await getFacultyDocument(faculty_id);
+  const existingIndex = faculty.users.findIndex(
+    (candidate: User) => candidate.id === user_id
+  );
+  if (existingIndex === -1) {
     throw new ServiceError(404, "User not found");
   }
-  const syncUpdate = await FacultyModel.updateOne(
-    { id: faculty_id, "users.id": user_id },
-    { $set: { "users.$": updated } }
-  );
-  if (syncUpdate.matchedCount === 0) {
-    await FacultyModel.updateOne(
-      { id: faculty_id, "users.id": { $ne: user_id } },
-      { $push: { users: updated } }
-    );
+  const existing = faculty.users[existingIndex] as User;
+
+  if (safeUpdates.role !== undefined) {
+    assertValidRole(safeUpdates.role);
+    if (
+      existing.role === "admin" &&
+      safeUpdates.role !== "admin" &&
+      (await countAdmins(faculty_id)) <= 1
+    ) {
+      throw new ServiceError(409, "Faculty must retain at least one admin");
+    }
   }
-  return updated as User;
+
+  const updatePayload = omitUndefined({
+    name: safeUpdates.name,
+    email: safeUpdates.email,
+    role: safeUpdates.role,
+    must_change_password: safeUpdates.must_change_password,
+  });
+
+  const userDoc = faculty.users[existingIndex] as User & {
+    toObject?: () => User;
+    password?: string;
+  };
+
+  if (updatePayload.name !== undefined) userDoc.name = updatePayload.name;
+  if (updatePayload.email !== undefined) userDoc.email = updatePayload.email;
+  if (updatePayload.role !== undefined) userDoc.role = updatePayload.role;
+  if (updatePayload.must_change_password !== undefined) userDoc.must_change_password = updatePayload.must_change_password;
+  if (safeUpdates.password !== undefined) {
+    assertValidPassword(safeUpdates.password);
+    userDoc.password = await Bun.password.hash(safeUpdates.password);
+  }
+
+  await faculty.save();
+  return typeof userDoc.toObject === "function"
+    ? (userDoc.toObject() as User)
+    : (userDoc as User);
 }
 
 /**
@@ -115,16 +198,19 @@ export async function deleteUserByID(
   faculty_id: string,
   user_id: string
 ): Promise<User> {
-  const deleted = await UserModel.findOneAndDelete({
-    faculty_id,
-    id: user_id,
-  }).lean();
-  if (!deleted) {
+  const faculty = await getFacultyDocument(faculty_id);
+  const existingIndex = faculty.users.findIndex(
+    (candidate: User) => candidate.id === user_id
+  );
+  if (existingIndex === -1) {
     throw new ServiceError(404, "User not found");
   }
-  await FacultyModel.updateOne(
-    { id: faculty_id },
-    { $pull: { users: { id: user_id } } }
-  );
-  return deleted as User;
+  const existing = faculty.users[existingIndex] as User;
+  if (existing.role === "admin" && (await countAdmins(faculty_id)) <= 1) {
+    throw new ServiceError(409, "Faculty must retain at least one admin");
+  }
+
+  faculty.users.splice(existingIndex, 1);
+  await faculty.save();
+  return existing;
 }

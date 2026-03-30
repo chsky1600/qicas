@@ -3,6 +3,7 @@ import { DndContext, DragOverlay, PointerSensor, useSensor, useSensors } from "@
 import { snapCenterToCursor } from "@dnd-kit/modifiers"
 import type { DragEndEvent, DragStartEvent, DragOverEvent } from "@dnd-kit/core"
 import { useSchedule } from "@/features/schedule/useSchedule"
+import * as api from "@/features/schedule/api"
 import { useTutorial } from "@/features/schedule/useTutorial"
 import type { SectionDragData, InstructorDropData, PanelDropData } from "@/features/schedule/types"
 import { useAuth } from "@/lib/AuthContext"
@@ -12,22 +13,24 @@ import ScheduleTable from "@/components/schedule/ScheduleTable"
 import PropertiesDialog from "@/components/schedule/PropertiesDialog"
 import SavedSchedulesDialog from "@/components/schedule/SavedSchedulesDialog"
 import MigrationDialog from "@/components/schedule/MigrationDialog"
-import SectionChip from "@/components/schedule/SectionChip"
+import UserManagementDialog from "@/components/schedule/UserManagementDialog"
+import AccountDialog from "@/components/schedule/AccountDialog"
 import { Toaster } from "@/components/ui/sonner"
 
 export default function SchedulePage() {
-  const { isAdmin: admin, logout } = useAuth()
+  const { isAdmin: admin, role, logout, fetchSession, userId, name: sessionName, email: sessionEmail } = useAuth()
   const {
     years, yearId, courses, courseRules,
-    instructors, instructorRules,
+    instructors, instructorRules, users,
     schedules, schedule, assignments, violations,
     saving, loading, error,
     assign, unassign,
     createInstructor, updateInstructor, dropInstructor, updateInstructorRule,
     createCourse, updateCourse, dropCourse, updateCourseRule,
+    createUserAccount, updateUserAccount, setTemporaryPassword, deleteUserAccount,
     addSchedule, copySchedule, deleteSavedSchedule, switchSchedule, renameSchedule,
     changeYear, migrateYear,
-    exportCSV,
+    exportCSV, refresh,
     creditsPerCourse,
     validationMode, setValidationMode, validateNow, validationStale
   } = useSchedule()
@@ -35,6 +38,8 @@ export default function SchedulePage() {
   const [propertiesOpen, setPropertiesOpen] = useState(false)
   const [snapshotsOpen, setSnapshotsOpen] = useState(false)
   const [migrationOpen, setMigrationOpen] = useState(false)
+  const [usersOpen, setUsersOpen] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
   const [dragging, setDragging] = useState<SectionDragData | null>(null)
   const [overValid, setOverValid] = useState(false)
   const [propertiesMode, setPropertiesMode] = useState<"instructors" | "courses">("instructors")
@@ -56,6 +61,10 @@ export default function SchedulePage() {
       startTutorial()
     }
   }, [startTutorial])
+
+  useEffect(() => {
+    if (!admin) setUsersOpen(false)
+  }, [admin])
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -120,8 +129,11 @@ export default function SchedulePage() {
         yearId={yearId}
         schedule={schedule}
         saving={saving}
+        role={role}
         onChangeYear={changeYear}
         onOpenProperties={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
+        onOpenUsers={() => setUsersOpen(true)}
+        onOpenAccount={() => setAccountOpen(true)}
         onOpenSnapshots={() => setSnapshotsOpen(true)}
         onExportCSV={exportCSV}
         onStartTutorial={startTutorial}
@@ -229,6 +241,63 @@ export default function SchedulePage() {
         activeSchedule={schedule}
         schedules={schedules}
         onMigrateYear={migrateYear}
+      />
+
+      <UserManagementDialog
+        open={usersOpen}
+        onClose={() => setUsersOpen(false)}
+        currentUserId={userId}
+        users={users}
+        onCreateUser={createUserAccount}
+        onUpdateOwnAccount={async ({ name, email, currentPassword, newPassword }) => {
+          const changedPassword = Boolean(newPassword)
+          const currentUser = users.find((u) => u.id === userId)
+          const profileChanged =
+            name !== (currentUser?.name ?? sessionName ?? "") ||
+            email !== (currentUser?.email ?? sessionEmail ?? "")
+          await api.updateAccount({ name, email })
+          if (changedPassword) {
+            await api.changePassword(currentPassword, newPassword!)
+          }
+          const ok = await fetchSession()
+          if (!ok) await logout()
+          if (profileChanged) {
+            await refresh()
+          }
+        }}
+        onUpdateUser={async (userId, updates) => {
+          await updateUserAccount(userId, updates)
+          const ok = await fetchSession()
+          if (!ok) await logout()
+        }}
+        onSetTemporaryPassword={setTemporaryPassword}
+        onDeleteUser={async (userId) => {
+          await deleteUserAccount(userId)
+          const ok = await fetchSession()
+          if (!ok) await logout()
+        }}
+      />
+
+      <AccountDialog
+        open={accountOpen}
+        onClose={() => setAccountOpen(false)}
+        name={sessionName ?? ""}
+        email={sessionEmail ?? ""}
+        onSave={async ({ name, email, currentPassword, newPassword }) => {
+          const changedPassword = Boolean(newPassword)
+          const profileChanged =
+            name !== (sessionName ?? "") ||
+            email !== (sessionEmail ?? "")
+          await api.updateAccount({ name, email })
+          if (changedPassword) {
+            await api.changePassword(currentPassword, newPassword!)
+          }
+          const ok = await fetchSession()
+          if (!ok) await logout()
+          if (profileChanged) {
+            await refresh()
+          }
+        }}
       />
     </div>
   )

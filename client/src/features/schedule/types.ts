@@ -8,6 +8,7 @@ export const DEFAULT_CREDITS_PER_COURSE = 1
 export type Term = "Fall" | "Winter"
 
 export type ValidationMode = "auto" | "manual"
+export type UserRole = "admin" | "support"
 
 export type ViolationDegree = "Info" | "Warning" | "Error"
 
@@ -108,6 +109,15 @@ export interface Faculty {
   name: string;
   /** Academic years managed by this faculty */
   academic_years: Year[];
+}
+
+export interface User {
+  id: string
+  faculty_id: string
+  name: string
+  email: string
+  role: UserRole
+  must_change_password: boolean
 }
 
 // ── Drag-drop UI types (frontend only) ───────────────────────────────────────

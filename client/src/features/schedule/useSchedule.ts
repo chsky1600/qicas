@@ -3,7 +3,7 @@ import { toast } from "sonner"
 import * as api from "./api"
 import type {
   Year, Course, Instructor, Schedule, Assignment,
-  InstructorRule, CourseRule, Violation, Term, ValidationMode
+  InstructorRule, CourseRule, Violation, Term, ValidationMode, User, UserRole
 } from "./types"
 import  {
   RANK_DISPLAY
@@ -17,6 +17,7 @@ export interface UseScheduleResult {
   courseRules: CourseRule[]
   instructors: Instructor[]
   instructorRules: InstructorRule[]
+  users: User[]
   schedules: Schedule[]
   schedule: Schedule | null
   assignments: Assignment[]
@@ -33,6 +34,10 @@ export interface UseScheduleResult {
   createCourse: (course: Course, rule: CourseRule) => Promise<void>
   updateCourse: (course: Course) => Promise<void>
   dropCourse: (courseCode: string, dropped: boolean) => Promise<void>
+  createUserAccount: (user: { name: string; email: string; password: string; role: UserRole }) => Promise<void>
+  updateUserAccount: (userId: string, updates: { name?: string; email?: string; role?: UserRole }) => Promise<void>
+  setTemporaryPassword: (userId: string, password: string) => Promise<void>
+  deleteUserAccount: (userId: string) => Promise<void>
   addSchedule: () => Promise<Schedule | undefined>
   copySchedule: (schedule: Schedule) => Promise<Schedule | undefined>
   deleteSavedSchedule: (scheduleId: string) => Promise<void>
@@ -58,6 +63,7 @@ export function useSchedule(): UseScheduleResult {
   const [courseRules, setCourseRules] = useState<CourseRule[]>([])
   const [instructors, setInstructors] = useState<Instructor[]>([])
   const [instructorRules, setInstructorRules] = useState<InstructorRule[]>([])
+  const [users, setUsers] = useState<User[]>([])
   const [schedule, setSchedule] = useState<Schedule | null>(null)
   const [schedules, setSchedules] = useState<Schedule[]>([])
   const [violations, setViolations] = useState<Violation[]>([])
@@ -155,12 +161,14 @@ export function useSchedule(): UseScheduleResult {
       setLoading(true)
       setError(null)
 
-      const [yearsData, workingSchedule, creditsData] = await Promise.all([
+      const [yearsData, workingSchedule, creditsData, usersData] = await Promise.all([
         api.getYears(),
         api.getWorkingSchedule(),
         api.getCreditsPerCourse(),
+        api.getUsers().catch(() => []),
       ])
       setCreditsPerCourse(creditsData.credits_per_course)
+      setUsers(usersData)
 
       setYears(yearsData)
 
@@ -415,6 +423,48 @@ export function useSchedule(): UseScheduleResult {
     return copySchedule
   }, [])
 
+  // ── User actions ────────────────────────────────────────────────────────────
+
+  const createUserAccount = useCallback(async (user: {
+    name: string
+    email: string
+    password: string
+    role: UserRole
+  }) => {
+    const created = await api.createUser({
+      ...user,
+      id: crypto.randomUUID(),
+      must_change_password: false,
+    })
+    setUsers(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))
+  }, [])
+
+  const updateUserAccount = useCallback(async (userId: string, updates: {
+    name?: string
+    email?: string
+    role?: UserRole
+  }) => {
+    const updated = await api.updateUser(userId, updates)
+    setUsers(prev => prev
+      .map(user => user.id === userId ? updated : user)
+      .sort((a, b) => a.name.localeCompare(b.name)))
+  }, [])
+
+  const setTemporaryPassword = useCallback(async (userId: string, password: string) => {
+    const updated = await api.updateUser(userId, {
+      password,
+      must_change_password: true,
+    })
+    setUsers(prev => prev
+      .map(user => user.id === userId ? updated : user)
+      .sort((a, b) => a.name.localeCompare(b.name)))
+  }, [])
+
+  const deleteUserAccount = useCallback(async (userId: string) => {
+    await api.deleteUser(userId)
+    setUsers(prev => prev.filter(user => user.id !== userId))
+  }, [])
+
   const copySchedule = useCallback(async (schedule: Schedule) => {
     const yr = yearIdRef.current
     if (!yr) return
@@ -611,7 +661,7 @@ export function useSchedule(): UseScheduleResult {
   }, [revalidate])
 
   return {
-    years, yearId, courses, courseRules, instructors, instructorRules,
+    years, yearId, courses, courseRules, instructors, instructorRules, users,
     schedules, schedule, assignments, violations,
     saving, loading, error,
     creditsPerCourse,
@@ -619,6 +669,7 @@ export function useSchedule(): UseScheduleResult {
     assign, unassign,
     createInstructor, updateInstructor, dropInstructor,
     createCourse, updateCourse, dropCourse,
+    createUserAccount, updateUserAccount, setTemporaryPassword, deleteUserAccount,
     addSchedule, copySchedule, switchSchedule, deleteSavedSchedule, renameSchedule,
     changeYear, migrateYear,
     exportCSV,
