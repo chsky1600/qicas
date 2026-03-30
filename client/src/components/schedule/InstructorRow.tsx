@@ -2,8 +2,7 @@ import { useState, useRef } from "react"
 import { useDroppable } from "@dnd-kit/core"
 import * as Popover from "@radix-ui/react-popover"
 import SectionChip from "./SectionChip"
-import type { Instructor, InstructorRule, Course, CourseRule, Assignment, Violation, Term } from "@/features/schedule/types"
-import type { SectionDragData } from "@/features/schedule/types"
+import type { Instructor, InstructorRule, Course, CourseRule, Assignment, Violation } from "@/features/schedule/types"
 import { RANK_DISPLAY } from "@/features/schedule/types"
 import * as icon from '@/assets/index'
 

@@ -5,10 +5,8 @@ import type { SortBy } from "./InstructorFilters.tsx"
 import { HelpTooltip } from "../ui/help-tooltip.tsx"
 import type {
   Instructor, InstructorRule, Course, CourseRule,
-  Assignment, Violation, InstructorRank, Term,
-  Section
+  Assignment, Violation, InstructorRank
 } from "@/features/schedule/types"
-import type { SectionDragData } from "@/features/schedule/types"
 
 interface Props {
   instructors: Instructor[]
