@@ -45,7 +45,7 @@ export interface UseScheduleResult {
   renameSchedule: (scheduleId: string, newName: string)  => Promise<void>
   switchSchedule: (scheduleId: string) => Promise<void>
   changeYear: (yearId: string) => Promise<void>
-  migrateYear: (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]) => Promise<void>
+  migrateYear: (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[], release_Candidate_Id?: string) => Promise<void>
   refresh: () => Promise<void>
   updateInstructorRule: (ruleId: string, updates: Partial<InstructorRule>) => Promise<void>
   updateCourseRule: (ruleId: string, updates: Partial<CourseRule>) => Promise<void>
@@ -524,7 +524,7 @@ export function useSchedule(): UseScheduleResult {
   const changeYear = useCallback(async (newYearId: string) => {
     setYearId(newYearId)
     yearIdRef.current = newYearId
-    setLoading(true)
+    if (!loading) setLoading(true)
     setSchedule(null)
     scheduleRef.current = null
     try {
@@ -545,15 +545,33 @@ export function useSchedule(): UseScheduleResult {
     }
   }, [loadYear])
 
-  const migrateYear = useCallback(async (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]) => {
+  const migrateYear = useCallback(async (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[], release_Candidate_Id?: string) => {
+    if (!loading) setLoading(true)
     try {
       await api.migrateToNextYear(source_year_id, new_year_id, name, schedule_ids)
       const updatedYears = await api.getYears()
       setYears(updatedYears)
-      changeYear(new_year_id)
+      if(release_Candidate_Id && release_Candidate_Id.length > 0) await handleReleaseCandidate(release_Candidate_Id)
+      await changeYear(new_year_id)
     } catch (e) {
       console.log(e)
       setError((e as Error).message)
+    }
+    setLoading(false)
+  }, [changeYear])
+
+  const handleReleaseCandidate = useCallback(async (release_Candidate_Id: string) => {
+    const yr = yearIdRef.current
+    if (!yr) return
+    schedules.find((s) => s.id == release_Candidate_Id)
+    try {
+      await api.setIsRCSchedule(yr, release_Candidate_Id, true)
+      setSchedules(prev => prev.map(s => s.id === release_Candidate_Id ? { ...s, is_rc: true } : s))
+      if (scheduleRef.current?.id === release_Candidate_Id) {
+        setSchedule(prev => prev ? { ...prev, is_rc: true } : prev)
+      }
+    } catch (e) {
+      console.log("setting RC failed", e)
     }
   }, [changeYear])
 

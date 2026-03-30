@@ -12,7 +12,7 @@ interface Props {
   loadedYearId: string
   activeSchedule: Schedule | null
   schedules: Schedule[]
-  onMigrateYear: (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]) => Promise<void>
+  onMigrateYear: (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[], release_Candidate_Id?: string) => Promise<void>
   onOpenProperties: () => void
 }
 
@@ -76,7 +76,7 @@ export default function MigrationDialog({
     const migratingSchedules = Array.from(selectedScheduleIds.values())
     onClose()
     console.log(newName)
-    await onMigrateYear(latestYear.id, newId, newName, migratingSchedules)
+    await onMigrateYear(latestYear.id, newId, newName, migratingSchedules, releaseCandidateId)
     await onOpenProperties()
     setTimeout(()=>{
       toast.info(`You may now make any necessary changes for the ${newName} academic year`)
