@@ -477,7 +477,7 @@ export function useSchedule(): UseScheduleResult {
   const copySchedule = useCallback(async (schedule: Schedule) => {
     const yr = yearIdRef.current
     if (!yr) return
-    const copiedSchedule = {...schedule, name: (schedule.name + " (copy)")}
+    const copiedSchedule = {...schedule, name: (schedule.name + " (copy)"), is_rc: false}
     const copySchedule = await api.createSavedSchedule(yr, copiedSchedule)
     setSchedules(prev => [...prev, copySchedule])
     return copySchedule
