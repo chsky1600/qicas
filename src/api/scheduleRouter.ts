@@ -2,7 +2,8 @@ import express from "express";
 
 import {
     getScheduleByID,
-    saveSchedule,
+    renameSchedule,
+    setRCSchedule,
     setWorkingSchedule,
     createSnapshot,
     getSchedules,
@@ -23,7 +24,8 @@ router.put("/schedule/active/:schedule_id",setWorkingSchedule)
 router.get("/schedule/", getWorkingSchedule)
 
 router.get("/schedule/:year",getSchedules)
-router.put("/schedule/:year", requireRole("admin"), saveSchedule)
+router.put("/schedule/:year/rename", requireRole("admin"), renameSchedule)
+router.put("/schedule/:year/isrc", requireRole("admin"), setRCSchedule)
 router.post("/schedule/:year", requireRole("admin"), createSnapshot)
 router.delete("/schedule/:schedule_id", requireRole("admin"), deleteSchedule)
 

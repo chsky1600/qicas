@@ -125,14 +125,14 @@ export function getCreditsPerCourse() {
   return request<{ credits_per_course: number }>("/faculty/credits")
 }
 
-export function migrateToNextYear(source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]){
+export function migrateToNextYear(source_year_id: string, new_year_id: string, year_name: string, schedule_ids: string[]){
   return request<Faculty>("/faculty/migrate", {
     method: "POST",
     body: JSON.stringify({
-      source_year_id, 
-      new_year_id, 
-      name, 
-      schedule_ids
+      source_year_id: source_year_id, 
+      new_year_id: new_year_id, 
+      year_name: year_name, 
+      schedule_ids: schedule_ids
     }),
   })
 }
@@ -239,10 +239,17 @@ export function setWorkingSchedule(scheduleId: string) {
   return request<Schedule>(`/schedule/active/${scheduleId}`, { method: "PUT" })
 }
 
-export function renameSchedule(year: string, scheduleId: string, name: string) {
-  return request<void>(`/schedule/${year}`, {
+export function renameSchedule(year: string, scheduleId: string, schedule_name: string) {
+  return request<void>(`/schedule/${year}/rename`, {
     method: "PUT",
-    body: JSON.stringify({ schedule_id: scheduleId, name }),
+    body: JSON.stringify({ schedule_id: scheduleId, schedule_name: schedule_name }),
+  })
+}
+
+export function setIsRCSchedule(year: string, scheduleId: string, is_rc: boolean) {
+  return request<void>(`/schedule/${year}/isrc`, {
+    method: "PUT",
+    body: JSON.stringify({ schedule_id: scheduleId, is_rc: is_rc }),
   })
 }
 
