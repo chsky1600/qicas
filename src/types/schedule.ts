@@ -26,4 +26,6 @@ export interface Schedule {
   is_rc: boolean;
   /** All assignments within this schedule */
   assignments: Assignment[];
+  /** Monotonic counter, bumped on every assignment mutation */
+  version: number;
 }

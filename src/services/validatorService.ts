@@ -17,6 +17,16 @@ import { applyCandidate } from "./scheduleService";
 
 const CO_TEACHING_LIMIT = 2;
 
+// resolve raw IDs to human-readable labels for violation messages
+function instructorName(ctx: AcademicYear, id: string): string {
+  return ctx.instructors.find(i => i.id === id)?.name ?? id
+}
+function sectionLabel(ctx: AcademicYear, courseCode: string, sectionId: string): string {
+  const course = ctx.courses.find(c => c.code === courseCode)
+  const section = course?.sections.find(s => s.id === sectionId)
+  return section ? `section ${section.number}` : `section ${sectionId}`
+}
+
 const RANK_ELIGIBILITY: Record<CourseLevel, InstructorRank[]> = {
   undergrad1: [
     "FullProfessor", "AssociateProfessor", "AssistantProfessor",
@@ -153,7 +163,7 @@ export function checkCourseRules(
       type: "Course",
       offending_id: candidate.course_code,
       code: "DUPLICATE_ASSIGNMENT",
-      message: `Instructor ${candidate.instructor_id} is assigned to ${candidate.course_code} section ${candidate.section_id} in ${candidate.term} more than once.`,
+      message: `${instructorName(ctx, candidate.instructor_id)} is assigned to ${candidate.course_code} ${sectionLabel(ctx, candidate.course_code, candidate.section_id)} in ${candidate.term} more than once.`,
       degree: "Error",
     });
     return violations;
@@ -178,7 +188,7 @@ export function checkCourseRules(
         type: "Course",
         offending_id: candidate.course_code,
         code: "CROSS_TERM_DUPLICATE",
-        message: `Instructor ${candidate.instructor_id} is assigned to ${candidate.course_code} in both Fall and Winter, but this course is not full-year.`,
+        message: `${instructorName(ctx, candidate.instructor_id)} is assigned to ${candidate.course_code} in both Fall and Winter, but this course is not full-year.`,
         degree: "Info",
       });
     }
@@ -214,7 +224,7 @@ export function checkCourseRules(
         type: "Course",
         offending_id: candidate.course_code,
         code: "FULLYEAR_HALF_OPEN",
-        message: `Full-year course ${candidate.course_code} has different instructors in Fall (${fallAssignment.instructor_id}) and Winter (${winterAssignment.instructor_id}).`,
+        message: `Full-year course ${candidate.course_code} has different instructors in Fall (${instructorName(ctx, fallAssignment.instructor_id)}) and Winter (${instructorName(ctx, winterAssignment.instructor_id)}).`,
         degree: "Info",
       });
     }
@@ -265,7 +275,7 @@ export function checkCourseRules(
       type: "Course",
       offending_id: candidate.course_code,
       code: "SECTION_OVERASSIGNED",
-      message: `${candidate.course_code} section ${candidate.section_id} in ${candidate.term} has ${sectionCount} instructors assigned, exceeding the co-teaching limit of ${CO_TEACHING_LIMIT}.`,
+      message: `${candidate.course_code} ${sectionLabel(ctx, candidate.course_code, candidate.section_id)} in ${candidate.term} has ${sectionCount} instructors assigned, exceeding the co-teaching limit of ${CO_TEACHING_LIMIT}.`,
       degree: "Error",
     });
   }
@@ -334,7 +344,7 @@ export function checkInstructorRules(
     const assignedCodes = projected.assignments
       .filter(a => a.instructor_id === candidate.instructor_id)
       .map(a => a.course_code);
-    const missing = iRule.courses.filter(c => !assignedCodes.includes(c));
+    const missing = iRule.courses.filter(c => !assignedCodes.includes(c) && !iRule.declined_courses.includes(c));
     if (missing.length > 0) {
       violations.push({
         id: `v-tadj-unassigned-${candidate.instructor_id}`,

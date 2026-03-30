@@ -89,34 +89,39 @@ export const getSchedules = async (req : Request, res : Response) => {
     }
 }
 
-/** takes in a schedule, and overrides the currently saved one with the same ID
-*    router.put("/schedule/:year",saveSchedule)
-*/
+// atomic rename — only updates the name field, not the full schedule
+// router.put("/schedule/:year", saveSchedule)
 export const saveSchedule = async (req : Request, res : Response) => {
     try {
         const year_id : string = req.params.year as string;
         const faculty_id : string = req.body.faculty_id;
-        const updatedSchedule : Schedule = req.body.schedule as Schedule;
+        const schedule_id : string = req.body.schedule_id;
+        const name : string = req.body.name;
+
+        if (!schedule_id || !name) {
+            res.status(400).json({ error: "schedule_id and name are required" });
+            return;
+        }
 
         const result = await FacultyModel.updateOne(
             { id: faculty_id },
             {
                 $set: {
-                    "academic_years.$[year].schedules.$[schedule]": updatedSchedule,
+                    "academic_years.$[year].schedules.$[schedule].name": name,
                 },
             },
             {
                 arrayFilters: [
                     { "year.id": year_id },
-                    { "schedule.id": updatedSchedule.id },
+                    { "schedule.id": schedule_id },
                 ],
             }
         );
 
         if(result.modifiedCount > 0) {
-            res.sendStatus(201)
-        } else {
             res.sendStatus(200)
+        } else {
+            res.sendStatus(404)
         }
     } catch (err: any) {
         res.status(500).json({ error: err.message });
@@ -177,6 +182,38 @@ export const getWorkingSchedule = async (req : Request, res : Response) => {
     }
 }
 
+// lightweight version check for polling
+export const getScheduleVersion = async (req: Request, res: Response) => {
+    try {
+        const year_id: string = req.params.year as string;
+        const faculty_id: string = req.body.faculty_id;
+        const schedule_id: string = req.params.schedule_id as string;
+
+        const doc = await FacultyModel.findOne(
+            {
+                id: faculty_id,
+                "academic_years.id": year_id,
+            },
+            {
+                _id: 0,
+                academic_years: { $elemMatch: { id: year_id } },
+            }
+        ).lean();
+
+        if (!doc) { res.status(404).json({ error: "Not found" }); return; }
+
+        const schedule = (doc as any).academic_years[0]?.schedules?.find(
+            (s: any) => s.id === schedule_id
+        );
+
+        if (!schedule) { res.status(404).json({ error: "Schedule not found" }); return; }
+
+        res.json({ version: schedule.version ?? 0 });
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // duplicates the given schedule and gives it a new ID and sets it to the current schedule?
 // router.post("/schedule/:year", createSnapshot)
 export const createSnapshot = async (req : Request, res : Response) => {
@@ -194,6 +231,7 @@ export const createSnapshot = async (req : Request, res : Response) => {
             year_id: year_id,
             date_created: new Date(),
             name: schedule.name,
+            version: 1,
         };
 
         const result = await FacultyModel.updateOne(
@@ -250,6 +288,8 @@ export const deleteSchedule = async (req: Request, res: Response) => {
 }
 
 // router.post("/schedule/:year/:schedule_id/assignments", addAssignment)
+const CO_TEACHING_LIMIT = 2;
+
 export const addAssignment = async (req: Request, res: Response) => {
     try {
         const year_id: string = req.params.year as string;
@@ -262,22 +302,38 @@ export const addAssignment = async (req: Request, res: Response) => {
             return;
         }
 
-        // Guard against duplicate assignment IDs
-        const existing = await FacultyModel.findOne({
-            id: faculty_id,
-            "academic_years.schedules": {
-                $elemMatch: {
-                    id: schedule_id,
-                    "assignments.id": assignment.id,
-                },
-            },
-        });
+        // single read for both guards
+        const doc = await FacultyModel.findOne(
+            { id: faculty_id, "academic_years.schedules.id": schedule_id },
+            { _id: 0, "academic_years.$": 1 }
+        ).lean();
 
-        if (existing) {
+        const sched = (doc as any)?.academic_years?.[0]?.schedules?.find(
+            (s: any) => s.id === schedule_id
+        );
+
+        if (!sched) {
+            res.status(404).json({ error: "Schedule not found" });
+            return;
+        }
+
+        // guard: duplicate assignment ID
+        if (sched.assignments.some((a: any) => a.id === assignment.id)) {
             res.status(409).json({ error: "Assignment with this id already exists" });
             return;
         }
 
+        // guard: section+term at capacity
+        const sectionTermCount = sched.assignments.filter(
+            (a: any) => a.section_id === assignment.section_id && a.term === assignment.term
+        ).length;
+
+        if (sectionTermCount >= CO_TEACHING_LIMIT) {
+            res.status(409).json({ error: "Section already has maximum assignments for this term" });
+            return;
+        }
+
+        // atomic push + version bump
         const result = await FacultyModel.updateOne(
             {
                 id: faculty_id,
@@ -286,6 +342,9 @@ export const addAssignment = async (req: Request, res: Response) => {
             {
                 $push: {
                     "academic_years.$[year].schedules.$[schedule].assignments": assignment,
+                },
+                $inc: {
+                    "academic_years.$[year].schedules.$[schedule].version": 1,
                 },
             },
             {
@@ -322,6 +381,9 @@ export const removeAssignment = async (req: Request, res: Response) => {
             {
                 $pull: {
                     "academic_years.$[year].schedules.$[schedule].assignments": { id: assignment_id },
+                },
+                $inc: {
+                    "academic_years.$[year].schedules.$[schedule].version": 1,
                 },
             },
             {

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import * as Popover from "@radix-ui/react-popover"
 import { SlidersHorizontal } from "lucide-react"
 import type { InstructorRank } from "@/features/schedule/types"
@@ -18,8 +18,18 @@ export default function InstructorFilters({ onChange }: Props) {
   const [search, setSearch] = useState("")
   const [sortBy, setSortBy] = useState<SortBy>(null)
   const [rankFilter, setRankFilter] = useState<Set<InstructorRank>>(new Set())
+  const [open, setOpen] = useState(false)
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const isFiltered = sortBy !== null || rankFilter.size > 0
+
+  function handleEnter() {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null }
+    setOpen(true)
+  }
+  function handleLeave() {
+    closeTimer.current = setTimeout(() => setOpen(false), 150)
+  }
 
   function updateSort(val: SortBy) {
     const next = sortBy === val ? null : val
@@ -46,10 +56,12 @@ export default function InstructorFilters({ onChange }: Props) {
   }
 
   return (
-    <Popover.Root>
+    <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <button
           type="button"
+          onMouseEnter={handleEnter}
+          onMouseLeave={handleLeave}
           className={`p-1 rounded border ${isFiltered ? "border-gray-800 bg-gray-800 text-white" : "border-gray-300 text-gray-500 hover:border-gray-500"}`}
         >
           <SlidersHorizontal size={12} />
@@ -60,6 +72,8 @@ export default function InstructorFilters({ onChange }: Props) {
           side="bottom"
           align="start"
           sideOffset={6}
+          onMouseEnter={handleEnter}
+          onMouseLeave={handleLeave}
           className="z-50 w-56 rounded-md border border-gray-200 bg-white shadow-lg p-3 text-sm"
         >
           <div className="space-y-3">

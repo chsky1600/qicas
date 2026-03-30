@@ -22,7 +22,8 @@ export const scheduleSchema = new mongoose.Schema<Schedule>(
         year_id : {type : String, required: true},
         date_created : {type : Date, required: true},
         is_rc : {type : Boolean, required: true},
-        assignments : { type: [assignmentSchema], required:true}
+        assignments : { type: [assignmentSchema], required:true},
+        version : { type: Number, required: true, default: 1 }
     }
 );
 

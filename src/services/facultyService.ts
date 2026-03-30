@@ -255,14 +255,16 @@ export async function migrateFacultyToNewYear(
       year_id: "overwritten",
       date_created: new Date, // will be ovewritten
       is_rc: false,
-      assignments: []
+      assignments: [],
+      version: 1,
     }]
   }
 
   const clonedSchedules = cloneWithoutMongoIds(pickedSchedules).map(s => ({
     ...s,
     year_id: new_year_id,
-    id: crypto.randomUUID()
+    id: crypto.randomUUID(),
+    version: 1,
   }));
 
   const newYear: AcademicYear = {

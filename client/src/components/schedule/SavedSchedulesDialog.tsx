@@ -75,7 +75,9 @@ export default function SavedSchedulesDialog({
             )}
             <HelpTooltip
               title="Saved Schedules"
-              description="Save multiple versions of a schedule for the same year. Load one to make it active, copy it as a starting point, rename it, or delete it."
+              description={isAdmin
+                ? "Save multiple versions of a schedule for the same year. Load one to make it active, copy it as a starting point, rename it, or delete it."
+                : "View saved schedule versions for the same year. Load one to make it active."}
             />
           </div>          
           <button id="saved-schedules-dialog-close" onClick={onClose} className="text-white hover:text-gray-300">

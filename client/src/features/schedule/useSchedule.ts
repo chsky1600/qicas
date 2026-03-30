@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
+import { toast } from "sonner"
 import * as api from "./api"
 import type {
   Year, Course, Instructor, Schedule, Assignment,
@@ -28,6 +29,7 @@ export interface UseScheduleResult {
   unassign: (assignmentId: string) => Promise<void>
   createInstructor: (instructor: Instructor, rule: InstructorRule) => Promise<void>
   updateInstructor: (instructor: Instructor) => Promise<void>
+  addNote: (instructor: Instructor, content: string, userName: string) => Promise<void>
   dropInstructor: (instructorId: string, dropped: boolean) => Promise<void>
   createCourse: (course: Course, rule: CourseRule) => Promise<void>
   updateCourse: (course: Course) => Promise<void>
@@ -85,6 +87,9 @@ export function useSchedule(): UseScheduleResult {
   useEffect(() => { coursesRef.current = courses}, [courses])
   const validationModeRef = useRef(validationMode)
   useEffect(() => { validationModeRef.current = validationMode }, [validationMode])
+  const localVersionRef = useRef(0)
+  const savingRef = useRef(false)
+  useEffect(() => { savingRef.current = saving }, [saving])
 
   const assignments = useMemo(() => schedule?.assignments ?? [], [schedule])
 
@@ -129,13 +134,13 @@ export function useSchedule(): UseScheduleResult {
     setSchedules(schedulesData)
     setSchedule(workingSchedule)
     scheduleRef.current = workingSchedule
+    localVersionRef.current = workingSchedule?.version ?? 0
 
     if (workingSchedule) {
       try {
         const result = await api.validateSchedule(yr, workingSchedule.id)
         setViolations(result.validationResult.violations)
       } catch {
-        // support users get 403 on validate, just skip
         setViolations([])
       }
     } else {
@@ -182,6 +187,41 @@ export function useSchedule(): UseScheduleResult {
 
   useEffect(() => { load() }, [load])
 
+  // ── Version polling (detect external changes) ─────────────────────────────
+
+  useEffect(() => {
+    const poll = async () => {
+      if (document.hidden || savingRef.current) return
+      const sched = scheduleRef.current
+      const yr = yearIdRef.current
+      if (!sched || !yr) return
+      try {
+        const { version } = await api.getScheduleVersion(yr, sched.id)
+        if (version > localVersionRef.current) {
+          const fresh = await api.getWorkingSchedule()
+          if (fresh && fresh.id === scheduleRef.current?.id) {
+            setSchedule(fresh)
+            scheduleRef.current = fresh
+            localVersionRef.current = fresh.version ?? 0
+            triggerRevalidate()
+            toast.info("Schedule was updated by a registered admin")
+          }
+        }
+      } catch {
+        // poll failure is silent, will retry next interval
+      }
+    }
+
+    const interval = setInterval(poll, 5000)
+    const onVisible = () => { if (!document.hidden) poll() }
+    document.addEventListener("visibilitychange", onVisible)
+
+    return () => {
+      clearInterval(interval)
+      document.removeEventListener("visibilitychange", onVisible)
+    }
+  }, [triggerRevalidate])
+
   // ── Assignment actions ──────────────────────────────────────────────────────
 
   const assign = useCallback(async (
@@ -194,6 +234,17 @@ export function useSchedule(): UseScheduleResult {
     const sched = scheduleRef.current
     const yr = yearIdRef.current
     if (!sched || !yr) return
+
+    // pre-check: section+term at co-teaching limit
+    const CO_TEACHING_LIMIT = 2
+    const existing = sched.assignments.filter(
+      a => a.section_id === sectionId && a.term === term && a.id !== prevAssignmentId
+    ).length
+    if (existing >= CO_TEACHING_LIMIT) {
+      toast.warning("Section already has maximum instructors for this term")
+      return
+    }
+
     setSaving(true)
 
     const newAssignment: Assignment = {
@@ -218,10 +269,15 @@ export function useSchedule(): UseScheduleResult {
 
     try {
       await Promise.all(toRemove.map(a => api.removeAssignment(yr, sched.id, a.id)))
+      localVersionRef.current += toRemove.length
       await api.addAssignment(yr, sched.id, newAssignment)
+      localVersionRef.current += 1
       triggerRevalidate()
-    } catch (e) {
+    } catch (e: any) {
       console.error("Assignment failed", e)
+      if (e.message?.includes("409")) {
+        toast.warning("Another user already assigned this section")
+      }
       load()
     }
     setSaving(false)
@@ -239,6 +295,7 @@ export function useSchedule(): UseScheduleResult {
 
     try {
       await api.removeAssignment(yr, sched.id, assignmentId)
+      localVersionRef.current += 1
       triggerRevalidate()
     } catch (e) {
       console.error("Unassign failed", e)
@@ -264,6 +321,15 @@ export function useSchedule(): UseScheduleResult {
     const yr = yearIdRef.current
     if (!yr) return
     const updated = await api.updateInstructor(yr, instructor.id, instructor)
+    setInstructors(prev => prev.map(i => i.id === instructor.id ? updated : i))
+  }, [])
+
+  const addNote = useCallback(async (instructor: Instructor, content: string, userName: string) => {
+    const yr = yearIdRef.current
+    if (!yr) return
+    const note = { content, created_by: userName, date_created: new Date().toISOString().split("T")[0] }
+    const withNote = { ...instructor, notes: [...instructor.notes, note] }
+    const updated = await api.updateInstructor(yr, instructor.id, withNote)
     setInstructors(prev => prev.map(i => i.id === instructor.id ? updated : i))
   }, [])
 
@@ -350,7 +416,8 @@ export function useSchedule(): UseScheduleResult {
       year_id: yr,
       date_created: "overwritten", // will be ovewritten
       is_rc: false,
-      assignments: []
+      assignments: [],
+      version: 1,
     }
     const copySchedule = await api.createSavedSchedule(yr, newSchedule)
     setSchedules(prev => [...prev, copySchedule])
@@ -379,6 +446,7 @@ export function useSchedule(): UseScheduleResult {
     const newSchedule = await api.setWorkingSchedule(scheduleId)
     setSchedule(newSchedule)
     scheduleRef.current = newSchedule
+    localVersionRef.current = newSchedule?.version ?? 0
     lastSchedulePerYear.current[yr] = scheduleId
     try {
       const result = await api.validateSchedule(yr, newSchedule.id)
@@ -391,19 +459,13 @@ export function useSchedule(): UseScheduleResult {
   const renameSchedule = async (scheduleId: string, newName: string) => {
     const yr = yearIdRef.current
     if (!yr) return
-    const index = schedules.findIndex(a => a.id === scheduleId);
-    if (index === -1) return;
-    const renamedSchedule = {...schedules[index], name: newName}
-    
-    try {      
-      await api.saveSchedule(yr, renamedSchedule)
-      setSchedules(prev => {
-        const next = [...prev];
-        next[index] = renamedSchedule;
-        return next;
-      });
-    }
-    catch (e){
+    try {
+      await api.renameSchedule(yr, scheduleId, newName)
+      setSchedules(prev => prev.map(s => s.id === scheduleId ? { ...s, name: newName } : s))
+      if (scheduleRef.current?.id === scheduleId) {
+        setSchedule(prev => prev ? { ...prev, name: newName } : prev)
+      }
+    } catch (e) {
       console.log("Rename failed", e)
     }
   }
@@ -460,8 +522,8 @@ export function useSchedule(): UseScheduleResult {
       now.getFullYear(),
       String(now.getMonth() + 1).padStart(2, "0"),
       String(now.getDate()).padStart(2, "0"),
-      String(now.getHours()).padStart(2, "0"),
-      String(now.getMinutes()).padStart(2, "0"),
+      String(now.getHours()).padStart(2, "0")+"h",
+      String(now.getMinutes()).padStart(2, "0")+"m",
     ].join("-");
   
     // there must be at least 1
@@ -564,7 +626,7 @@ export function useSchedule(): UseScheduleResult {
     creditsPerCourse,
     validationMode, setValidationMode, validateNow, validationStale,
     assign, unassign,
-    createInstructor, updateInstructor, dropInstructor,
+    createInstructor, updateInstructor, addNote, dropInstructor,
     createCourse, updateCourse, dropCourse,
     addSchedule, copySchedule, switchSchedule, deleteSavedSchedule, renameSchedule,
     changeYear, migrateYear,

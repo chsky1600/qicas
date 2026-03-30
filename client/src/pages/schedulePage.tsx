@@ -15,14 +15,14 @@ import MigrationDialog from "@/components/schedule/MigrationDialog"
 import { Toaster } from "@/components/ui/sonner"
 
 export default function SchedulePage() {
-  const { isAdmin: admin, logout } = useAuth()
+  const { isAdmin: admin, userName, logout } = useAuth()
   const {
     years, yearId, courses, courseRules,
     instructors, instructorRules,
     schedules, schedule, assignments, violations,
     saving, loading, error,
     assign, unassign,
-    createInstructor, updateInstructor, dropInstructor, updateInstructorRule,
+    createInstructor, updateInstructor, addNote, dropInstructor, updateInstructorRule,
     createCourse, updateCourse, dropCourse, updateCourseRule,
     addSchedule, copySchedule, deleteSavedSchedule, switchSchedule, renameSchedule,
     changeYear, migrateYear,
@@ -36,6 +36,7 @@ export default function SchedulePage() {
   const [migrationOpen, setMigrationOpen] = useState(false)
   const [dragging, setDragging] = useState<SectionDragData | null>(null)
   const [overValid, setOverValid] = useState(false)
+  const [highlightedSectionId, setHighlightedSectionId] = useState<string | null>(null)
   const [propertiesMode, setPropertiesMode] = useState<"instructors" | "courses">("instructors")
   const [propertiesAdd, setPropertiesAdd] = useState(false) // flag to tell properties tab to make a new course/instructor on open
   const { startTutorial } = useTutorial({
@@ -107,6 +108,13 @@ export default function SchedulePage() {
   const draggingCourse = dragging ? courses.find(c => c.code === dragging.courseCode) : null
   const draggingSection = draggingCourse?.sections.find(s => s.id === dragging?.sectionId)
   const draggingRule = dragging ? courseRules.find(r => r.course_code === dragging.courseCode) : null
+  const draggingViolation = dragging ? (() => {
+    const vs = violations.filter(v => v.type === "Course" && v.offending_id === dragging.courseCode && (v.id.includes(dragging.sectionId) || v.code === "FULLYEAR_HALF_OPEN" || v.code === "CROSS_TERM_DUPLICATE"))
+    if (vs.some(v => v.degree === "Error")) return "bg-red-400"
+    if (vs.some(v => v.degree === "Warning")) return "bg-orange-400"
+    if (vs.some(v => v.degree === "Info")) return "bg-blue-400"
+    return "bg-green-500"
+  })() : "bg-gray-400"
 
   if (loading) return <div className="flex items-center justify-center h-screen text-gray-500">Loading…</div>
   if (error) return <div className="flex items-center justify-center h-screen text-red-500">{error}</div>
@@ -127,6 +135,7 @@ export default function SchedulePage() {
         onOpenMigration={() => setMigrationOpen(true)}
         onLogout={logout}
         isAdmin={admin}
+        userName={userName}
         validationMode={validationMode}
         setValidationMode={setValidationMode}
         validateNow={validateNow}
@@ -142,6 +151,8 @@ export default function SchedulePage() {
               assignments={assignments}
               onAddCourse={() => { setPropertiesMode("courses"); setPropertiesAdd(true); setPropertiesOpen(true) }}
               isAdmin={admin}
+              highlightedSectionId={highlightedSectionId}
+              onHighlight={setHighlightedSectionId}
             />
             <ScheduleTable
               instructors={instructors}
@@ -152,11 +163,15 @@ export default function SchedulePage() {
               violations={violations}
               onAddInstructor={() => { setPropertiesMode("instructors"); setPropertiesAdd(true); setPropertiesOpen(true) }}
               isAdmin={admin}
+              highlightedSectionId={highlightedSectionId}
+              onHighlight={setHighlightedSectionId}
+              onAddNote={addNote}
+              userName={userName}
             />
           </div>
           <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
             {dragging && draggingSection ? (
-              <span className={`${overValid ? "bg-green-500" : "bg-gray-400"} text-white px-2 py-1 rounded text-sm cursor-grab select-none ${draggingRule?.is_external ? "outline-dashed outline-2 outline-offset-1 outline-blue-500" : ""}`}>
+              <span className={`${dragging.source === "chip" ? draggingViolation : overValid ? "bg-green-500" : "bg-gray-400"} text-white px-2 py-1 rounded text-sm cursor-grab select-none ${draggingRule?.is_external ? "outline-dashed outline-2 outline-offset-1 outline-blue-500" : ""}`}>
                 {dragging.courseCode}{draggingRule?.is_full_year ? (dragging.prevTerm === "Fall" ? "A" : "B") : ""}-{draggingSection.number}
               </span>
             ) : null}
@@ -170,6 +185,8 @@ export default function SchedulePage() {
             assignments={assignments}
             onAddCourse={() => { setPropertiesMode("courses"); setPropertiesOpen(true) }}
             isAdmin={admin}
+            highlightedSectionId={highlightedSectionId}
+            onHighlight={setHighlightedSectionId}
           />
           <ScheduleTable
             instructors={instructors}
@@ -180,6 +197,10 @@ export default function SchedulePage() {
             violations={violations}
             onAddInstructor={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
             isAdmin={admin}
+            highlightedSectionId={highlightedSectionId}
+            onHighlight={setHighlightedSectionId}
+            onAddNote={addNote}
+            userName={userName}
           />
         </div>
       )}
@@ -203,6 +224,7 @@ export default function SchedulePage() {
         onDropCourse={dropCourse}
         onUpdateCourseRule={updateCourseRule}
         creditsPerCourse={creditsPerCourse}
+        userName={userName ?? "Unknown"}
       />
 
       <SavedSchedulesDialog

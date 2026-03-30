@@ -20,9 +20,11 @@ interface Props {
   assignments: Assignment[]
   onAddCourse: () => void
   isAdmin: boolean
+  highlightedSectionId: string | null
+  onHighlight: (sectionId: string | null) => void
 }
 
-export default function CoursesPanel({ courses, courseRules, assignments, onAddCourse, isAdmin }: Props) {
+export default function CoursesPanel({ courses, courseRules, assignments, onAddCourse, isAdmin, highlightedSectionId, onHighlight }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id: "panel", data: { type: "panel" } })
   const [search, setSearch] = useState("")
   const [showUnassigned, setShowUnassigned] = useState(true)
@@ -63,7 +65,9 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
           <span className="font-semibold text-sm text-gray-700">Courses</span>
           <HelpTooltip
             title="Courses Panel"
-            description="Lists all active courses for the year. Drag a chip onto an instructor's Fall or Winter cell to assign it. Drag it back here to unassign."
+            description={isAdmin
+              ? "Lists all active courses for the year. Drag a chip onto an instructor's Fall or Winter cell to assign it. Drag it back here to unassign."
+              : "Lists all active courses for the year. Hover a row to highlight its chip on the schedule."}
           />
         </div>
         {isAdmin && (
@@ -110,7 +114,7 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
               </TableCell>
             </TableRow>
             {showUnassigned && unassigned.map(({ course, section, rule }) => (
-              <CourseRow key={section.id} course={course} section={section} rule={rule} assignments={assignments} isAdmin={isAdmin} />
+              <CourseRow key={section.id} course={course} section={section} rule={rule} assignments={assignments} isAdmin={isAdmin} highlighted={highlightedSectionId === section.id} onHighlight={onHighlight} />
             ))}
 
             {assigned.length > 0 && (
@@ -124,7 +128,7 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
                   </TableCell>
                 </TableRow>
                 {showAssigned && assigned.map(({ course, section, rule }) => (
-                  <CourseRow key={section.id} course={course} section={section} rule={rule} assignments={assignments} isAdmin={isAdmin} />
+                  <CourseRow key={section.id} course={course} section={section} rule={rule} assignments={assignments} isAdmin={isAdmin} highlighted={highlightedSectionId === section.id} onHighlight={onHighlight} />
                 ))}
               </>
             )}

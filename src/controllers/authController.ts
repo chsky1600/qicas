@@ -58,7 +58,7 @@ export const getToken = async (req : Request, res : Response) => {
             const match = await Bun.password.verify(password, user.password);
             if(match) {
 
-                const jwt = await new jose.SignJWT({'faculty_id': user.faculty_id, 'role': user.role})
+                const jwt = await new jose.SignJWT({'faculty_id': user.faculty_id, 'role': user.role, 'name': user.name})
                     .setProtectedHeader({alg})
                     .setIssuedAt()
                     .setIssuer('qicas')
@@ -140,7 +140,7 @@ export const refreshToken = async (req : Request, res : Response) => {
     }
 
     try {
-        const jwt = await new jose.SignJWT({'faculty_id': faculty_id, 'role': role})
+        const jwt = await new jose.SignJWT({'faculty_id': faculty_id, 'role': role, 'name': req.body.name})
             .setProtectedHeader({alg})
             .setIssuedAt()
             .setIssuer('qicas')
@@ -150,7 +150,7 @@ export const refreshToken = async (req : Request, res : Response) => {
         res.cookie("token", jwt, cookieOpts)
         // Return new expiry so frontend can update session state without a second round-trip
         const payload = JSON.parse(atob(jwt.split(".")[1]!))
-        res.json({ faculty_id, role, exp: payload.exp })
+        res.json({ faculty_id, role, name: req.body.name, exp: payload.exp })
     } catch (err: any) {
         res.status(500).json({ error: err.message })
     }
@@ -178,6 +178,7 @@ export const verifyToken = async (req : Request, res : Response, next: NextFunct
             if (!req.body) req.body = {};
             req.body.faculty_id = payload.faculty_id;
             req.body.role = payload.role;
+            req.body.name = payload.name;
             next();
             return
         } catch (err) {
@@ -193,7 +194,7 @@ export const verifyToken = async (req : Request, res : Response, next: NextFunct
 // returns session metadata so the frontend never needs to parse the JWT itself
 // must be chained after verifyToken
 export const getSession = async (req: Request, res: Response) => {
-    const { faculty_id, role } = req.body
+    const { faculty_id, role, name } = req.body
 
     // Decode the verified token to read `exp` without re-verifying
     const token = (req as any).cookies?.token
@@ -207,7 +208,7 @@ export const getSession = async (req: Request, res: Response) => {
         } catch { /* token already verified by middleware, this is just a read */ }
     }
 
-    res.json({ faculty_id, role, exp })
+    res.json({ faculty_id, role, name, exp })
 }
 
 // clears the httpOnly auth cookie
