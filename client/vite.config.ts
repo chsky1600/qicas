@@ -19,6 +19,7 @@ export default defineConfig({
       "/schedule/": { target: "http://localhost:3000", changeOrigin: true },
       "/year": { target: "http://localhost:3000", changeOrigin: true },
       "/faculty": { target: "http://localhost:3000", changeOrigin: true },
+      "/users": { target: "http://localhost:3000", changeOrigin: true },
     },
   },  
 })

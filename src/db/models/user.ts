@@ -10,6 +10,7 @@ export const userSchema = new mongoose.Schema<User>(
         email : {type: String, required: true},
         password : {type: String, required: true},
         role : {type: String, required: true, enum: ["admin", "support"]},
+        must_change_password : {type: Boolean, required: true, default: false},
     }
 );
 

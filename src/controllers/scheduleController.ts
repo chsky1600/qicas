@@ -90,13 +90,13 @@ export const getSchedules = async (req : Request, res : Response) => {
 }
 
 // atomic rename — only updates the name field, not the full schedule
-// router.put("/schedule/:year", saveSchedule)
-export const saveSchedule = async (req : Request, res : Response) => {
+// router.put("/schedule/:year/rename", saveSchedule)
+export const renameSchedule = async (req : Request, res : Response) => {
     try {
         const year_id : string = req.params.year as string;
         const faculty_id : string = req.body.faculty_id;
         const schedule_id : string = req.body.schedule_id;
-        const name : string = req.body.name;
+        const name : string = req.body.schedule_name;
 
         if (!schedule_id || !name) {
             res.status(400).json({ error: "schedule_id and name are required" });
@@ -108,6 +108,45 @@ export const saveSchedule = async (req : Request, res : Response) => {
             {
                 $set: {
                     "academic_years.$[year].schedules.$[schedule].name": name,
+                },
+            },
+            {
+                arrayFilters: [
+                    { "year.id": year_id },
+                    { "schedule.id": schedule_id },
+                ],
+            }
+        );
+
+        if(result.modifiedCount > 0) {
+            res.sendStatus(200)
+        } else {
+            res.sendStatus(404)
+        }
+    } catch (err: any) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
+// atomic set is_rc — only updates the is_rc field, not the full schedule
+// router.put("/schedule/:year", saveSchedule)
+export const setRCSchedule = async (req : Request, res : Response) => {
+    try {
+        const year_id : string = req.params.year as string;
+        const faculty_id : string = req.body.faculty_id;
+        const schedule_id : string = req.body.schedule_id;
+        const is_rc : boolean = req.body.is_rc;
+
+        if (!schedule_id || !is_rc) {
+            res.status(400).json({ error: "schedule_id and is_rc are required" });
+            return;
+        }
+
+        const result = await FacultyModel.updateOne(
+            { id: faculty_id },
+            {
+                $set: {
+                    "academic_years.$[year].schedules.$[schedule].is_rc": is_rc,
                 },
             },
             {

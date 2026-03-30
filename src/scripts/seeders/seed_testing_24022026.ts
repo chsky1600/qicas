@@ -23,6 +23,7 @@ async function main() {
         email: "alice.johnson@university.edu",
         password: aliceHash,
         role: "admin",
+        must_change_password: false,
       },
       {
         id: "U002",
@@ -31,6 +32,7 @@ async function main() {
         email: "bob.smith@university.edu",
         password: bobHash,
         role: "support",
+        must_change_password: false,
       },
     ],
     current_working_schedule_id : "SCH001",

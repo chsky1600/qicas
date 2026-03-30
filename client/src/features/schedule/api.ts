@@ -1,6 +1,6 @@
 import type {
   Course, Instructor, Schedule, Assignment,
-  InstructorRule, CourseRule, Year, Violation, Faculty
+  InstructorRule, CourseRule, Year, Violation, Faculty, User, UserRole
 } from "./types"
 
 const BASE = ""
@@ -27,7 +27,17 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     throw new Error("Session expired")
   }
   _onActivity?.()
-  if (!res.ok) throw new Error(`${options?.method ?? "GET"} ${path} → ${res.status}`)
+  if (!res.ok) {
+    let detail = ""
+    const contentType = res.headers.get("content-type")
+    if (contentType?.includes("application/json")) {
+      try {
+        const data = await res.json() as { error?: string; message?: string }
+        detail = data.error ?? data.message ?? ""
+      } catch {}
+    }
+    throw new Error(detail || `${options?.method ?? "GET"} ${path} → ${res.status}`)
+  }
   
   // these responses have no body
   if (res.status === 204 || res.status === 205) return undefined as T
@@ -51,10 +61,57 @@ export function login(email: string, password: string) {
   })
 }
 
-export function changePassword(email: string, current_password: string, new_password: string) {
+export function changePassword(current_password: string | undefined, new_password: string) {
   return request<void>("/auth/password", {
     method: "PUT",
-    body: JSON.stringify({ email, current_password, new_password }),
+    body: JSON.stringify({ current_password, new_password }),
+  })
+}
+
+export function updateAccount(updates: { name?: string; email?: string }) {
+  return request<User>("/auth/account", {
+    method: "PUT",
+    body: JSON.stringify(updates),
+  })
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+
+export function getUsers() {
+  return request<User[]>("/users")
+}
+
+export function createUser(user: {
+  id: string
+  name: string
+  email: string
+  password: string
+  role: UserRole
+  must_change_password?: boolean
+}) {
+  return request<User>("/users", {
+    method: "POST",
+    body: JSON.stringify({ ...user, user_role: user.role, must_change_password: user.must_change_password ?? false }),
+  })
+}
+
+export function updateUser(userId: string, updates: {
+  name?: string
+  email?: string
+  password?: string
+  role?: UserRole
+  must_change_password?: boolean
+}) {
+  return request<User>(`/users/${userId}`, {
+    method: "PUT",
+    body: JSON.stringify({ ...updates, user_role: updates.role, must_change_password: updates.must_change_password }),
+  })
+}
+
+export function deleteUser(userId: string) {
+  return request<User>(`/users/${userId}`, {
+    method: "DELETE",
+    body: JSON.stringify({}),
   })
 }
 
@@ -68,14 +125,14 @@ export function getCreditsPerCourse() {
   return request<{ credits_per_course: number }>("/faculty/credits")
 }
 
-export function migrateToNextYear(source_year_id: string, new_year_id: string, name: string, schedule_ids: string[]){
+export function migrateToNextYear(source_year_id: string, new_year_id: string, year_name: string, schedule_ids: string[]){
   return request<Faculty>("/faculty/migrate", {
     method: "POST",
     body: JSON.stringify({
-      source_year_id, 
-      new_year_id, 
-      name, 
-      schedule_ids
+      source_year_id: source_year_id, 
+      new_year_id: new_year_id, 
+      year_name: year_name, 
+      schedule_ids: schedule_ids
     }),
   })
 }
@@ -182,10 +239,17 @@ export function setWorkingSchedule(scheduleId: string) {
   return request<Schedule>(`/schedule/active/${scheduleId}`, { method: "PUT" })
 }
 
-export function renameSchedule(year: string, scheduleId: string, name: string) {
-  return request<void>(`/schedule/${year}`, {
+export function renameSchedule(year: string, scheduleId: string, schedule_name: string) {
+  return request<void>(`/schedule/${year}/rename`, {
     method: "PUT",
-    body: JSON.stringify({ schedule_id: scheduleId, name }),
+    body: JSON.stringify({ schedule_id: scheduleId, schedule_name: schedule_name }),
+  })
+}
+
+export function setIsRCSchedule(year: string, scheduleId: string, is_rc: boolean) {
+  return request<void>(`/schedule/${year}/isrc`, {
+    method: "PUT",
+    body: JSON.stringify({ schedule_id: scheduleId, is_rc: is_rc }),
   })
 }
 

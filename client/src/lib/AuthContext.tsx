@@ -5,17 +5,23 @@ import { registerAuthHooks } from "@/features/schedule/api"
 
 interface Session {
   faculty_id: string
-  role: "admin" | "support"
+  user_id: string
   name: string
+  email: string
+  role: "admin" | "support"
+  must_change_password: boolean
   exp: number // unix seconds
 }
 
 interface AuthContextValue {
   authenticated: boolean
   loading: boolean
+  userId: string | null
+  name: string | null
+  email: string | null
   role: "admin" | "support" | null
   isAdmin: boolean
-  userName: string | null
+  mustChangePassword: boolean
   exp: number | null
   logout: () => Promise<void>
   refreshSession: () => Promise<boolean>
@@ -123,9 +129,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextValue = {
     authenticated: session !== null,
     loading,
+    userId: session?.user_id ?? null,
+    name: session?.name ?? null,
+    email: session?.email ?? null,
     role: session?.role ?? null,
     isAdmin: session?.role === "admin",
-    userName: session?.name ?? null,
+    mustChangePassword: session?.must_change_password ?? false,
     exp: session?.exp ?? null,
     logout,
     refreshSession,

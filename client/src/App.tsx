@@ -4,12 +4,14 @@ import SchedulePage from './pages/schedulePage'
 import { AuthGuard, GuestGuard } from './components/authGuard'
 import SessionWarning from './components/sessionWarning'
 import { AuthProvider } from './lib/AuthContext'
+import ForcedPasswordChange from './components/forcedPasswordChange'
 
 
 function App() {
   return (
     <AuthProvider>
       <SessionWarning />
+      <ForcedPasswordChange />
       <Routes>
         <Route path="/" element={<Navigate to="/schedule" replace />} />
 
