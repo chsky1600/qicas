@@ -42,6 +42,22 @@ const STEP_REOPEN_SNAPSHOTS   = 16  // ArrowLeft  - reopen snapshots (go back to
 // #saved-schedules-dialog-close - Saved Schedules close button
 // #saved-schedules-add       - Saved Schedules Add+ button
 
+// expand a collapsed toolbar button's label for tutorial visibility
+// and optionally pulse it to signal "click me"
+function tutorialExpand(el: HTMLElement, driverObj: ReturnType<typeof driver>, pulse = false) {
+  const wrapper = el.closest<HTMLElement>(".group")
+  if (wrapper) wrapper.classList.add("tutorial-expanded")
+  if (pulse) el.classList.add("tutorial-pulse")
+  // re-measure after the label transition finishes
+  setTimeout(() => driverObj.refresh(), 220)
+}
+
+function tutorialCollapse(el: HTMLElement) {
+  const wrapper = el.closest<HTMLElement>(".group")
+  if (wrapper) wrapper.classList.remove("tutorial-expanded")
+  el.classList.remove("tutorial-pulse")
+}
+
 export function useTutorial({
   onOpenProperties, onCloseProperties,
   onOpenSnapshots, onCloseSnapshots,
@@ -94,12 +110,12 @@ export function useTutorial({
           setTimeout(() => d.moveNext(), 150)
         } else if (index === STEP_COURSES_TAB) {
           e.stopImmediatePropagation()
-          const wrapper = document.querySelector<HTMLElement>("#properties-tab-courses")
-          if (wrapper && coursesTabClickHandler) {
-            wrapper.removeEventListener("click", coursesTabClickHandler)
+          const btn = document.querySelector<HTMLElement>("#properties-tab-courses button:last-child")
+          if (btn && coursesTabClickHandler) {
+            btn.removeEventListener("click", coursesTabClickHandler)
             coursesTabClickHandler = null
           }
-          document.querySelector<HTMLElement>("#properties-tab-courses button:last-child")?.click()
+          btn?.click()
           setTimeout(() => d.moveNext(), 50)
         } else if (index === STEP_CLOSE_PROPERTIES) {
           e.stopImmediatePropagation()
@@ -251,14 +267,18 @@ export function useTutorial({
           onHighlighted: () => {
             const btn = document.querySelector<HTMLElement>("#toolbar-edit-properties")
             if (!btn) return
+            tutorialExpand(btn, driverObj, true)
             propertiesClickHandler = () => setTimeout(() => driverObj.moveNext(), 150)
             btn.addEventListener("click", propertiesClickHandler)
           },
           onDeselected: () => {
             const btn = document.querySelector<HTMLElement>("#toolbar-edit-properties")
-            if (btn && propertiesClickHandler) {
-              btn.removeEventListener("click", propertiesClickHandler)
-              propertiesClickHandler = null
+            if (btn) {
+              tutorialCollapse(btn)
+              if (propertiesClickHandler) {
+                btn.removeEventListener("click", propertiesClickHandler)
+                propertiesClickHandler = null
+              }
             }
           },
           popover: {
@@ -287,24 +307,28 @@ export function useTutorial({
         },
         // 9 (STEP_COURSES_TAB) - user clicks Courses tab; Next hidden
         {
-          element: "#properties-tab-courses",
+          element: "#properties-tab-courses button:last-child",
           onHighlighted: () => {
-            const wrapper = document.querySelector<HTMLElement>("#properties-tab-courses")
-            if (!wrapper) return
+            const btn = document.querySelector<HTMLElement>("#properties-tab-courses button:last-child")
+            if (!btn) return
+            btn.classList.add("tutorial-pulse")
             coursesTabClickHandler = () => setTimeout(() => driverObj.moveNext(), 50)
-            wrapper.addEventListener("click", coursesTabClickHandler)
+            btn.addEventListener("click", coursesTabClickHandler)
           },
           onDeselected: () => {
-            const wrapper = document.querySelector<HTMLElement>("#properties-tab-courses")
-            if (wrapper && coursesTabClickHandler) {
-              wrapper.removeEventListener("click", coursesTabClickHandler)
-              coursesTabClickHandler = null
+            const btn = document.querySelector<HTMLElement>("#properties-tab-courses button:last-child")
+            if (btn) {
+              btn.classList.remove("tutorial-pulse")
+              if (coursesTabClickHandler) {
+                btn.removeEventListener("click", coursesTabClickHandler)
+                coursesTabClickHandler = null
+              }
             }
           },
           popover: {
             title: "Edit Properties: Switching Tabs",
             description:
-              "There are two tabs: Instructors and Courses. Click between them to switch what you're editing. Click the Courses tab now to continue",
+              "There are two tabs: Instructors and Courses. Click between them to switch what you're editing. Click the Courses tab now to continue.",
             side: "bottom",
             align: "start",
             showButtons: ["previous", "close"],
@@ -332,14 +356,18 @@ export function useTutorial({
           onHighlighted: () => {
             const btn = document.querySelector<HTMLElement>("#properties-dialog-close")
             if (!btn) return
+            btn.classList.add("tutorial-pulse")
             propertiesCloseHandler = () => setTimeout(() => driverObj.moveNext(), 50)
             btn.addEventListener("click", propertiesCloseHandler)
           },
           onDeselected: () => {
             const btn = document.querySelector<HTMLElement>("#properties-dialog-close")
-            if (btn && propertiesCloseHandler) {
-              btn.removeEventListener("click", propertiesCloseHandler)
-              propertiesCloseHandler = null
+            if (btn) {
+              btn.classList.remove("tutorial-pulse")
+              if (propertiesCloseHandler) {
+                btn.removeEventListener("click", propertiesCloseHandler)
+                propertiesCloseHandler = null
+              }
             }
           },
           popover: {
@@ -357,14 +385,18 @@ export function useTutorial({
           onHighlighted: () => {
             const btn = document.querySelector<HTMLElement>("#toolbar-saved-schedules")
             if (!btn) return
+            tutorialExpand(btn, driverObj, true)
             snapshotsClickHandler = () => setTimeout(() => driverObj.moveNext(), 150)
             btn.addEventListener("click", snapshotsClickHandler)
           },
           onDeselected: () => {
             const btn = document.querySelector<HTMLElement>("#toolbar-saved-schedules")
-            if (btn && snapshotsClickHandler) {
-              btn.removeEventListener("click", snapshotsClickHandler)
-              snapshotsClickHandler = null
+            if (btn) {
+              tutorialCollapse(btn)
+              if (snapshotsClickHandler) {
+                btn.removeEventListener("click", snapshotsClickHandler)
+                snapshotsClickHandler = null
+              }
             }
           },
           popover: {
@@ -412,14 +444,18 @@ export function useTutorial({
           onHighlighted: () => {
             const btn = document.querySelector<HTMLElement>("#saved-schedules-dialog-close")
             if (!btn) return
+            btn.classList.add("tutorial-pulse")
             snapshotsCloseHandler = () => setTimeout(() => driverObj.moveNext(), 50)
             btn.addEventListener("click", snapshotsCloseHandler)
           },
           onDeselected: () => {
             const btn = document.querySelector<HTMLElement>("#saved-schedules-dialog-close")
-            if (btn && snapshotsCloseHandler) {
-              btn.removeEventListener("click", snapshotsCloseHandler)
-              snapshotsCloseHandler = null
+            if (btn) {
+              btn.classList.remove("tutorial-pulse")
+              if (snapshotsCloseHandler) {
+                btn.removeEventListener("click", snapshotsCloseHandler)
+                snapshotsCloseHandler = null
+              }
             }
           },
           popover: {
@@ -434,6 +470,14 @@ export function useTutorial({
         // 16 (STEP_REOPEN_SNAPSHOTS) - prev reopens snapshots
         {
           element: "#toolbar-export",
+          onHighlighted: () => {
+            const btn = document.querySelector<HTMLElement>("#toolbar-export")
+            if (btn) tutorialExpand(btn, driverObj)
+          },
+          onDeselected: () => {
+            const btn = document.querySelector<HTMLElement>("#toolbar-export")
+            if (btn) tutorialCollapse(btn)
+          },
           popover: {
             title: "Export to CSV",
             description:
@@ -451,7 +495,7 @@ export function useTutorial({
           popover: {
             title: "You're all set!",
             description:
-              "That's the full tour. You can restart the tutorial any time from the Tutorial button in the toolbar.",
+              "That's the full tour. You can restart the tutorial any time from the More menu in the toolbar.",
             side: "over",
             align: "center",
           },
