@@ -14,7 +14,7 @@ interface Props {
   onOpenAccount: () => void
   onOpenSnapshots: () => void
   onOpenHowTo: () => void
-  onExportCSV: () => void
+  onExportData: () => void
   onStartTutorial: () => void
   onOpenMigration: () => void
   onLogout: () => void
@@ -28,7 +28,7 @@ interface Props {
 
 export default function Toolbar({
   years, yearId, schedule, saving,
-  role, onChangeYear, onOpenProperties, onOpenUsers, onOpenAccount, onOpenSnapshots, onOpenHowTo, onExportCSV, onStartTutorial, onOpenMigration,
+  role, onChangeYear, onOpenProperties, onOpenUsers, onOpenAccount, onOpenSnapshots, onOpenHowTo, onExportData, onStartTutorial, onOpenMigration,
   onLogout, isAdmin, userName, validationMode, setValidationMode, validateNow, validationStale
 }: Props) {
   const migrate = "migrate"
@@ -89,7 +89,7 @@ export default function Toolbar({
           </button>
         </div>
         <div className="group p-1 -m-0.5">
-          <button id="toolbar-export" onClick={onExportCSV} className={btn}>
+          <button id="toolbar-export" onClick={onExportData} className={btn}>
             <img src={icon.userExport} alt="Export" className="w-6 h-6"/><span className={label}>Export</span>
           </button>
         </div>

@@ -31,7 +31,7 @@ export default function SchedulePage() {
     createUserAccount, updateUserAccount, setTemporaryPassword, deleteUserAccount,
     addSchedule, copySchedule, deleteSavedSchedule, switchSchedule, renameSchedule,
     changeYear, migrateYear,
-    exportCSV, refresh,
+    exportData, refresh,
     creditsPerCourse,
     validationMode, setValidationMode, validateNow, validationStale
   } = useSchedule()
@@ -173,7 +173,7 @@ export default function SchedulePage() {
         onOpenAccount={() => setAccountOpen(true)}
         onOpenSnapshots={() => setSnapshotsOpen(true)}
         onOpenHowTo={() => setHowToOpen(true)}
-        onExportCSV={exportCSV}
+        onExportData={exportData}
         onStartTutorial={startTutorial}
         onOpenMigration={() => setMigrationOpen(true)}
         onLogout={logout}

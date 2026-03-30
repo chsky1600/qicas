@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import * as api from "./api"
+import * as XLSX from "xlsx"
 import type {
   Year, Course, Instructor, Schedule, Assignment,
   InstructorRule, CourseRule, Violation, Term, ValidationMode, User, UserRole
@@ -57,7 +58,7 @@ export interface UseScheduleResult {
   refresh: () => Promise<void>
   updateInstructorRule: (ruleId: string, updates: Partial<InstructorRule>) => Promise<void>
   updateCourseRule: (ruleId: string, updates: Partial<CourseRule>) => Promise<void>
-  exportCSV: () => void
+  exportData: (fileType?: "csv"|"xlsx") => void
   setValidationMode: (mode: ValidationMode) => void
   validateNow: () => Promise<void>
   undo: () => Promise<void>
@@ -650,7 +651,7 @@ export function useSchedule(): UseScheduleResult {
   }, [changeYear])
 
   // ── export scheudle ─────────────────────────────────────────────────────────────
-  function exportCSV() {
+    function exportData(fileType: "csv"|"xlsx"="xlsx") {
     const scheduleName = schedule?.name ?? "Schedule"
   
     interface row {
@@ -670,12 +671,6 @@ export function useSchedule(): UseScheduleResult {
   
     // there must be at least 1
     let maxFallAssigned = 1;
-    
-    // fast reference between course codes and respective courses
-    const courseMap = new Map<string, Course>();
-    for (const c of courses) {
-      courseMap.set(c.code, c);
-    }
 
     // built for faster reference of which instructors are dropped
     const instructorDropedSet = new Set<string>();
@@ -687,7 +682,7 @@ export function useSchedule(): UseScheduleResult {
     for (const i of instructors) {
       const dropped = instructorDropedSet.has(i.id)
       if (!dropped) exportMap.set(i.id, {
-          data: [RANK_DISPLAY[i.rank].short + " " + i.name],
+          data: [RANK_DISPLAY[i.rank].short + " " + i.name, i.email ?? ""],
           fallAssign: [],
           wintAssign: [],
         }
@@ -698,10 +693,16 @@ export function useSchedule(): UseScheduleResult {
       const csvRow = exportMap.get(a.instructor_id);
       if (!csvRow) continue
   
-      const c = courseMap.get(a.course_code);
-      if (!c) continue;
+      const c = courses.find(c => c.code === a.course_code)
+      if (!c) continue;      
   
       let courseString = a.course_code;
+      const c_rule = courseRulesRef.current.find(r => r.course_code === a.course_code);
+      if (c_rule && c_rule.is_full_year) {
+        if (a.term === "Fall") courseString += "A"
+        else courseString += "B"        
+      }
+
       if (c.sections.length > 1) {
         const s = c.sections.find(s => s.id === a.section_id) ?? { id: "", number: 1, capacity: 0 };
         courseString += "-" + s.number;
@@ -719,7 +720,7 @@ export function useSchedule(): UseScheduleResult {
       }
     }
   
-    let csv: string = `${scheduleName},`;
+    let csv: string = `${scheduleName},,`;
   
     let fallPadding = ",";
     while (fallPadding.length < maxFallAssigned) fallPadding += ",";
@@ -737,13 +738,34 @@ export function useSchedule(): UseScheduleResult {
   
       csv += combinedRow.join(",") + "\n";
     });
-  
-    const blob = new Blob([csv], { type: "text/csv" });
+    
+    let blob: Blob;
+    let fileName = `${scheduleName}-${timestamp}`
+    if (fileType === "csv") {
+      blob = new Blob([csv], { type: "text/csv" });
+
+      fileName = fileName + ".csv"
+    }
+    else {
+      const workbook = XLSX.read(csv, { type: "string" })
+
+      const xlsxData = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array"
+      })
+
+      blob = new Blob([xlsxData], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      })
+
+      fileName = fileName + ".xlsx"
+    }
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
   
-    a.download = `${scheduleName}-${timestamp}.csv`;
+    a.download = fileName;
   
     a.click();
     URL.revokeObjectURL(url);
@@ -773,7 +795,7 @@ export function useSchedule(): UseScheduleResult {
     createUserAccount, updateUserAccount, setTemporaryPassword, deleteUserAccount,
     addSchedule, copySchedule, switchSchedule, deleteSavedSchedule, renameSchedule,
     changeYear, migrateYear,
-    exportCSV,
+    exportData,
     refresh: load,
     updateInstructorRule,
     updateCourseRule,
