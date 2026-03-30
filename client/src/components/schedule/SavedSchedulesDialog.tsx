@@ -3,6 +3,7 @@ import { X } from "lucide-react"
 import type { Schedule, Course, CourseRule } from "@/features/schedule/types"
 import { HelpTooltip } from "../ui/help-tooltip.tsx"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import ConfirmDialog from "../ui/confirm-dialog.tsx"
 
 
 interface Props {
@@ -35,9 +36,9 @@ export default function SavedSchedulesDialog({
   onAddSchedule, onCopySchedule, onDeleteSavedSchedule, onSwitchSchedule,
   onRenameSchedule, isAdmin,
 }: Props) {
-  const [loading, setLoading] = useState(false)
   const [renameId, setRenameId] = useState<string|null>(null)
   const [renameValue, setRenameValue] = useState<string>("")
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const total = totalSections(courses, courseRules)
 
@@ -56,8 +57,7 @@ export default function SavedSchedulesDialog({
         id="saved-schedules-dialog"
         showCloseButton={false}
         onInteractOutside={(e) => {
-          const target = e.target as Element
-          if (target.closest?.("#driver-popover-content")) e.preventDefault()
+          if (document.querySelector("#driver-popover-content")) e.preventDefault()
         }}
         className="p-0 gap-0 w-[700px] max-h-[70vh] h-auto flex flex-col rounded-lg overflow-hidden"
       >
@@ -159,9 +159,7 @@ export default function SavedSchedulesDialog({
                       </button>
                       {isAdmin && (
                         <button
-                          onClick={() => {
-                            if (window.confirm(`Do you want to delete "${s.name}"?`))onDeleteSavedSchedule(s.id)
-                          }}
+                          onClick={() => setConfirmDeleteId(s.id)}
                           className="text-xs bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
                         >
                           Delete
@@ -176,6 +174,15 @@ export default function SavedSchedulesDialog({
           })}
         </div>
       </DialogContent>
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Delete Schedule"
+        message={`Are you sure you want to delete "${schedules.find(s => s.id === confirmDeleteId)?.name}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={() => { onDeleteSavedSchedule(confirmDeleteId!); setConfirmDeleteId(null) }}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
     </Dialog>
   )
 }
+

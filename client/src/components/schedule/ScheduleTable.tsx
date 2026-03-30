@@ -5,8 +5,10 @@ import type { SortBy } from "./InstructorFilters.tsx"
 import { HelpTooltip } from "../ui/help-tooltip.tsx"
 import type {
   Instructor, InstructorRule, Course, CourseRule,
-  Assignment, Violation, InstructorRank
+  Assignment, Violation, InstructorRank, Term,
+  Section
 } from "@/features/schedule/types"
+import type { SectionDragData } from "@/features/schedule/types"
 
 interface Props {
   instructors: Instructor[]
@@ -21,13 +23,15 @@ interface Props {
   onHighlight: (sectionId: string | null) => void
   onAddNote: (instructor: any, content: string, userName: string) => Promise<void>
   userName: string | null
+  previewTarget: { instructorId: string, term: Term } | null
+  dragging: SectionDragData | null
 }
 
 export default function ScheduleTable({
   instructors, instructorRules, courses, courseRules,
   assignments, violations, onAddInstructor, isAdmin,
   highlightedSectionId, onHighlight,
-  onAddNote, userName,
+  onAddNote, userName, previewTarget, dragging,
 }: Props) {
   const [search, setSearch] = useState("")
   const [sortBy, setSortBy] = useState<SortBy>(null)
@@ -127,6 +131,8 @@ export default function ScheduleTable({
               onHighlight={onHighlight}
               onAddNote={onAddNote}
               userName={userName}
+              previewTarget={previewTarget}
+              dragging={dragging}
             />
           ))}
         </tbody>

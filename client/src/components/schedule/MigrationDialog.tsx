@@ -14,10 +14,11 @@ interface Props {
   schedules: Schedule[]
   onMigrateYear: (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[], release_Candidate_Id?: string) => Promise<void>
   onOpenProperties: () => void
+  skipYearCheck?: boolean
 }
 
 export default function MigrationDialog({
-  open, onClose, years, loadedYearId, activeSchedule, schedules, onMigrateYear, onOpenProperties
+  open, onClose, years, loadedYearId, activeSchedule, schedules, onMigrateYear, onOpenProperties, skipYearCheck
 }: Props) {
   type migrationStages  = "SelectSchedules" | "SelectRC" | "Confirm";
   const [migrationStage, setMigrationStage] = useState<migrationStages>("SelectSchedules");
@@ -31,7 +32,7 @@ export default function MigrationDialog({
   )
 
   useEffect(() => {
-    if(open && loadedYearId !== latestYear.id){
+    if(open && !skipYearCheck && loadedYearId !== latestYear.id){
       toast.warning(`To create a new academic year you must have the latest year open.`, {
         duration: 8000,
         description: <span>Please open <b>{latestYear.name}</b> and try again.</span>,
@@ -39,9 +40,9 @@ export default function MigrationDialog({
       })
       onClose()
     }
-  }, [open, loadedYearId, latestYear.id])
+  }, [open, loadedYearId, latestYear.id, skipYearCheck])
 
-  if (!open || loadedYearId !== latestYear.id) return null
+  if (!open || (!skipYearCheck && loadedYearId !== latestYear.id)) return null
   
   function toggle(id: string){
     setSelectedScheduleIds(prev => {
@@ -252,18 +253,17 @@ export default function MigrationDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) {setMigrationStage("SelectSchedules"); onClose()} }}>
     <DialogContent
-        id="saved-schedules-dialog"
+        id="migration-dialog"
         showCloseButton={false}
         onInteractOutside={(e) => {
-          const target = e.target as Element
-          if (target.closest?.("#driver-popover-content")) e.preventDefault()
+          if (document.querySelector("#driver-popover-content")) e.preventDefault()
         }}
         className="p-0 gap-0 w-4/6 h-auto flex flex-col rounded-lg overflow-hidden"
       >
       <div className="bg-white rounded-lg shadow-xl flex flex-col max-h-[70vh]">
         <DialogTitle className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
           <span className="text-white font-semibold text-base">Creating {newName} Academic year</span>       
-          <button onClick={() => {setMigrationStage("SelectSchedules"); onClose()}} className="text-white hover:text-gray-300">
+          <button id="migration-dialog-close" onClick={() => {setMigrationStage("SelectSchedules"); onClose()}} className="text-white hover:text-gray-300">
             <X size={18} />
           </button>
         </DialogTitle>

@@ -94,7 +94,7 @@ export default function Toolbar({
           </button>
         </div>
         {isAdmin && (validationMode === "auto" ? (
-          <div className="group p-1 -m-0.5">
+          <div id="toolbar-validation-mode" className="group p-1 -m-0.5">
             <button
               onClick={() => setValidationMode("manual")}
               className={`${btn} gap-2`}
@@ -104,7 +104,7 @@ export default function Toolbar({
             </button>
           </div>
         ) : (
-          <div className="relative group p-1 -m-0.5">
+          <div id="toolbar-validation-mode" className="relative group p-1 -m-0.5">
             <button
               onClick={(e) => { (e.target as HTMLElement).blur(); validateNow() }}
               className={`flex items-center justify-center gap-2 text-white px-3 py-2 rounded text-sm cursor-pointer transition-colors bg-[#1a1a1a] border hover:bg-[#3c3c3c] focus:outline-none ${validationStale ? "border-green-500 animate-pulse" : "border-[#444]"}`}
@@ -123,7 +123,7 @@ export default function Toolbar({
         ))}
 
         {/* More dropdown */}
-        <div className="group relative p-1 -m-0.5" ref={moreRef}>
+        <div id="toolbar-more-wrapper" className="group relative p-1 -m-0.5" ref={moreRef}>
           <button id="toolbar-more" onClick={() => setMoreOpen(o => !o)} className={btn}>
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 256 256" className="w-6 h-6 fill-white"><circle cx="128" cy="128" r="16"/><circle cx="128" cy="64" r="16"/><circle cx="128" cy="192" r="16"/></svg>
             <span className={label}>More</span>

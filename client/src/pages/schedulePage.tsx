@@ -5,7 +5,7 @@ import type { DragEndEvent, DragStartEvent, DragOverEvent } from "@dnd-kit/core"
 import { useSchedule } from "@/features/schedule/useSchedule"
 import * as api from "@/features/schedule/api"
 import { useTutorial } from "@/features/schedule/useTutorial"
-import type { SectionDragData, InstructorDropData, PanelDropData } from "@/features/schedule/types"
+import type { SectionDragData, InstructorDropData, PanelDropData, Term } from "@/features/schedule/types"
 import { useAuth } from "@/lib/AuthContext"
 import Toolbar from "@/components/schedule/Toolbar"
 import CoursesPanel from "@/components/schedule/CoursesPanel"
@@ -25,7 +25,7 @@ export default function SchedulePage() {
     instructors, instructorRules, users,
     schedules, schedule, assignments, violations,
     saving, loading, error,
-    assign, unassign,
+    assign, unassign, undo, redo,
     createInstructor, updateInstructor, addNote, dropInstructor, updateInstructorRule,
     createCourse, updateCourse, dropCourse, updateCourseRule,
     createUserAccount, updateUserAccount, setTemporaryPassword, deleteUserAccount,
@@ -40,6 +40,7 @@ export default function SchedulePage() {
   const [snapshotsOpen, setSnapshotsOpen] = useState(false)
   const [migrationOpen, setMigrationOpen] = useState(false)
   const [howToOpen, setHowToOpen] = useState(false)
+  const [tutorialActive, setTutorialActive] = useState(false)
   const [usersOpen, setUsersOpen] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
   const [dragging, setDragging] = useState<SectionDragData | null>(null)
@@ -47,14 +48,30 @@ export default function SchedulePage() {
   const [highlightedSectionId, setHighlightedSectionId] = useState<string | null>(null)
   const [propertiesMode, setPropertiesMode] = useState<"instructors" | "courses">("instructors")
   const [propertiesAdd, setPropertiesAdd] = useState(false) // flag to tell properties tab to make a new course/instructor on open
+  const shiftHeldRef = useRef(false)
+  const [previewTarget, setPreviewTarget] = useState<{ instructorId: string; term: Term } | null>(null)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { shiftHeldRef.current = e.shiftKey }
+    window.addEventListener('keydown', onKey)
+    window.addEventListener('keyup', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('keyup', onKey)
+    }
+  }, [])
+
   const { startTutorial } = useTutorial({
-    courses, courseRules,
-    instructors, instructorRules,
-    schedule, schedules,
+    role,
     onOpenProperties: () => { setPropertiesMode("instructors"); setPropertiesOpen(true) },
     onCloseProperties: () => setPropertiesOpen(false),
     onOpenSnapshots: () => setSnapshotsOpen(true),
     onCloseSnapshots: () => setSnapshotsOpen(false),
+    onOpenUsers: () => setUsersOpen(true),
+    onCloseUsers: () => setUsersOpen(false),
+    onOpenMigration: () => setMigrationOpen(true),
+    onCloseMigration: () => setMigrationOpen(false),
+    onTutorialStart: () => setTutorialActive(true),
+    onTutorialEnd: () => setTutorialActive(false),
   })
 
   const tutorialStarted = useRef(false)
@@ -69,6 +86,19 @@ export default function SchedulePage() {
     if (!admin) setUsersOpen(false)
   }, [admin])
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) redo()
+        else undo()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [undo, redo])
+
+
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   function handleDragStart(e: DragStartEvent) {
@@ -76,43 +106,39 @@ export default function SchedulePage() {
   }
 
   function handleDragOver(e: DragOverEvent) {
-    const overData = e.over?.data.current as { type?: string } | undefined
-    setOverValid(overData?.type === "instructor")
+    const overData = e.over?.data.current as { type?: string; instructorId?: string; term?: Term } | undefined
+    const isInstructor = overData?.type === "instructor"
+    if (isInstructor && shiftHeldRef.current && validationMode === "auto") {
+      setOverValid(false)
+      setPreviewTarget({ instructorId: overData.instructorId!, term: overData.term! })
+    } else {
+      setOverValid(isInstructor)
+      setPreviewTarget(null)
+    }
   }
 
   function handleDragEnd(e: DragEndEvent) {
+    const wasShift = shiftHeldRef.current
     setDragging(null)
     setOverValid(false)
+    setPreviewTarget(null)
+    if (wasShift) return
+
     const drag = e.active.data.current as SectionDragData
     if (!e.over) return
-
     const over = e.over.data.current as InstructorDropData | PanelDropData
-
-    if (over.type === "panel" && drag.assignmentId) {
-      unassign(drag.assignmentId)
-      return
-    }
-
+    if (over.type === "panel" && drag.assignmentId) { unassign(drag.assignmentId); return }
     if (over.type !== "instructor") return
-
     const isFullYear = courseRules.find(r => r.course_code === drag.courseCode)?.is_full_year ?? false
-
-    // Full year: Fall chip must stay in Fall, Winter chip must stay in Winter.
-    // If user drags across terms, redirect to the chip that belongs in the target term.
     if (isFullYear && drag.source === "chip" && drag.prevTerm !== over.term) {
-      const targetAssignment = assignments.find(
-        a => a.course_code === drag.courseCode && a.term === over.term
-      )
+      const targetAssignment = assignments.find(a => a.course_code === drag.courseCode && a.term === over.term)
       if (targetAssignment) {
-        // Move the chip that actually belongs in that term
         assign(targetAssignment.section_id, drag.courseCode, over.instructorId, over.term, targetAssignment.id)
       } else {
-        // No chip in target term yet — move the dragged chip there (change its term)
         assign(drag.sectionId, drag.courseCode, over.instructorId, over.term, drag.assignmentId)
       }
       return
     }
-
     assign(drag.sectionId, drag.courseCode, over.instructorId, over.term, drag.assignmentId)
   }
 
@@ -183,6 +209,8 @@ export default function SchedulePage() {
               onHighlight={setHighlightedSectionId}
               onAddNote={addNote}
               userName={userName}
+              previewTarget={previewTarget}
+              dragging={dragging}
             />
           </div>
           <DragOverlay modifiers={[snapCenterToCursor]} dropAnimation={null}>
@@ -217,6 +245,8 @@ export default function SchedulePage() {
             onHighlight={setHighlightedSectionId}
             onAddNote={addNote}
             userName={userName}
+            previewTarget={previewTarget}
+            dragging={dragging}
           />
         </div>
       )}
@@ -267,6 +297,7 @@ export default function SchedulePage() {
         schedules={schedules}
         onMigrateYear={migrateYear}
         onOpenProperties={() => {setPropertiesMode("instructors"); setPropertiesOpen(true) }}
+        skipYearCheck={tutorialActive}
       />
 
       <UserManagementDialog

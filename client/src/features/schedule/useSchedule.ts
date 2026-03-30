@@ -9,6 +9,11 @@ import  {
   RANK_DISPLAY
 } from "./types"
 
+type UndoEntry =
+  | { type: 'assign'; added: Assignment; removed: Assignment[] }
+  | { type: 'unassign'; removed: Assignment }
+
+
 export interface UseScheduleResult {
   // Raw data — components derive what they need
   years: Year[]
@@ -25,6 +30,9 @@ export interface UseScheduleResult {
   saving: boolean
   loading: boolean
   error: string | null
+  creditsPerCourse: number
+  validationMode: ValidationMode
+  validationStale: boolean
   // Actions
   assign: (sectionId: string, courseCode: string, instructorId: string, term: Term, prevAssignmentId: string | null) => Promise<void>
   unassign: (assignmentId: string) => Promise<void>
@@ -50,11 +58,10 @@ export interface UseScheduleResult {
   updateInstructorRule: (ruleId: string, updates: Partial<InstructorRule>) => Promise<void>
   updateCourseRule: (ruleId: string, updates: Partial<CourseRule>) => Promise<void>
   exportCSV: () => void
-  creditsPerCourse: number
-  validationMode: ValidationMode
   setValidationMode: (mode: ValidationMode) => void
   validateNow: () => Promise<void>
-  validationStale: boolean
+  undo: () => Promise<void>
+  redo: () => Promise<void>
 }
 
 export function useSchedule(): UseScheduleResult {
@@ -86,15 +93,17 @@ export function useSchedule(): UseScheduleResult {
   const courseRulesRef = useRef(courseRules)
   const coursesRef = useRef(courses)
   const lastSchedulePerYear = useRef<Record<string, string>>({})
+  const validationModeRef = useRef(validationMode)
+  const localVersionRef = useRef(0)
+  const savingRef = useRef(false)
+  const historyRef = useRef<UndoEntry[]>([])
+  const futureRef = useRef<UndoEntry[]>([])
   useEffect(() => { scheduleRef.current = schedule }, [schedule])
   useEffect(() => { yearIdRef.current = yearId }, [yearId])
   useEffect(() => { instructorRulesRef.current = instructorRules }, [instructorRules])
   useEffect(() => { courseRulesRef.current = courseRules }, [courseRules])
   useEffect(() => { coursesRef.current = courses}, [courses])
-  const validationModeRef = useRef(validationMode)
   useEffect(() => { validationModeRef.current = validationMode }, [validationMode])
-  const localVersionRef = useRef(0)
-  const savingRef = useRef(false)
   useEffect(() => { savingRef.current = saving }, [saving])
 
   const assignments = useMemo(() => schedule?.assignments ?? [], [schedule])
@@ -124,6 +133,8 @@ export function useSchedule(): UseScheduleResult {
   // ── Load year data ──────────────────────────────────────────────────────────
 
   const loadYear = useCallback(async (yr: string, workingSchedule: Schedule | null) => {
+    historyRef.current = []
+    futureRef.current = []
     const [coursesData, courseRulesData, instructorsData, instructorRulesData, schedulesData] =
       await Promise.all([
         api.getCourses(yr),
@@ -281,6 +292,8 @@ export function useSchedule(): UseScheduleResult {
       await api.addAssignment(yr, sched.id, newAssignment)
       localVersionRef.current += 1
       triggerRevalidate()
+      historyRef.current = [...historyRef.current.slice(-19), { type: 'assign', added: newAssignment, removed: toRemove }]
+      futureRef.current = []
     } catch (e: any) {
       console.error("Assignment failed", e)
       if (e.message?.includes("409")) {
@@ -295,6 +308,7 @@ export function useSchedule(): UseScheduleResult {
     const sched = scheduleRef.current
     const yr = yearIdRef.current
     if (!sched || !yr) return
+    const assignment = sched.assignments.find(a => a.id === assignmentId)
     setSaving(true)
 
     setSchedule(prev =>
@@ -305,10 +319,68 @@ export function useSchedule(): UseScheduleResult {
       await api.removeAssignment(yr, sched.id, assignmentId)
       localVersionRef.current += 1
       triggerRevalidate()
+      if (assignment) {
+        historyRef.current = [...historyRef.current.slice(-19), { type: 'unassign', removed: assignment }]
+        futureRef.current = []
+      }
     } catch (e) {
       console.error("Unassign failed", e)
       load()
     }
+    setSaving(false)
+  }, [load, triggerRevalidate])
+
+  const undo = useCallback(async () => {
+    const entry = historyRef.current[historyRef.current.length - 1]
+    if (!entry) return
+    const sched = scheduleRef.current
+    const yr = yearIdRef.current
+    if (!sched || !yr) return
+    historyRef.current = historyRef.current.slice(0, -1)
+    setSaving(true)
+    try {
+      if (entry.type === 'assign') {
+        await api.removeAssignment(yr, sched.id, entry.added.id)
+        for (const a of entry.removed) await api.addAssignment(yr, sched.id, a)
+        setSchedule(prev => {
+          if (!prev) return prev
+          const filtered = prev.assignments.filter(a => a.id !== entry.added.id)
+          return { ...prev, assignments: [...filtered, ...entry.removed] }
+        })
+      } else {
+        await api.addAssignment(yr, sched.id, entry.removed)
+        setSchedule(prev => prev ? { ...prev, assignments: [...prev.assignments, entry.removed] } : prev)
+      }
+      futureRef.current = [...futureRef.current, entry]
+      triggerRevalidate()
+    } catch { load() }
+    setSaving(false)
+  }, [load, triggerRevalidate])
+
+  const redo = useCallback(async () => {
+    const entry = futureRef.current[futureRef.current.length - 1]
+    if (!entry) return
+    const sched = scheduleRef.current
+    const yr = yearIdRef.current
+    if (!sched || !yr) return
+    futureRef.current = futureRef.current.slice(0, -1)
+    setSaving(true)
+    try {
+      if (entry.type === 'assign') {
+        for (const a of entry.removed) await api.removeAssignment(yr, sched.id, a.id)
+        await api.addAssignment(yr, sched.id, entry.added)
+        setSchedule(prev => {
+          if (!prev) return prev
+          const removeIds = new Set(entry.removed.map(a => a.id))
+          return { ...prev, assignments: [...prev.assignments.filter(a => !removeIds.has(a.id)), entry.added] }
+        })
+      } else {
+        await api.removeAssignment(yr, sched.id, entry.removed.id)
+        setSchedule(prev => prev ? { ...prev, assignments: prev.assignments.filter(a => a.id !== entry.removed.id) } : prev)
+      }
+      historyRef.current = [...historyRef.current, entry]
+      triggerRevalidate()
+    } catch { load() }
     setSaving(false)
   }, [load, triggerRevalidate])
 
@@ -693,7 +765,7 @@ export function useSchedule(): UseScheduleResult {
     saving, loading, error,
     creditsPerCourse,
     validationMode, setValidationMode, validateNow, validationStale,
-    assign, unassign,
+    assign, unassign, undo, redo,
     createInstructor, updateInstructor, addNote, dropInstructor,
     createCourse, updateCourse, dropCourse,
     createUserAccount, updateUserAccount, setTemporaryPassword, deleteUserAccount,

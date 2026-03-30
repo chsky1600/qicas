@@ -240,3 +240,12 @@ button:focus-visible {
 .tutorial-pulse {
   animation: tutorial-pulse 2s ease-in-out infinite;
 }
+
+/* driver.js forces overflow:hidden on parents of highlighted elements,
+   which clips the More dropdown. Override it for the toolbar. */
+:has(> #toolbar-more-wrapper.driver-active-element) {
+  overflow: visible !important;
+}
+#toolbar-more-wrapper.driver-active-element {
+  overflow: visible !important;
+}

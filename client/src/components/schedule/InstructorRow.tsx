@@ -2,7 +2,8 @@ import { useState, useRef } from "react"
 import { useDroppable } from "@dnd-kit/core"
 import * as Popover from "@radix-ui/react-popover"
 import SectionChip from "./SectionChip"
-import type { Instructor, InstructorRule, Course, CourseRule, Assignment, Violation } from "@/features/schedule/types"
+import type { Instructor, InstructorRule, Course, CourseRule, Assignment, Violation, Term } from "@/features/schedule/types"
+import type { SectionDragData } from "@/features/schedule/types"
 import { RANK_DISPLAY } from "@/features/schedule/types"
 import * as icon from '@/assets/index'
 
@@ -18,9 +19,12 @@ interface Props {
   onHighlight: (sectionId: string | null) => void
   onAddNote: (instructor: Instructor, content: string, userName: string) => Promise<void>
   userName: string | null
+  previewTarget: { instructorId: string; term: Term } | null
+  dragging: SectionDragData | null
+
 }
 
-export default function InstructorRow({ instructor, rule, courses, courseRules, assignments, violations, isAdmin, highlightedSectionId, onHighlight, onAddNote, userName }: Props) {
+export default function InstructorRow({ instructor, rule, courses, courseRules, assignments, violations, isAdmin, highlightedSectionId, onHighlight, onAddNote, userName, previewTarget, dragging }: Props) {
   const [showViolations, setShowViolations] = useState(false)
   const [noteOpen, setNoteOpen] = useState(false)
   const [noteInput, setNoteInput] = useState("")
@@ -50,6 +54,8 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
       const secB = courses.find(c => c.code === b.course_code)?.sections.find(s => s.id === b.section_id)?.number ?? 0
       return secA - secB
     })
+  const draggingSection = dragging ? courses.find(c => c.code === dragging.courseCode)?.sections.find(s => s.id === dragging.sectionId) : null
+  const draggingRule = dragging ? courseRules.find(r => r.course_code === dragging.courseCode) : null
 
   const assignedWorkload = [...fallAssignments, ...wintAssignments].reduce((sum, a) => {
     const cr = courseRules.find(r => r.course_code === a.course_code)
@@ -219,6 +225,12 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
               ) : null
             })}
           </div>
+          {previewTarget?.instructorId === instructor.id && previewTarget.term === "Fall" && dragging && draggingSection && (
+            <span className="bg-gray-400 text-white px-2 py-1 rounded text-sm opacity-50 pointer-events-none select-none">
+              {dragging.courseCode}{draggingRule?.is_full_year ? "A" : ""}-{draggingSection.number}
+            </span>
+          )}
+
         </td>
 
         {/* -- Winter Col -- */}
@@ -251,6 +263,11 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
               ) : null
             })}
           </div>
+          {previewTarget?.instructorId === instructor.id && previewTarget.term === "Winter" && dragging && draggingSection && (
+            <span className="bg-gray-400 text-white px-2 py-1 rounded text-sm opacity-50 pointer-events-none select-none">
+              {dragging.courseCode}{draggingRule?.is_full_year ? "B" : ""}-{draggingSection.number}
+            </span>
+          )}
         </td>
       </tr>
 
