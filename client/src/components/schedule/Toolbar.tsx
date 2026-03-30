@@ -9,6 +9,7 @@ interface Props {
   onChangeYear: (yearId: string) => void
   onOpenProperties: () => void
   onOpenSnapshots: () => void
+  onOpenHowTo: () => void
   onExportCSV: () => void
   onStartTutorial: () => void
   onOpenMigration: () => void
@@ -23,7 +24,7 @@ interface Props {
 
 export default function Toolbar({
   years, yearId, schedule, saving,
-  onChangeYear, onOpenProperties, onOpenSnapshots, onExportCSV, onStartTutorial, onOpenMigration,
+  onChangeYear, onOpenProperties, onOpenSnapshots, onOpenHowTo, onExportCSV, onStartTutorial, onOpenMigration,
   onLogout, isAdmin, userName, validationMode, setValidationMode, validateNow, validationStale
 }: Props) {
   const migrate = "migrate"
@@ -59,6 +60,9 @@ export default function Toolbar({
       <div className="flex gap-2">
         <button onClick={onStartTutorial} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none">
           <img src={icon.tutorial} alt="Tutorial" className="w-6 h-6"/>Tutorial
+        </button>
+        <button onClick={onOpenHowTo} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none">
+          <img src={icon.tutorial} alt="How-To's" className="w-6 h-6"/>How-To's
         </button>
         {isAdmin && (
           <button id="toolbar-edit-properties" onClick={onOpenProperties} className="flex items-center gap-2 bg-[#1a1a1a] text-white border border-[#444] px-4 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none">

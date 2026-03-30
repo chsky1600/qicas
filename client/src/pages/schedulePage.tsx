@@ -12,6 +12,7 @@ import ScheduleTable from "@/components/schedule/ScheduleTable"
 import PropertiesDialog from "@/components/schedule/PropertiesDialog"
 import SavedSchedulesDialog from "@/components/schedule/SavedSchedulesDialog"
 import MigrationDialog from "@/components/schedule/MigrationDialog"
+import HowToDialog from "@/components/schedule/HowToDialog"
 import SectionChip from "@/components/schedule/SectionChip"
 import { Toaster } from "@/components/ui/sonner"
 
@@ -35,6 +36,7 @@ export default function SchedulePage() {
   const [propertiesOpen, setPropertiesOpen] = useState(false)
   const [snapshotsOpen, setSnapshotsOpen] = useState(false)
   const [migrationOpen, setMigrationOpen] = useState(false)
+  const [howToOpen, setHowToOpen] = useState(false)
   const [dragging, setDragging] = useState<SectionDragData | null>(null)
   const [overValid, setOverValid] = useState(false)
   const [highlightedSectionId, setHighlightedSectionId] = useState<string | null>(null)
@@ -131,6 +133,7 @@ export default function SchedulePage() {
         onChangeYear={changeYear}
         onOpenProperties={() => { setPropertiesMode("instructors"); setPropertiesOpen(true) }}
         onOpenSnapshots={() => setSnapshotsOpen(true)}
+        onOpenHowTo={() => setHowToOpen(true)}
         onExportCSV={exportCSV}
         onStartTutorial={startTutorial}
         onOpenMigration={() => setMigrationOpen(true)}
@@ -245,12 +248,18 @@ export default function SchedulePage() {
 
       <MigrationDialog
         open={migrationOpen}
-        onClose={() => setMigrationOpen(false)}        
+        onClose={() => setMigrationOpen(false)}
         loadedYearId={yearId}
-        years={years}        
+        years={years}
         activeSchedule={schedule}
         schedules={schedules}
         onMigrateYear={migrateYear}
+      />
+
+      <HowToDialog
+        open={howToOpen}
+        onClose={() => setHowToOpen(false)}
+        isAdmin={admin}
       />
     </div>
   )
