@@ -352,6 +352,7 @@ export function useSchedule(): UseScheduleResult {
         setSchedule(prev => prev ? { ...prev, assignments: [...prev.assignments, entry.removed] } : prev)
       }
       futureRef.current = [...futureRef.current, entry]
+      localVersionRef.current += entry.type === 'assign' ? 1 + entry.removed.length : 1
       triggerRevalidate()
     } catch { load() }
     setSaving(false)
@@ -379,6 +380,7 @@ export function useSchedule(): UseScheduleResult {
         setSchedule(prev => prev ? { ...prev, assignments: prev.assignments.filter(a => a.id !== entry.removed.id) } : prev)
       }
       historyRef.current = [...historyRef.current, entry]
+      localVersionRef.current += entry.type === 'assign' ? entry.removed.length + 1 : 1
       triggerRevalidate()
     } catch { load() }
     setSaving(false)
