@@ -13,7 +13,7 @@ jobs:
     - uses: oven-sh/setup-bun@v2
     - run: bun install
     - run: |
-        if find . -name '*.test.*' -o -name '*.spec.*' | grep -q .; then
+        if find . -path ./node_modules -prune -o \( -name '*.test.*' -o -name '*.spec.*' \) -print | grep -q .; then
           bun test
         else
           echo "No test files found, skipping"
