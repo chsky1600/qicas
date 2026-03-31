@@ -129,7 +129,7 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
             </div>
           )}
 
-          {userName && (cellHovered || noteOpen || myNotes.length > 0) && (
+          {isAdmin && userName && (cellHovered || noteOpen || myNotes.length > 0) && (
             <Popover.Root open={noteOpen} onOpenChange={o => { setNoteOpen(o); if (!o) setNoteInput("") }}>
               <Popover.Trigger asChild>
                 <div
