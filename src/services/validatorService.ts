@@ -492,10 +492,16 @@ export function checkScheduleRules(
 ): Violation[] {
   const violations: Violation[] = [];
 
+
+  const activeInstructors = ctx.instructors.filter(instructor => {
+    const rule = ctx.instructor_rules.find(r => r.instructor_id === instructor.id);
+    return !rule?.dropped;
+  });
+
   // --- SECTION_UNASSIGNED (Error) ---
   // All instructors are at or above their workload target and an internal
   // (in-faculty) section remains unassigned.
-  const allAtCapacity = ctx.instructors.every(instructor => {
+  const allAtCapacity = activeInstructors.length > 0 && activeInstructors.every(instructor => {
     const rule = ctx.instructor_rules.find(r => r.instructor_id === instructor.id);
     if (rule?.dropped) return true; // dropped instructors don't count
     const delta = rule?.workload_delta ?? 0;
@@ -510,22 +516,22 @@ export function checkScheduleRules(
 
   if (allAtCapacity) {
     for (const cr of ctx.course_rules) {
-      if (cr.is_external || cr.dropped) continue;
+      if (cr.dropped) continue;
       const course = ctx.courses.find(c => c.code === cr.course_code);
       if (!course) continue;
 
       for (const term of cr.terms_offered) {
         for (const sec of course.sections) {
           const assigned = schedule.assignments.some(
-            a => a.course_code === cr.course_code && a.section_id === sec.id && a.term === term
+            a => a.course_code === cr.course_code && a.section_id === sec.id && (cr.is_full_year ? a.term === term: true)
           );
           if (!assigned) {
             violations.push({
-              id: `v-section-unassigned-${cr.course_code}-${sec.id}-${term}`,
+              id: `v-section-unassigned-${cr.course_code}-${sec.id}`,
               type: "Schedule",
               offending_id: cr.course_code,
               code: "SECTION_UNASSIGNED",
-              message: `${cr.course_code} section ${sec.number} in ${term} is unassigned and all instructors are at capacity.`,
+              message: `${cr.course_code} section ${sec.number} ${cr.is_full_year ? "in " + term : ""} is unassigned and all instructors are at capacity.`,
               degree: "Error",
             });
           }
