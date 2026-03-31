@@ -315,7 +315,7 @@ export function useTutorial({
       {
         popover: {
           title: "Keyboard Shortcuts",
-          description: "Use Cmd+Z (Mac) or Ctrl+Z (Windows) to undo a recent assignment or unassignment. Use Cmd+Shift+Z / Ctrl+Shift+Z to redo. Up to 20 actions are stored in the undo history.",
+          description: "Use Cmd+Z (Mac) or Ctrl+Z (Windows) to undo a recent assignment or unassignment. Use Cmd+Shift+Z / Ctrl+Shift+Z to redo. Up to 20 actions are stored. Note: only assigning and unassigning courses can be undone — changes to instructor or course properties, renames, and migrations cannot.",
           side: "over" as const, align: "center" as const,
           onPrevClick: () => doBackward(A_KEYBOARD, () => driverInstance?.movePrevious()),
         },
@@ -457,7 +457,7 @@ export function useTutorial({
         },
         popover: {
           title: "Validation Mode",
-          description: "Auto mode validates the schedule after every change and highlights violations instantly. Hover over the button, then click \"Switch to Manual\" to validate on demand using the lightning bolt — useful when making many changes at once. To switch back, hover again and click \"Switch to Auto\".",
+          description: "Auto mode validates the schedule after every change and highlights violations instantly. Hover over the button, then click \"Switch to Manual\" to validate on demand using the lightning bolt, useful when making many changes at once. To switch back, hover again and click \"Switch to Auto\".",
           side: "bottom" as const, align: "end" as const,
         },
       },
