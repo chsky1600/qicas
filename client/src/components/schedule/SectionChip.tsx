@@ -39,13 +39,13 @@ export default function SectionChip({
   const externalOffset = isExternal && highlighted ? "outline-offset-3" : "outline-offset-1"
   const externalDecoration = isExternal ? `outline-dashed outline-2 ${externalOffset} outline-blue-500` : "text-white"
 
-  const highlightRing = highlighted ? "ring-2 ring-black mx-0.5" : ""
+  const highlightRing = highlighted ? "ring-black" : ""
 
   return (
     <span
       ref={setNodeRef} {...listeners} {...attributes}
       style={{ opacity: isDragging ? 0.3 : 1, transform: undefined }}
-      className={`${colour} ${externalDecoration} ${highlightRing} text-white px-2 py-1 rounded text-sm ${isAdmin ? "cursor-grab" : "cursor-default"} select-none`}
+      className={`${colour} ${externalDecoration} ring-2 ${highlightRing} text-white px-2 py-1 rounded text-sm ${isAdmin ? "cursor-grab" : "cursor-default"} select-none`}
       onMouseEnter={() => onHighlight(sectionId)}
       onMouseLeave={() => onHighlight(null)}
     >
