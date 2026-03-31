@@ -260,7 +260,7 @@ export default function MigrationDialog({
         className="p-0 gap-0 w-200 h-auto flex flex-col rounded-lg overflow-hidden"
       >
       <div className="bg-white rounded-lg shadow-xl flex flex-col max-h-[70vh]">
-        <DialogTitle className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
+        <DialogTitle id="migration-dialog-header" className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
           <span className="text-white font-semibold text-base">Creating {newName} Academic year</span>       
           <button id="migration-dialog-close" onClick={() => {setMigrationStage("SelectSchedules"); onClose()}} className="text-white hover:text-gray-300">
             <X size={18} />

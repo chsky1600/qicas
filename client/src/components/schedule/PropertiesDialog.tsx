@@ -301,7 +301,7 @@ export default function PropertiesDialog({
         className={`w-[1100px] p-0 gap-0 border border-black rounded-md ${showDesignated ? "h-145" : "h-130"}`}
       >
         {/* Header */}
-        <DialogTitle className="relative flex items-center justify-center bg-black text-white p-2 h-fit rounded-t-md">
+        <DialogTitle  id="properties-dialog-header" className="relative flex items-center justify-center bg-black text-white p-2 h-fit rounded-t-md">
           <div className="absolute left-2 flex items-center gap-1.5">
             <span className="text-xs opacity-80">Edit Properties</span>
             <HelpTooltip

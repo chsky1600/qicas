@@ -129,7 +129,7 @@ export default function Toolbar({
             <span className={label}>More</span>
           </button>
           {moreOpen && (
-            <div className="absolute right-0 top-full mt-1 bg-[#2c2c2c] border border-[#444] rounded shadow-lg py-1 z-50 min-w-[160px]">
+            <div id="toolbar-more-dropdown" className="absolute right-0 top-full mt-1 bg-[#2c2c2c] border border-[#444] rounded shadow-lg py-1 z-50 min-w-[160px]">
               {role === "admin" && (
                 <button id="toolbar-users" onClick={() => { setMoreOpen(false); onOpenUsers() }} className={menuItem}>
                   <img src={icon.users} alt="Users" className="w-5 h-5"/>Users

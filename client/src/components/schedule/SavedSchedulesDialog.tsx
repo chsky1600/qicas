@@ -61,7 +61,7 @@ export default function SavedSchedulesDialog({
         }}
         className="p-0 gap-0 w-[700px] max-h-[70vh] h-auto flex flex-col rounded-lg overflow-hidden"
       >
-        <DialogTitle className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
+        <DialogTitle id="saved-schedules-dialog-header" className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
           <div className="flex items-center gap-2">
             <h2 className="text-white font-semibold text-base">Saved Schedules</h2>                       
             {isAdmin && (
