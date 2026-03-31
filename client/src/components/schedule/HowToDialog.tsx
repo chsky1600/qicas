@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { X } from "lucide-react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 
 interface Scribe {
@@ -60,13 +61,16 @@ export default function HowToDialog({ open, onClose, isAdmin }: Props) {
         showCloseButton={false}
         className="w-[900px] h-[600px] p-0 gap-0 border border-black rounded-md grid-rows-[auto_1fr]"
       >
-        <DialogTitle className="flex items-center justify-center bg-black text-white p-2 h-fit rounded-t-md">
-          <span className="text-sm font-semibold">How-To Guides</span>
+        <DialogTitle className="flex items-center justify-between bg-black text-white px-5 py-4 rounded-t-md">
+          <span className="text-white font-semibold text-base">How-To Guides</span>
+          <button id="migration-dialog-close" onClick={onClose} className="text-white hover:text-gray-300">
+            <X size={18} />
+          </button>
         </DialogTitle>
 
         <div className="flex flex-1 overflow-hidden">
           {/* sidebar */}
-          <div className="w-64 border-r border-gray-200 overflow-y-auto bg-gray-50">
+          <div className="w-64 border-r border-gray-200 rounded-bl-md overflow-y-auto bg-gray-50">
             {scribes.map((s, i) => (
               <button
                 key={i}
