@@ -5,7 +5,7 @@ module.exports = {
       script: "dist/index.js",
       interpreter: "bun",
       env: {
-        NODE_ENV: "production",
+        NODE_ENV: "development",
         PORT: 3000,
       },
       instances: 1,
