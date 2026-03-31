@@ -4,6 +4,7 @@ import { toast } from "sonner"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { HelpTooltip } from "@/components/ui/help-tooltip"
 import type { User, UserRole } from "@/features/schedule/types"
+import ConfirmDialog from "../ui/confirm-dialog"
 
 interface Props {
   open: boolean
@@ -140,10 +141,13 @@ export default function UserManagementDialog({
   const [tempPasswordOpen, setTempPasswordOpen] = useState(false)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
+  const [pendingConfirm, setPendingConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null)
   const createPasswordInputRef = useRef<HTMLInputElement | null>(null)
   const selfCurrentPasswordRef = useRef<HTMLInputElement | null>(null)
   const selfNewPasswordRef = useRef<HTMLInputElement | null>(null)
   const tempPasswordRef = useRef<HTMLInputElement | null>(null)
+  const demotionConfirmedRef = useRef(false)
+  const deleteConfirmedRef = useRef(false)
 
   useEffect(() => {
     if (!open) return
@@ -248,14 +252,22 @@ export default function UserManagementDialog({
 
       if (!selectedUser) return
 
-      if (isDemotion) {
-        const confirmed = window.confirm(
-          isSelfDemotion
+      if (isDemotion && !demotionConfirmedRef.current) {
+        setPendingConfirm({
+          title: "Demote User",
+          message: isSelfDemotion
             ? "Are you sure you want to demote yourself from admin to support? You will lose edit controls immediately after saving."
-            : `Are you sure you want to demote ${selectedUser.name} from admin to support?`
-        )
-        if (!confirmed) return
+            : `Are you sure you want to demote ${selectedUser.name} from admin to support?`,
+          onConfirm: () => {
+            demotionConfirmedRef.current = true
+            setPendingConfirm(null)
+            handleSave()
+          },
+        })
+        setSaving(false)
+        return
       }
+      demotionConfirmedRef.current = false
 
       if (isSelfSelection) {
         const wantsPasswordChange =
@@ -372,12 +384,21 @@ export default function UserManagementDialog({
 
   async function handleDelete() {
     if (!selectedUser) return
-    const confirmed = window.confirm(
-      isSelfSelection
-        ? `Delete your own account "${selectedUser.name}"? You will be signed out immediately.`
-        : `Delete user "${selectedUser.name}"?`
-    )
-    if (!confirmed) return
+    if (!deleteConfirmedRef.current) {
+      setPendingConfirm({
+        title: "Delete User",
+        message: isSelfSelection
+          ? `Delete your own account "${selectedUser.name}"? You will be signed out immediately.`
+          : `Delete user "${selectedUser.name}"?`,
+        onConfirm: () => {
+          deleteConfirmedRef.current = true
+          setPendingConfirm(null)
+          handleDelete()
+        },
+      })
+      return
+    }
+    deleteConfirmedRef.current = false
 
     setSaving(true)
     try {
@@ -402,7 +423,11 @@ export default function UserManagementDialog({
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose() }}>
       <DialogContent
+        id="users-dialog"
         showCloseButton={false}
+        onInteractOutside={(e) => {
+          if (document.querySelector("#driver-popover-content")) e.preventDefault()
+        }}
         className="flex w-[calc(100vw-2rem)] max-w-[980px] h-[calc(100vh-2rem)] max-h-[720px] flex-col p-0 gap-0 overflow-hidden rounded-lg"
       >
         <DialogDescription className="sr-only">
@@ -416,7 +441,7 @@ export default function UserManagementDialog({
               description="Use this panel to create users, update roles, and manage faculty access. Admins can promote, demote, and remove users here, but each faculty must always retain at least one admin."
             />
           </div>
-          <button onClick={onClose} className="text-white hover:text-gray-300">
+          <button id="users-dialog-close" onClick={onClose} className="text-white hover:text-gray-300">
             <X size={18} />
           </button>
         </div>
@@ -685,6 +710,16 @@ export default function UserManagementDialog({
           </div>
         </div>
       </DialogContent>
+      {pendingConfirm && (
+        <ConfirmDialog
+          open={true}
+          title={pendingConfirm.title}
+          message={pendingConfirm.message}
+          confirmLabel="Confirm"
+          onConfirm={pendingConfirm.onConfirm}
+          onCancel={() => setPendingConfirm(null)}
+        />
+      )}
     </Dialog>
   )
 }

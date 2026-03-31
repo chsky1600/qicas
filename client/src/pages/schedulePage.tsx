@@ -13,6 +13,7 @@ import ScheduleTable from "@/components/schedule/ScheduleTable"
 import PropertiesDialog from "@/components/schedule/PropertiesDialog"
 import SavedSchedulesDialog from "@/components/schedule/SavedSchedulesDialog"
 import MigrationDialog from "@/components/schedule/MigrationDialog"
+import HowToDialog from "@/components/schedule/HowToDialog"
 import UserManagementDialog from "@/components/schedule/UserManagementDialog"
 import AccountDialog from "@/components/schedule/AccountDialog"
 import { Toaster } from "@/components/ui/sonner"
@@ -24,13 +25,13 @@ export default function SchedulePage() {
     instructors, instructorRules, users,
     schedules, schedule, assignments, violations,
     saving, loading, error,
-    assign, unassign,
+    assign, unassign, undo, redo,
     createInstructor, updateInstructor, addNote, dropInstructor, updateInstructorRule,
     createCourse, updateCourse, dropCourse, updateCourseRule,
     createUserAccount, updateUserAccount, setTemporaryPassword, deleteUserAccount,
     addSchedule, copySchedule, deleteSavedSchedule, switchSchedule, renameSchedule,
     changeYear, migrateYear,
-    exportCSV, refresh,
+    exportData, refresh,
     creditsPerCourse,
     validationMode, setValidationMode, validateNow, validationStale
   } = useSchedule()
@@ -38,6 +39,8 @@ export default function SchedulePage() {
   const [propertiesOpen, setPropertiesOpen] = useState(false)
   const [snapshotsOpen, setSnapshotsOpen] = useState(false)
   const [migrationOpen, setMigrationOpen] = useState(false)
+  const [howToOpen, setHowToOpen] = useState(false)
+  const [tutorialActive, setTutorialActive] = useState(false)
   const [usersOpen, setUsersOpen] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
   const [dragging, setDragging] = useState<SectionDragData | null>(null)
@@ -45,14 +48,19 @@ export default function SchedulePage() {
   const [highlightedSectionId, setHighlightedSectionId] = useState<string | null>(null)
   const [propertiesMode, setPropertiesMode] = useState<"instructors" | "courses">("instructors")
   const [propertiesAdd, setPropertiesAdd] = useState(false) // flag to tell properties tab to make a new course/instructor on open
+
   const { startTutorial } = useTutorial({
-    courses, courseRules,
-    instructors, instructorRules,
-    schedule, schedules,
+    role,
     onOpenProperties: () => { setPropertiesMode("instructors"); setPropertiesOpen(true) },
     onCloseProperties: () => setPropertiesOpen(false),
     onOpenSnapshots: () => setSnapshotsOpen(true),
     onCloseSnapshots: () => setSnapshotsOpen(false),
+    onOpenUsers: () => setUsersOpen(true),
+    onCloseUsers: () => setUsersOpen(false),
+    onOpenMigration: () => setMigrationOpen(true),
+    onCloseMigration: () => setMigrationOpen(false),
+    onTutorialStart: () => setTutorialActive(true),
+    onTutorialEnd: () => setTutorialActive(false),
   })
 
   const tutorialStarted = useRef(false)
@@ -67,6 +75,19 @@ export default function SchedulePage() {
     if (!admin) setUsersOpen(false)
   }, [admin])
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) redo()
+        else undo()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [undo, redo])
+
+
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   function handleDragStart(e: DragStartEvent) {
@@ -75,42 +96,29 @@ export default function SchedulePage() {
 
   function handleDragOver(e: DragOverEvent) {
     const overData = e.over?.data.current as { type?: string } | undefined
-    setOverValid(overData?.type === "instructor")
+    const isInstructor = overData?.type === "instructor"
+    setOverValid(isInstructor)
   }
 
   function handleDragEnd(e: DragEndEvent) {
     setDragging(null)
     setOverValid(false)
+
     const drag = e.active.data.current as SectionDragData
     if (!e.over) return
-
     const over = e.over.data.current as InstructorDropData | PanelDropData
-
-    if (over.type === "panel" && drag.assignmentId) {
-      unassign(drag.assignmentId)
-      return
-    }
-
+    if (over.type === "panel" && drag.assignmentId) { unassign(drag.assignmentId); return }
     if (over.type !== "instructor") return
-
     const isFullYear = courseRules.find(r => r.course_code === drag.courseCode)?.is_full_year ?? false
-
-    // Full year: Fall chip must stay in Fall, Winter chip must stay in Winter.
-    // If user drags across terms, redirect to the chip that belongs in the target term.
     if (isFullYear && drag.source === "chip" && drag.prevTerm !== over.term) {
-      const targetAssignment = assignments.find(
-        a => a.course_code === drag.courseCode && a.term === over.term
-      )
+      const targetAssignment = assignments.find(a => a.course_code === drag.courseCode && a.term === over.term)
       if (targetAssignment) {
-        // Move the chip that actually belongs in that term
         assign(targetAssignment.section_id, drag.courseCode, over.instructorId, over.term, targetAssignment.id)
       } else {
-        // No chip in target term yet — move the dragged chip there (change its term)
         assign(drag.sectionId, drag.courseCode, over.instructorId, over.term, drag.assignmentId)
       }
       return
     }
-
     assign(drag.sectionId, drag.courseCode, over.instructorId, over.term, drag.assignmentId)
   }
 
@@ -144,7 +152,8 @@ export default function SchedulePage() {
         onOpenUsers={() => setUsersOpen(true)}
         onOpenAccount={() => setAccountOpen(true)}
         onOpenSnapshots={() => setSnapshotsOpen(true)}
-        onExportCSV={exportCSV}
+        onOpenHowTo={() => setHowToOpen(true)}
+        onExportData={exportData}
         onStartTutorial={startTutorial}
         onOpenMigration={() => setMigrationOpen(true)}
         onLogout={logout}
@@ -257,13 +266,14 @@ export default function SchedulePage() {
 
       <MigrationDialog
         open={migrationOpen}
-        onClose={() => setMigrationOpen(false)}        
+        onClose={() => setMigrationOpen(false)}
         loadedYearId={yearId}
-        years={years}        
+        years={years}
         activeSchedule={schedule}
         schedules={schedules}
         onMigrateYear={migrateYear}
         onOpenProperties={() => {setPropertiesMode("instructors"); setPropertiesOpen(true) }}
+        skipYearCheck={tutorialActive}
       />
 
       <UserManagementDialog
@@ -321,6 +331,12 @@ export default function SchedulePage() {
             await refresh()
           }
         }}
+      />
+
+      <HowToDialog
+        open={howToOpen}
+        onClose={() => setHowToOpen(false)}
+        isAdmin={admin}
       />
     </div>
   )

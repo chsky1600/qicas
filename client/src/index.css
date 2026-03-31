@@ -224,3 +224,28 @@ button:focus-visible {
   60% { transform: translateX(-3px); }
   80% { transform: translateX(3px); }
 }
+
+/* toolbar button label expansion during tutorial */
+.tutorial-expanded .toolbar-label {
+  max-width: 10rem;
+  opacity: 1;
+  margin-left: 0.5rem;
+}
+
+/* slow pulse for "click me" tutorial steps */
+@keyframes tutorial-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6); }
+  50% { box-shadow: 0 0 0 6px rgba(99, 102, 241, 0); }
+}
+.tutorial-pulse {
+  animation: tutorial-pulse 2s ease-in-out infinite;
+}
+
+/* driver.js forces overflow:hidden on parents of highlighted elements,
+   which clips the More dropdown. Override it for the toolbar. */
+:has(> #toolbar-more-wrapper.driver-active-element) {
+  overflow: visible !important;
+}
+#toolbar-more-wrapper.driver-active-element {
+  overflow: visible !important;
+}

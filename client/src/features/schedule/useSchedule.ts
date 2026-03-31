@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { toast } from "sonner"
 import * as api from "./api"
+import * as XLSX from "xlsx"
 import type {
   Year, Course, Instructor, Schedule, Assignment,
   InstructorRule, CourseRule, Violation, Term, ValidationMode, User, UserRole
@@ -8,6 +9,11 @@ import type {
 import  {
   RANK_DISPLAY
 } from "./types"
+
+type UndoEntry =
+  | { type: 'assign'; added: Assignment; removed: Assignment[] }
+  | { type: 'unassign'; removed: Assignment }
+
 
 export interface UseScheduleResult {
   // Raw data — components derive what they need
@@ -25,6 +31,9 @@ export interface UseScheduleResult {
   saving: boolean
   loading: boolean
   error: string | null
+  creditsPerCourse: number
+  validationMode: ValidationMode
+  validationStale: boolean
   // Actions
   assign: (sectionId: string, courseCode: string, instructorId: string, term: Term, prevAssignmentId: string | null) => Promise<void>
   unassign: (assignmentId: string) => Promise<void>
@@ -49,12 +58,11 @@ export interface UseScheduleResult {
   refresh: () => Promise<void>
   updateInstructorRule: (ruleId: string, updates: Partial<InstructorRule>) => Promise<void>
   updateCourseRule: (ruleId: string, updates: Partial<CourseRule>) => Promise<void>
-  exportCSV: () => void
-  creditsPerCourse: number
-  validationMode: ValidationMode
+  exportData: (fileType?: "csv"|"xlsx") => void
   setValidationMode: (mode: ValidationMode) => void
   validateNow: () => Promise<void>
-  validationStale: boolean
+  undo: () => Promise<void>
+  redo: () => Promise<void>
 }
 
 export function useSchedule(): UseScheduleResult {
@@ -86,15 +94,17 @@ export function useSchedule(): UseScheduleResult {
   const courseRulesRef = useRef(courseRules)
   const coursesRef = useRef(courses)
   const lastSchedulePerYear = useRef<Record<string, string>>({})
+  const validationModeRef = useRef(validationMode)
+  const localVersionRef = useRef(0)
+  const savingRef = useRef(false)
+  const historyRef = useRef<UndoEntry[]>([])
+  const futureRef = useRef<UndoEntry[]>([])
   useEffect(() => { scheduleRef.current = schedule }, [schedule])
   useEffect(() => { yearIdRef.current = yearId }, [yearId])
   useEffect(() => { instructorRulesRef.current = instructorRules }, [instructorRules])
   useEffect(() => { courseRulesRef.current = courseRules }, [courseRules])
   useEffect(() => { coursesRef.current = courses}, [courses])
-  const validationModeRef = useRef(validationMode)
   useEffect(() => { validationModeRef.current = validationMode }, [validationMode])
-  const localVersionRef = useRef(0)
-  const savingRef = useRef(false)
   useEffect(() => { savingRef.current = saving }, [saving])
 
   const assignments = useMemo(() => schedule?.assignments ?? [], [schedule])
@@ -124,6 +134,8 @@ export function useSchedule(): UseScheduleResult {
   // ── Load year data ──────────────────────────────────────────────────────────
 
   const loadYear = useCallback(async (yr: string, workingSchedule: Schedule | null) => {
+    historyRef.current = []
+    futureRef.current = []
     const [coursesData, courseRulesData, instructorsData, instructorRulesData, schedulesData] =
       await Promise.all([
         api.getCourses(yr),
@@ -281,6 +293,8 @@ export function useSchedule(): UseScheduleResult {
       await api.addAssignment(yr, sched.id, newAssignment)
       localVersionRef.current += 1
       triggerRevalidate()
+      historyRef.current = [...historyRef.current.slice(-19), { type: 'assign', added: newAssignment, removed: toRemove }]
+      futureRef.current = []
     } catch (e: any) {
       console.error("Assignment failed", e)
       if (e.message?.includes("409")) {
@@ -295,6 +309,7 @@ export function useSchedule(): UseScheduleResult {
     const sched = scheduleRef.current
     const yr = yearIdRef.current
     if (!sched || !yr) return
+    const assignment = sched.assignments.find(a => a.id === assignmentId)
     setSaving(true)
 
     setSchedule(prev =>
@@ -305,10 +320,70 @@ export function useSchedule(): UseScheduleResult {
       await api.removeAssignment(yr, sched.id, assignmentId)
       localVersionRef.current += 1
       triggerRevalidate()
+      if (assignment) {
+        historyRef.current = [...historyRef.current.slice(-19), { type: 'unassign', removed: assignment }]
+        futureRef.current = []
+      }
     } catch (e) {
       console.error("Unassign failed", e)
       load()
     }
+    setSaving(false)
+  }, [load, triggerRevalidate])
+
+  const undo = useCallback(async () => {
+    const entry = historyRef.current[historyRef.current.length - 1]
+    if (!entry) return
+    const sched = scheduleRef.current
+    const yr = yearIdRef.current
+    if (!sched || !yr) return
+    historyRef.current = historyRef.current.slice(0, -1)
+    setSaving(true)
+    try {
+      if (entry.type === 'assign') {
+        await api.removeAssignment(yr, sched.id, entry.added.id)
+        for (const a of entry.removed) await api.addAssignment(yr, sched.id, a)
+        setSchedule(prev => {
+          if (!prev) return prev
+          const filtered = prev.assignments.filter(a => a.id !== entry.added.id)
+          return { ...prev, assignments: [...filtered, ...entry.removed] }
+        })
+      } else {
+        await api.addAssignment(yr, sched.id, entry.removed)
+        setSchedule(prev => prev ? { ...prev, assignments: [...prev.assignments, entry.removed] } : prev)
+      }
+      futureRef.current = [...futureRef.current, entry]
+      localVersionRef.current += entry.type === 'assign' ? 1 + entry.removed.length : 1
+      triggerRevalidate()
+    } catch { load() }
+    setSaving(false)
+  }, [load, triggerRevalidate])
+
+  const redo = useCallback(async () => {
+    const entry = futureRef.current[futureRef.current.length - 1]
+    if (!entry) return
+    const sched = scheduleRef.current
+    const yr = yearIdRef.current
+    if (!sched || !yr) return
+    futureRef.current = futureRef.current.slice(0, -1)
+    setSaving(true)
+    try {
+      if (entry.type === 'assign') {
+        for (const a of entry.removed) await api.removeAssignment(yr, sched.id, a.id)
+        await api.addAssignment(yr, sched.id, entry.added)
+        setSchedule(prev => {
+          if (!prev) return prev
+          const removeIds = new Set(entry.removed.map(a => a.id))
+          return { ...prev, assignments: [...prev.assignments.filter(a => !removeIds.has(a.id)), entry.added] }
+        })
+      } else {
+        await api.removeAssignment(yr, sched.id, entry.removed.id)
+        setSchedule(prev => prev ? { ...prev, assignments: prev.assignments.filter(a => a.id !== entry.removed.id) } : prev)
+      }
+      historyRef.current = [...historyRef.current, entry]
+      localVersionRef.current += entry.type === 'assign' ? entry.removed.length + 1 : 1
+      triggerRevalidate()
+    } catch { load() }
     setSaving(false)
   }, [load, triggerRevalidate])
 
@@ -610,7 +685,7 @@ export function useSchedule(): UseScheduleResult {
   }
 
   // ── export scheudle ─────────────────────────────────────────────────────────────
-  function exportCSV() {
+    function exportData(fileType: "csv"|"xlsx"="xlsx") {
     const scheduleName = schedule?.name ?? "Schedule"
   
     interface row {
@@ -630,12 +705,6 @@ export function useSchedule(): UseScheduleResult {
   
     // there must be at least 1
     let maxFallAssigned = 1;
-    
-    // fast reference between course codes and respective courses
-    const courseMap = new Map<string, Course>();
-    for (const c of courses) {
-      courseMap.set(c.code, c);
-    }
 
     // built for faster reference of which instructors are dropped
     const instructorDropedSet = new Set<string>();
@@ -647,7 +716,7 @@ export function useSchedule(): UseScheduleResult {
     for (const i of instructors) {
       const dropped = instructorDropedSet.has(i.id)
       if (!dropped) exportMap.set(i.id, {
-          data: [RANK_DISPLAY[i.rank].short + " " + i.name],
+          data: [RANK_DISPLAY[i.rank].short + " " + i.name, i.email ?? ""],
           fallAssign: [],
           wintAssign: [],
         }
@@ -658,10 +727,16 @@ export function useSchedule(): UseScheduleResult {
       const csvRow = exportMap.get(a.instructor_id);
       if (!csvRow) continue
   
-      const c = courseMap.get(a.course_code);
-      if (!c) continue;
+      const c = courses.find(c => c.code === a.course_code)
+      if (!c) continue;      
   
       let courseString = a.course_code;
+      const c_rule = courseRulesRef.current.find(r => r.course_code === a.course_code);
+      if (c_rule && c_rule.is_full_year) {
+        if (a.term === "Fall") courseString += "A"
+        else courseString += "B"        
+      }
+
       if (c.sections.length > 1) {
         const s = c.sections.find(s => s.id === a.section_id) ?? { id: "", number: 1, capacity: 0 };
         courseString += "-" + s.number;
@@ -679,7 +754,7 @@ export function useSchedule(): UseScheduleResult {
       }
     }
   
-    let csv: string = `${scheduleName},`;
+    let csv: string = `${scheduleName},,`;
   
     let fallPadding = ",";
     while (fallPadding.length < maxFallAssigned) fallPadding += ",";
@@ -697,13 +772,34 @@ export function useSchedule(): UseScheduleResult {
   
       csv += combinedRow.join(",") + "\n";
     });
-  
-    const blob = new Blob([csv], { type: "text/csv" });
+    
+    let blob: Blob;
+    let fileName = `${scheduleName}-${timestamp}`
+    if (fileType === "csv") {
+      blob = new Blob([csv], { type: "text/csv" });
+
+      fileName = fileName + ".csv"
+    }
+    else {
+      const workbook = XLSX.read(csv, { type: "string" })
+
+      const xlsxData = XLSX.write(workbook, {
+        bookType: "xlsx",
+        type: "array"
+      })
+
+      blob = new Blob([xlsxData], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      })
+
+      fileName = fileName + ".xlsx"
+    }
+
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
   
-    a.download = `${scheduleName}-${timestamp}.csv`;
+    a.download = fileName;
   
     a.click();
     URL.revokeObjectURL(url);
@@ -727,13 +823,13 @@ export function useSchedule(): UseScheduleResult {
     saving, loading, error,
     creditsPerCourse,
     validationMode, setValidationMode, validateNow, validationStale,
-    assign, unassign,
+    assign, unassign, undo, redo,
     createInstructor, updateInstructor, addNote, dropInstructor,
     createCourse, updateCourse, dropCourse,
     createUserAccount, updateUserAccount, setTemporaryPassword, deleteUserAccount,
     addSchedule, copySchedule, switchSchedule, deleteSavedSchedule, renameSchedule,
     changeYear, migrateYear,
-    exportCSV,
+    exportData,
     refresh: load,
     updateInstructorRule,
     updateCourseRule,
