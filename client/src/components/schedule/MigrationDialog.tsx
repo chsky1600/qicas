@@ -75,7 +75,6 @@ export default function MigrationDialog({
   async function handleMigration(): Promise<void> {
     const migratingSchedules = Array.from(selectedScheduleIds.values())
     onClose()
-    console.log(newName)
     await onMigrateYear(latestYear.id, newId, newName, migratingSchedules, releaseCandidateId)
     await onOpenProperties()
     setTimeout(()=>{
@@ -236,7 +235,7 @@ export default function MigrationDialog({
   function ConfirmStage() {
     return (
       <div className="mx-auto overflow-y-auto p-3 px-10">
-        <span><b>Confirm creation of academic year <b>{newName}</b>?</b></span>
+        <span className="flex justify-center"><b>Confirm creation of academic year <b>{newName}</b>?</b></span>
         <div className="flex mx-auto my-1 justify-center ">            
           <button onClick={handlePrevStage} className="w-fit text-md bg-gray-800 text-white mx-5 px-5 py-1 rounded hover:bg-gray-500">
             &lt; Return
@@ -258,7 +257,7 @@ export default function MigrationDialog({
           const target = e.target as Element
           if (target.closest?.("#driver-popover-content")) e.preventDefault()
         }}
-        className="p-0 gap-0 w-4/6 h-auto flex flex-col rounded-lg overflow-hidden"
+        className="p-0 gap-0 w-200 h-auto flex flex-col rounded-lg overflow-hidden"
       >
       <div className="bg-white rounded-lg shadow-xl flex flex-col max-h-[70vh]">
         <DialogTitle className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
