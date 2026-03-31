@@ -15,71 +15,66 @@ type TutorialDeps = {
   onTutorialEnd: () => void
 }
 
-// Admin tutorial step indices
-const A_OPEN_PROPERTIES      = 8
-const A_CLOSE_PROPS_BACK     = 9
-const A_COURSES_TAB          = 10
-const A_INSTRUCTORS_TAB      = 11
-const A_CLOSE_PROPERTIES     = 12
-const A_OPEN_MORE            = 13  // click More button to open dropdown
-const A_CLICK_USERS          = 14  // click Users in dropdown
-const A_CLOSE_USERS_BACK     = 15
-const A_CLOSE_USERS          = 16
-const A_OPEN_SNAPSHOTS       = 17
-const A_CLOSE_SNAPS_BACK     = 18
-const A_CLOSE_SNAPSHOTS      = 20
-const A_REOPEN_SNAPSHOTS     = 21
-const A_OPEN_MIGRATION       = 21  // ArrowRight - open migration dialog
-const A_CLOSE_MIGRATION_BACK = 22  // ArrowLeft  - close migration, go back
-const A_CLOSE_MIGRATION      = 23  // ArrowRight - close migration via click
-const A_REOPEN_MIGRATION     = 24  // ArrowLeft  - reopen migration, go back
-
-// Support tutorial step indices
-const S_OPEN_SNAPSHOTS       = 8
-const S_CLOSE_SNAPS_BACK     = 9
-const S_CLOSE_SNAPSHOTS      = 10
-const S_REOPEN_SNAPSHOTS     = 11
-
 // Required DOM IDs - do not remove these from their components:
-// #toolbar-year-select          - Toolbar year dropdown
-// #toolbar-active-schedule      - Toolbar active schedule name
-// #toolbar-edit-properties      - Toolbar Edit Properties button (admin)
-// #toolbar-users                - Toolbar Users button (admin)
-// #toolbar-account              - Toolbar Account button (support)
-// #toolbar-saved-schedules      - Toolbar Saved Schedules button
-// #toolbar-export               - Toolbar Export button
-// #toolbar-validation-mode      - Toolbar validation mode button (admin)
-// #toolbar-more                 - Toolbar More button
-// #toolbar-more-wrapper         - Toolbar More button wrapper (includes dropdown)
-// #courses-panel                - Courses panel container
-// #courses-panel-search         - Courses panel search input
-// #courses-panel-list           - Courses panel list
-// #schedule-table               - Schedule table container
-// #properties-dialog            - Edit Properties dialog
-// #properties-dialog-close      - Edit Properties close button
-// #properties-tab-courses       - Edit Properties tab switcher
-// #users-dialog                 - Users dialog
-// #users-dialog-close           - Users dialog close button
-// #saved-schedules-dialog       - Saved Schedules dialog
-// #saved-schedules-dialog-close - Saved Schedules close button
-// #saved-schedules-add          - Saved Schedules Add+ button
-// #migration-dialog             - Migration dialog
-// #migration-dialog-close       - Migration dialog close button
+// #toolbar-year-select            - Toolbar year dropdown
+// #toolbar-active-schedule        - Toolbar active schedule name
+// #toolbar-edit-properties        - Toolbar Edit Properties button (admin)
+// #toolbar-saved-schedules        - Toolbar Saved Schedules button
+// #toolbar-export                 - Toolbar Export button
+// #toolbar-validation-mode        - Toolbar validation mode button (admin)
+// #toolbar-more                   - Toolbar More button
+// #toolbar-more-wrapper           - Toolbar More button + wrapper
+// #courses-panel                  - Courses panel container
+// #courses-panel-search           - Courses panel search input
+// #courses-panel-list             - Courses panel list
+// #schedule-table                 - Schedule table container
+// #properties-dialog              - Edit Properties dialog content
+// #properties-dialog-header       - Edit Properties dialog header bar
+// #properties-tab-courses         - Edit Properties tab switcher container
+// #users-dialog                   - Users dialog content
+// #users-dialog-header            - Users dialog header bar
+// #saved-schedules-dialog         - Saved Schedules dialog content
+// #saved-schedules-dialog-header  - Saved Schedules dialog header bar
+// #saved-schedules-add            - Saved Schedules Add+ button
+// #migration-dialog               - Migration dialog content
+// #migration-dialog-header        - Migration dialog header bar
 
-// expand a collapsed toolbar button's label for tutorial visibility
-// and optionally pulse it to signal "click me"
-function tutorialExpand(el: HTMLElement, driverObj: ReturnType<typeof driver>, pulse = false) {
+// Admin step indices
+const A_NEW_YEAR         = 7   // Next → open migration
+const A_MIGRATION        = 8   // migration open; Prev → close migration
+const A_CLOSE_MIGRATION  = 9   // Next → close migration
+const A_KEYBOARD         = 10  // no element; Prev → reopen migration
+const A_OPEN_PROPERTIES  = 11  // Next → open properties
+const A_PROPS_INSTR      = 12  // props open; Prev → close properties
+const A_SWITCH_COURSES   = 13  // Next → switch to courses tab
+const A_PROPS_COURSES    = 14  // Prev → switch back to instructors
+const A_CLOSE_PROPERTIES = 15  // Next → close properties
+const A_OPEN_SNAPSHOTS   = 16  // Next → open snapshots; Prev → reopen properties
+const A_SNAPSHOTS        = 17  // snapshots open; Prev → close snapshots
+const A_SNAPSHOTS_ADD    = 18  // Add+ button
+const A_CLOSE_SNAPSHOTS  = 19  // Next → close snapshots
+const A_EXPORT           = 20  // Prev → reopen snapshots
+const A_VALIDATION       = 21
+const A_OPEN_MORE        = 22  // Next → open users
+const A_USERS            = 23  // users open; Prev → close users
+const A_CLOSE_USERS      = 24  // Next → close users
+const A_DONE             = 25  // Prev → reopen users
+
+// Support step indices
+const S_OPEN_SNAPSHOTS  = 7
+const S_SNAPSHOTS       = 8   // Prev → close snapshots
+const S_CLOSE_SNAPSHOTS = 9   // Next → close snapshots
+const S_EXPORT          = 10  // Prev → reopen snapshots
+
+function tutorialExpand(el: HTMLElement, driverObj: ReturnType<typeof driver>) {
   const wrapper = el.closest<HTMLElement>(".group")
   if (wrapper) wrapper.classList.add("tutorial-expanded")
-  if (pulse) el.classList.add("tutorial-pulse")
-  // re-measure after the label transition finishes
   setTimeout(() => driverObj.refresh(), 220)
 }
 
 function tutorialCollapse(el: HTMLElement) {
   const wrapper = el.closest<HTMLElement>(".group")
   if (wrapper) wrapper.classList.remove("tutorial-expanded")
-  el.classList.remove("tutorial-pulse")
 }
 
 export function useTutorial({
@@ -109,181 +104,111 @@ export function useTutorial({
     const isAdmin = role === "admin"
     onTutorialStart()
 
-    let propertiesClickHandler: (() => void) | null = null
-    let propertiesCloseHandler: (() => void) | null = null
-    let moreClickHandler: (() => void) | null = null
-    let usersClickHandler: (() => void) | null = null
-    let usersCloseHandler: (() => void) | null = null
-    let snapshotsClickHandler: (() => void) | null = null
-    let snapshotsCloseHandler: (() => void) | null = null
-    let migrationCloseHandler: (() => void) | null = null
-    let coursesTabClickHandler: (() => void) | null = null
-
     let driverInstance: ReturnType<typeof driver> | null = null
 
-    const keyHandler = (e: KeyboardEvent) => {
-      const d = driverInstance
-      if (!d) return
-      if (e.key === "Escape") {
-        d.destroy()
-        return
-      }
-      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return
+    const click = (selector: string) => document.querySelector<HTMLElement>(selector)?.click()
+    const switchToInstructors = () => click("#properties-tab-courses button:first-child")
+    const switchToCourses = () => click("#properties-tab-courses button:last-child")
 
-      const index = d.getActiveIndex()
-      if (index === undefined || index === null) return
-
+    const doForward = (index: number | undefined, moveNext: () => void) => {
+      if (index === undefined) { moveNext(); return }
       if (isAdmin) {
-        if (e.key === "ArrowRight") {
-          if (index === A_OPEN_PROPERTIES) {
-            e.stopImmediatePropagation()
-            const btn = document.querySelector<HTMLElement>("#toolbar-edit-properties")
-            if (btn && propertiesClickHandler) { btn.removeEventListener("click", propertiesClickHandler); propertiesClickHandler = null }
-            onOpenProperties()
-            setTimeout(() => d.moveNext(), 150)
-          } else if (index === A_COURSES_TAB) {
-            e.stopImmediatePropagation()
-            const wrapper = document.querySelector<HTMLElement>("#properties-tab-courses")
-            if (wrapper && coursesTabClickHandler) { wrapper.removeEventListener("click", coursesTabClickHandler); coursesTabClickHandler = null }
-            document.querySelector<HTMLElement>("#properties-tab-courses button:last-child")?.click()
-            setTimeout(() => d.moveNext(), 50)
-          } else if (index === A_CLOSE_PROPERTIES) {
-            e.stopImmediatePropagation()
-            const btn = document.querySelector<HTMLElement>("#properties-dialog-close")
-            if (btn && propertiesCloseHandler) { btn.removeEventListener("click", propertiesCloseHandler); propertiesCloseHandler = null }
-            onCloseProperties()
-            setTimeout(() => d.moveNext(), 50)
-          } else if (index === A_OPEN_MORE) {
-            // arrow right on More button step: open dropdown and move to Users step
-            e.stopImmediatePropagation()
-            document.querySelector<HTMLElement>("#toolbar-more")?.click()
-            setTimeout(() => d.moveNext(), 100)
-          } else if (index === A_CLICK_USERS) {
-            // arrow right on Users step: clean up and open users dialog
-            e.stopImmediatePropagation()
-            const usersBtn = document.querySelector<HTMLElement>("#toolbar-users")
-            if (usersBtn && usersClickHandler) { usersBtn.removeEventListener("click", usersClickHandler); usersClickHandler = null }
-            onOpenUsers()
-            setTimeout(() => d.moveNext(), 150)
-          } else if (index === A_CLOSE_USERS) {
-            e.stopImmediatePropagation()
-            const btn = document.querySelector<HTMLElement>("#users-dialog-close")
-            if (btn && usersCloseHandler) { btn.removeEventListener("click", usersCloseHandler); usersCloseHandler = null }
-            onCloseUsers()
-            setTimeout(() => d.moveNext(), 50)
-          } else if (index === A_OPEN_SNAPSHOTS) {
-            e.stopImmediatePropagation()
-            const btn = document.querySelector<HTMLElement>("#toolbar-saved-schedules")
-            if (btn && snapshotsClickHandler) { btn.removeEventListener("click", snapshotsClickHandler); snapshotsClickHandler = null }
-            onOpenSnapshots()
-            setTimeout(() => d.moveNext(), 150)
-          } else if (index === A_CLOSE_SNAPSHOTS) {
-            e.stopImmediatePropagation()
-            const btn = document.querySelector<HTMLElement>("#saved-schedules-dialog-close")
-            if (btn && snapshotsCloseHandler) { btn.removeEventListener("click", snapshotsCloseHandler); snapshotsCloseHandler = null }
-            onCloseSnapshots()
-            setTimeout(() => d.moveNext(), 50)
-          } else if (index === A_OPEN_MIGRATION) {
-            e.stopImmediatePropagation()
-            onOpenMigration()
-            setTimeout(() => d.moveNext(), 150)
-          } else if (index === A_CLOSE_MIGRATION) {
-            e.stopImmediatePropagation()
-            const btn = document.querySelector<HTMLElement>("#migration-dialog-close")
-            if (btn && migrationCloseHandler) { btn.removeEventListener("click", migrationCloseHandler); migrationCloseHandler = null }
-            onCloseMigration()
-            setTimeout(() => d.moveNext(), 50)
-          }
-        } else {
-          if (index === A_CLOSE_PROPS_BACK) {
-            e.stopImmediatePropagation()
-            onCloseProperties()
-            setTimeout(() => d.movePrevious(), 50)
-          } else if (index === A_INSTRUCTORS_TAB) {
-            e.stopImmediatePropagation()
-            document.querySelector<HTMLElement>("#properties-tab-courses button:first-child")?.click()
-            setTimeout(() => d.movePrevious(), 50)
-          } else if (index === A_OPEN_MORE) {
-            // arrow left on More button: go back to close properties
-            e.stopImmediatePropagation()
-            onOpenProperties()
-            setTimeout(() => d.movePrevious(), 150)
-          } else if (index === A_CLICK_USERS) {
-            // arrow left on Users step: close dropdown, go back to More button
-            e.stopImmediatePropagation()
-            document.querySelector<HTMLElement>("#toolbar-more")?.click()
-            setTimeout(() => d.movePrevious(), 50)
-          } else if (index === A_CLOSE_USERS_BACK) {
-            e.stopImmediatePropagation()
-            onCloseUsers()
-            setTimeout(() => {
-              document.querySelector<HTMLElement>("#toolbar-more")?.click()
-              setTimeout(() => d.movePrevious(), 50)
-            }, 50)
-          } else if (index === A_OPEN_SNAPSHOTS) {
-            e.stopImmediatePropagation()
-            onOpenUsers()
-            setTimeout(() => d.movePrevious(), 150)
-          } else if (index === A_CLOSE_SNAPS_BACK) {
-            e.stopImmediatePropagation()
-            onCloseSnapshots()
-            setTimeout(() => d.movePrevious(), 50)
-          } else if (index === A_REOPEN_SNAPSHOTS) {
-            e.stopImmediatePropagation()
-            onOpenSnapshots()
-            setTimeout(() => d.movePrevious(), 150)
-          } else if (index === A_CLOSE_MIGRATION_BACK) {
-            e.stopImmediatePropagation()
-            onCloseMigration()
-            setTimeout(() => d.movePrevious(), 50)
-          } else if (index === A_REOPEN_MIGRATION) {
-            e.stopImmediatePropagation()
-            onOpenMigration()
-            setTimeout(() => d.movePrevious(), 150)
-          }
+        switch (index) {
+          case A_NEW_YEAR:
+            onOpenMigration(); setTimeout(moveNext, 150); break
+          case A_CLOSE_MIGRATION:
+            onCloseMigration(); setTimeout(moveNext, 100); break
+          case A_OPEN_PROPERTIES:
+            onOpenProperties(); setTimeout(() => { switchToInstructors(); moveNext() }, 150); break
+          case A_SWITCH_COURSES:
+            switchToCourses(); setTimeout(moveNext, 100); break
+          case A_CLOSE_PROPERTIES:
+            onCloseProperties(); setTimeout(moveNext, 100); break
+          case A_OPEN_SNAPSHOTS:
+            onOpenSnapshots(); setTimeout(moveNext, 150); break
+          case A_CLOSE_SNAPSHOTS:
+            onCloseSnapshots(); setTimeout(moveNext, 100); break
+          case A_OPEN_MORE:
+            onOpenUsers(); setTimeout(moveNext, 150); break
+          case A_CLOSE_USERS:
+            onCloseUsers(); setTimeout(moveNext, 100); break
+          default:
+            moveNext(); break
         }
       } else {
-        // Support role
-        if (e.key === "ArrowRight") {
-          if (index === S_OPEN_SNAPSHOTS) {
-            e.stopImmediatePropagation()
-            const btn = document.querySelector<HTMLElement>("#toolbar-saved-schedules")
-            if (btn && snapshotsClickHandler) { btn.removeEventListener("click", snapshotsClickHandler); snapshotsClickHandler = null }
-            onOpenSnapshots()
-            setTimeout(() => d.moveNext(), 150)
-          } else if (index === S_CLOSE_SNAPSHOTS) {
-            e.stopImmediatePropagation()
-            const btn = document.querySelector<HTMLElement>("#saved-schedules-dialog-close")
-            if (btn && snapshotsCloseHandler) { btn.removeEventListener("click", snapshotsCloseHandler); snapshotsCloseHandler = null }
-            onCloseSnapshots()
-            setTimeout(() => d.moveNext(), 50)
-          }
-        } else {
-          if (index === S_CLOSE_SNAPS_BACK) {
-            e.stopImmediatePropagation()
-            onCloseSnapshots()
-            setTimeout(() => d.movePrevious(), 50)
-          } else if (index === S_REOPEN_SNAPSHOTS) {
-            e.stopImmediatePropagation()
-            onOpenSnapshots()
-            setTimeout(() => d.movePrevious(), 150)
-          }
+        switch (index) {
+          case S_OPEN_SNAPSHOTS:
+            onOpenSnapshots(); setTimeout(moveNext, 150); break
+          case S_CLOSE_SNAPSHOTS:
+            onCloseSnapshots(); setTimeout(moveNext, 100); break
+          default:
+            moveNext(); break
         }
+      }
+    }
+
+    const doBackward = (index: number | undefined, movePrevious: () => void) => {
+      if (index === undefined) { movePrevious(); return }
+      if (isAdmin) {
+        switch (index) {
+          case A_MIGRATION:
+            onCloseMigration(); setTimeout(movePrevious, 100); break
+          case A_KEYBOARD:
+            onOpenMigration(); setTimeout(movePrevious, 150); break
+          case A_PROPS_INSTR:
+            onCloseProperties(); setTimeout(movePrevious, 100); break
+          case A_PROPS_COURSES:
+            switchToInstructors(); setTimeout(movePrevious, 100); break
+          case A_OPEN_SNAPSHOTS:
+            onOpenProperties(); setTimeout(() => { switchToCourses(); setTimeout(movePrevious, 50) }, 150); break
+          case A_SNAPSHOTS:
+            onCloseSnapshots(); setTimeout(movePrevious, 100); break
+          case A_EXPORT:
+            onOpenSnapshots(); setTimeout(movePrevious, 150); break
+          case A_USERS:
+            onCloseUsers(); setTimeout(movePrevious, 100); break
+          case A_DONE:
+            onOpenUsers(); setTimeout(movePrevious, 150); break
+          default:
+            movePrevious(); break
+        }
+      } else {
+        switch (index) {
+          case S_SNAPSHOTS:
+            onCloseSnapshots(); setTimeout(movePrevious, 100); break
+          case S_EXPORT:
+            onOpenSnapshots(); setTimeout(movePrevious, 150); break
+          default:
+            movePrevious(); break
+        }
+      }
+    }
+
+    const keyHandler = (e: KeyboardEvent) => {
+      if (!driverInstance?.isActive()) return
+      if (e.key === "Escape") { driverInstance.destroy(); return }
+      if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return
+      e.stopImmediatePropagation()
+      const index = driverInstance.getActiveIndex()
+      if (e.key === "ArrowRight") {
+        if (!driverInstance.hasNextStep()) { driverInstance.destroy(); return }
+        doForward(index, () => driverInstance!.moveNext())
+      } else {
+        if (!driverInstance.hasPreviousStep()) return
+        doBackward(index, () => driverInstance!.movePrevious())
       }
     }
 
     keyHandlerRef.current = keyHandler
     window.addEventListener("keyup", keyHandler, true)
 
-    const commonStepsStart = [
+    const commonSteps = [
       // 0
       {
         popover: {
           title: "Welcome to QICAS!",
-          description:
-            "This quick tour will walk you through the schedule interface. Use the Next and Previous buttons to navigate, or press Escape to exit at any time.",
-          side: "over" as const,
-          align: "center" as const,
+          description: "This quick tour walks you through the scheduling interface. Use Next / Previous or ← → arrow keys to navigate. Press Escape to exit at any time.",
+          side: "over" as const, align: "center" as const,
         },
       },
       // 1
@@ -291,10 +216,8 @@ export function useTutorial({
         element: "#toolbar-year-select",
         popover: {
           title: "Academic Year",
-          description:
-            "Use this dropdown to switch between academic years. All courses, instructors, and schedules are organized per year.",
-          side: "bottom" as const,
-          align: "start" as const,
+          description: "Use this dropdown to switch between academic years. All courses, instructors, and schedules are organised per year.",
+          side: "bottom" as const, align: "start" as const,
         },
       },
       // 2
@@ -302,10 +225,8 @@ export function useTutorial({
         element: "#toolbar-active-schedule",
         popover: {
           title: "Active Schedule",
-          description:
-            "The name of your currently active schedule is shown here. You can have multiple saved schedules for the same year and switch between them freely.",
-          side: "bottom" as const,
-          align: "start" as const,
+          description: "The name of your currently active schedule is shown here. You can have multiple saved schedules for the same year and switch between them freely.",
+          side: "bottom" as const, align: "start" as const,
         },
       },
       // 3
@@ -313,10 +234,8 @@ export function useTutorial({
         element: "#courses-panel",
         popover: {
           title: "Courses Panel",
-          description:
-            "This panel lists all active courses for the year. Unassigned courses appear at the top, assigned courses below. Use the search bar to filter quickly.",
-          side: "right" as const,
-          align: "start" as const,
+          description: "This panel lists all active courses for the year. Unassigned courses appear at the top, assigned courses below. Use the search bar to filter quickly.",
+          side: "right" as const, align: "start" as const,
         },
       },
       // 4
@@ -324,10 +243,8 @@ export function useTutorial({
         element: "#courses-panel-search",
         popover: {
           title: "Search Courses",
-          description:
-            "Type here to filter by course code. The list updates as you type.",
-          side: "right" as const,
-          align: "start" as const,
+          description: "Type here to filter by course code. The list updates as you type.",
+          side: "right" as const, align: "start" as const,
         },
       },
       // 5
@@ -336,10 +253,9 @@ export function useTutorial({
         popover: {
           title: isAdmin ? "Drag to Assign" : "Course Chips",
           description: isAdmin
-            ? "Drag a course chip from this panel and drop it onto an instructor's Fall or Winter cell to assign it. Chips with a dashed blue border are external courses, meaning they are paid by the faculty member rather than the department. You can set this in Edit Properties under the Courses tab."
-            : "Each chip represents a course section. Chips with a dashed blue border are external courses, meaning they are paid by the faculty member rather than the department.",
-          side: "right" as const,
-          align: "start" as const,
+            ? "Drag a course chip from this panel and drop it onto an instructor's Fall or Winter cell to assign it. Chips with a dashed blue border are external courses paid by the faculty member rather than the department."
+            : "Each chip represents a course section. Chips with a dashed blue border are external courses paid by the faculty member rather than the department.",
+          side: "right" as const, align: "start" as const,
         },
       },
       // 6
@@ -348,514 +264,333 @@ export function useTutorial({
         popover: {
           title: "Schedule Table",
           description: isAdmin
-            ? "Each row is an instructor. Drop chips in the Fall or Winter column to assign them. Drag a chip back to the courses panel to unassign it, or to another row to reassign."
+            ? "Each row is an instructor. Drop chips in the Fall or Winter column to assign them. Drag a chip back to the courses panel to unassign, or to another row to reassign."
             : "Each row is an instructor with their Fall and Winter course assignments.",
-          side: "left" as const,
-          align: "start" as const,
+          side: "left" as const, align: "start" as const,
         },
       },
     ]
 
     const adminSteps = [
-      ...commonStepsStart,
-      // 7 - keyboard shortcuts
-      {
-        popover: {
-          title: "Keyboard Shortcuts",
-          description:
-            "Use Cmd+Z (Mac) or Ctrl+Z (Windows) to undo a recent assignment or unassignment. Use Cmd+Shift+Z / Ctrl+Shift+Z to redo. Up to 20 actions are stored in the undo history.",
-          side: "over" as const,
-          align: "center" as const,
-        },
-      },
-      // 8 (A_OPEN_PROPERTIES) - click to open
-      {
-        element: "#toolbar-edit-properties",
-        onHighlighted: () => {
-          const btn = document.querySelector<HTMLElement>("#toolbar-edit-properties")
-          if (!btn) return
-          tutorialExpand(btn, driverObj, true)
-          propertiesClickHandler = () => setTimeout(() => driverObj.moveNext(), 150)
-          btn.addEventListener("click", propertiesClickHandler)
-        },
-        onDeselected: () => {
-          const btn = document.querySelector<HTMLElement>("#toolbar-edit-properties")
-          if (btn) tutorialCollapse(btn)
-          if (btn && propertiesClickHandler) { btn.removeEventListener("click", propertiesClickHandler); propertiesClickHandler = null }
-        },
-        popover: {
-          title: "Edit Properties",
-          description:
-            "Manage instructors and courses for the year. Click this button to open it.",
-          side: "bottom" as const,
-          align: "end" as const,
-          showButtons: ["previous", "close"] as ["previous", "close"],
-        },
-      },
-      // 9 (A_CLOSE_PROPS_BACK) - prev closes properties
-      {
-        element: "#properties-dialog",
-        popover: {
-          title: "Edit Properties: Instructors",
-          description:
-            "The Instructors tab lets you add or edit instructors, set their workload limit, rank, and notes. Click on an instructor to expand their details.",
-          side: "left" as const,
-          align: "start" as const,
-          onPrevClick: () => {
-            onCloseProperties()
-            setTimeout(() => driverObj.movePrevious(), 50)
-          },
-        },
-      },
-      // 10 (A_COURSES_TAB) - click Courses tab
-      {
-        element: "#properties-tab-courses button:last-child",
-        onHighlighted: () => {
-          const btn = document.querySelector<HTMLElement>("#properties-tab-courses button:last-child")
-          if (!btn) return
-          btn.classList.add("tutorial-pulse")
-          coursesTabClickHandler = () => setTimeout(() => driverObj.moveNext(), 50)
-          btn.addEventListener("click", coursesTabClickHandler)
-        },
-        onDeselected: () => {
-          const btn = document.querySelector<HTMLElement>("#properties-tab-courses button:last-child")
-          if (btn) btn.classList.remove("tutorial-pulse")
-          if (btn && coursesTabClickHandler) { btn.removeEventListener("click", coursesTabClickHandler); coursesTabClickHandler = null }
-        },
-        popover: {
-          title: "Switching Tabs",
-          description:
-            "There are two tabs: Instructors and Courses. Click the Courses tab now to continue.",
-          side: "bottom" as const,
-          align: "start" as const,
-          showButtons: ["previous", "close"] as ["previous", "close"],
-        },
-      },
-      // 11 (A_INSTRUCTORS_TAB) - explain courses tab
-      {
-        element: "#properties-dialog",
-        popover: {
-          title: "Edit Properties: Courses",
-          description:
-            "The Courses tab lets you add or edit courses, set sections, and drop it from the schedule. The 'Paid By' field controls whether a course is external. External courses show a dashed blue border on their chips in the schedule.",
-          side: "right" as const,
-          align: "start" as const,
-          onPrevClick: () => {
-            document.querySelector<HTMLElement>("#properties-tab-courses button:first-child")?.click()
-            setTimeout(() => driverObj.movePrevious(), 50)
-          },
-        },
-      },
-      // 12 (A_CLOSE_PROPERTIES) - click X to close
-      {
-        element: "#properties-dialog-close",
-        onHighlighted: () => {
-          const btn = document.querySelector<HTMLElement>("#properties-dialog-close")
-          if (!btn) return
-          btn.classList.add("tutorial-pulse")
-          propertiesCloseHandler = () => setTimeout(() => driverObj.moveNext(), 50)
-          btn.addEventListener("click", propertiesCloseHandler)
-        },
-        onDeselected: () => {
-          const btn = document.querySelector<HTMLElement>("#properties-dialog-close")
-          if (btn) btn.classList.remove("tutorial-pulse")
-          if (btn && propertiesCloseHandler) { btn.removeEventListener("click", propertiesCloseHandler); propertiesCloseHandler = null }
-        },
-        popover: {
-          title: "Closing Edit Properties",
-          description: "Click the X to close the dialog when you're done.",
-          side: "bottom" as const,
-          align: "end" as const,
-          showButtons: ["previous", "close"] as ["previous", "close"],
-        },
-      },
-      // 13 (A_OPEN_MORE) - click More button to open dropdown
-      {
-        element: "#toolbar-more",
-        onHighlighted: () => {
-          const btn = document.querySelector<HTMLElement>("#toolbar-more")
-          if (btn) tutorialExpand(btn, driverObj, true)
-          // clicking More opens the dropdown and advances to the Users step
-          moreClickHandler = () => setTimeout(() => driverObj.moveNext(), 100)
-          btn?.addEventListener("click", moreClickHandler)
-        },
-        onDeselected: () => {
-          const btn = document.querySelector<HTMLElement>("#toolbar-more")
-          if (btn) tutorialCollapse(btn)
-          if (btn && moreClickHandler) { btn.removeEventListener("click", moreClickHandler); moreClickHandler = null }
-        },
-        popover: {
-          title: "More Menu",
-          description:
-            "Tutorial, how-to guides, user management, and logout live here. Click the button to open it.",
-          side: "bottom" as const,
-          align: "end" as const,
-          showButtons: ["previous", "close"] as ["previous", "close"],
-          onPrevClick: () => {
-            onOpenProperties()
-            setTimeout(() => driverObj.movePrevious(), 150)
-          },
-        },
-      },
-      // 14 (A_CLICK_USERS) - click Users in the open dropdown
-      {
-        element: "#toolbar-users",
-        onHighlighted: () => {
-          const btn = document.querySelector<HTMLElement>("#toolbar-users")
-          if (!btn) return
-          btn.classList.add("tutorial-pulse")
-          usersClickHandler = () => setTimeout(() => driverObj.moveNext(), 150)
-          btn.addEventListener("click", usersClickHandler)
-        },
-        onDeselected: () => {
-          const btn = document.querySelector<HTMLElement>("#toolbar-users")
-          if (btn) btn.classList.remove("tutorial-pulse")
-          if (btn && usersClickHandler) { btn.removeEventListener("click", usersClickHandler); usersClickHandler = null }
-        },
-        popover: {
-          title: "User Management",
-          description:
-            "Manage who has access to your department. Click Users to open it.",
-          side: "left" as const,
-          align: "start" as const,
-          showButtons: ["previous", "close"] as ["previous", "close"],
-        },
-      },
-      // 15 (A_CLOSE_USERS_BACK) - prev closes users, reopens More dropdown
-      {
-        element: "#users-dialog",
-        popover: {
-          title: "Users Dialog",
-          description:
-            "Create new accounts, update existing users, set roles (admin or support), and reset passwords. Admins have full edit access; support users have read-only access.",
-          side: "left" as const,
-          align: "start" as const,
-          onPrevClick: () => {
-            onCloseUsers()
-            // reopen the More dropdown so the Users button is visible for the previous step
-            setTimeout(() => {
-              document.querySelector<HTMLElement>("#toolbar-more")?.click()
-              setTimeout(() => driverObj.movePrevious(), 50)
-            }, 50)
-          },
-        },
-      },
-      // 15 (A_CLOSE_USERS) - click X to close
-      {
-        element: "#users-dialog-close",
-        onHighlighted: () => {
-          const btn = document.querySelector<HTMLElement>("#users-dialog-close")
-          if (!btn) return
-          btn.classList.add("tutorial-pulse")
-          usersCloseHandler = () => setTimeout(() => driverObj.moveNext(), 50)
-          btn.addEventListener("click", usersCloseHandler)
-        },
-        onDeselected: () => {
-          const btn = document.querySelector<HTMLElement>("#users-dialog-close")
-          if (btn) btn.classList.remove("tutorial-pulse")
-          if (btn && usersCloseHandler) { btn.removeEventListener("click", usersCloseHandler); usersCloseHandler = null }
-        },
-        popover: {
-          title: "Closing Users",
-          description: "Click the X to close when you're done.",
-          side: "left" as const,
-          align: "start" as const,
-          showButtons: ["previous", "close"] as ["previous", "close"],
-        },
-      },
-      // 16 (A_OPEN_SNAPSHOTS) - click to open; prev closes users
-      {
-        element: "#toolbar-saved-schedules",
-        onHighlighted: () => {
-          const btn = document.querySelector<HTMLElement>("#toolbar-saved-schedules")
-          if (!btn) return
-          tutorialExpand(btn, driverObj, true)
-          snapshotsClickHandler = () => setTimeout(() => driverObj.moveNext(), 150)
-          btn.addEventListener("click", snapshotsClickHandler)
-        },
-        onDeselected: () => {
-          const btn = document.querySelector<HTMLElement>("#toolbar-saved-schedules")
-          if (btn) tutorialCollapse(btn)
-          if (btn && snapshotsClickHandler) { btn.removeEventListener("click", snapshotsClickHandler); snapshotsClickHandler = null }
-        },
-        popover: {
-          title: "Saved Schedules",
-          description:
-            "Save multiple versions of a schedule for the same year. Click the button to open it.",
-          side: "bottom" as const,
-          align: "end" as const,
-          showButtons: ["previous", "close"] as ["previous", "close"],
-          onPrevClick: () => {
-            onOpenUsers()
-            setTimeout(() => driverObj.movePrevious(), 150)
-          },
-        },
-      },
-      // 17 (A_CLOSE_SNAPS_BACK) - prev closes snapshots
-      {
-        element: "#saved-schedules-dialog",
-        popover: {
-          title: "Saved Schedules",
-          description:
-            "Each card shows a saved schedule. You can load, copy, rename, or delete schedules from here.",
-          side: "left" as const,
-          align: "start" as const,
-          onPrevClick: () => {
-            onCloseSnapshots()
-            setTimeout(() => driverObj.movePrevious(), 50)
-          },
-        },
-      },
-      // 18 - add button
-      {
-        element: "#saved-schedules-add",
-        popover: {
-          title: "Adding a New Schedule",
-          description:
-            'Click "Add+" to create a blank schedule. You can build it independently from your other saved versions.',
-          side: "bottom" as const,
-          align: "start" as const,
-        },
-      },
-      // 19 (A_CLOSE_SNAPSHOTS) - click X to close
-      {
-        element: "#saved-schedules-dialog-close",
-        onHighlighted: () => {
-          const btn = document.querySelector<HTMLElement>("#saved-schedules-dialog-close")
-          if (!btn) return
-          btn.classList.add("tutorial-pulse")
-          snapshotsCloseHandler = () => setTimeout(() => driverObj.moveNext(), 50)
-          btn.addEventListener("click", snapshotsCloseHandler)
-        },
-        onDeselected: () => {
-          const btn = document.querySelector<HTMLElement>("#saved-schedules-dialog-close")
-          if (btn) btn.classList.remove("tutorial-pulse")
-          if (btn && snapshotsCloseHandler) { btn.removeEventListener("click", snapshotsCloseHandler); snapshotsCloseHandler = null }
-        },
-        popover: {
-          title: "Closing Saved Schedules",
-          description: "Click the X to close the dialog.",
-          side: "left" as const,
-          align: "start" as const,
-          showButtons: ["previous", "close"] as ["previous", "close"],
-        },
-      },
-      // 20 (A_REOPEN_SNAPSHOTS / A_OPEN_MIGRATION) - prev reopens snapshots, next opens migration
+      ...commonSteps,
+      // 7 (A_NEW_YEAR)
       {
         element: "#toolbar-year-select",
+        onHighlighted: () => {
+          const el = document.querySelector<HTMLElement>("#toolbar-year-select")
+          if (el && driverInstance) tutorialExpand(el, driverInstance)
+        },
+        onDeselected: () => {
+          const el = document.querySelector<HTMLElement>("#toolbar-year-select")
+          if (el) tutorialCollapse(el)
+        },
         popover: {
           title: "Creating a New Academic Year",
-          description:
-            "Select \"New Year +\" from this dropdown to migrate to a new academic year. You must be on the latest year to do this.",
-          side: "bottom" as const,
-          align: "start" as const,
-          onPrevClick: () => {
-            onOpenSnapshots()
-            setTimeout(() => driverObj.movePrevious(), 150)
-          },
-          onNextClick: () => {
-            onOpenMigration()
-            setTimeout(() => driverObj.moveNext(), 150)
-          },
+          description: "Select \"New Year +\" from this dropdown to migrate to a new academic year. You must be on the latest year to do this. Click Next to see the migration dialog.",
+          side: "bottom" as const, align: "start" as const,
+          onNextClick: () => doForward(A_NEW_YEAR, () => driverInstance?.moveNext()),
         },
       },
-      // 21 (A_CLOSE_MIGRATION_BACK) - prev closes migration
+      // 8 (A_MIGRATION)
       {
         element: "#migration-dialog",
         popover: {
           title: "Migration Dialog",
-          description:
-            "Optionally select schedules from the current year to copy into the new one, then click \"Continue\" to proceed.",
-          side: "left" as const,
-          align: "start" as const,
-          onPrevClick: () => {
-            onCloseMigration()
-            setTimeout(() => driverObj.movePrevious(), 50)
-          },
+          description: "When creating a new academic year, this dialog lets you optionally copy schedules from the current year into the new one.",
+          side: "left" as const, align: "start" as const,
+          onPrevClick: () => doBackward(A_MIGRATION, () => driverInstance?.movePrevious()),
         },
       },
-      // 22 (A_CLOSE_MIGRATION) - click X to close
+      // 9 (A_CLOSE_MIGRATION)
       {
-        element: "#migration-dialog-close",
+        element: "#migration-dialog-header",
+        popover: {
+          title: "Closing a Dialog",
+          description: "The X button in the top-right closes any dialog. Click Next to close this one now.",
+          side: "bottom" as const, align: "end" as const,
+          onNextClick: () => doForward(A_CLOSE_MIGRATION, () => driverInstance?.moveNext()),
+        },
+      },
+      // 10 (A_KEYBOARD)
+      {
+        popover: {
+          title: "Keyboard Shortcuts",
+          description: "Use Cmd+Z (Mac) or Ctrl+Z (Windows) to undo a recent assignment or unassignment. Use Cmd+Shift+Z / Ctrl+Shift+Z to redo. Up to 20 actions are stored. Note: only assigning and unassigning courses can be undone — changes to instructor or course properties, renames, and migrations cannot.",
+          side: "over" as const, align: "center" as const,
+          onPrevClick: () => doBackward(A_KEYBOARD, () => driverInstance?.movePrevious()),
+        },
+      },
+      // 11 (A_OPEN_PROPERTIES)
+      {
+        element: "#toolbar-edit-properties",
         onHighlighted: () => {
-          const btn = document.querySelector<HTMLElement>("#migration-dialog-close")
-          if (!btn) return
-          btn.classList.add("tutorial-pulse")
-          migrationCloseHandler = () => setTimeout(() => driverObj.moveNext(), 50)
-          btn.addEventListener("click", migrationCloseHandler)
+          const el = document.querySelector<HTMLElement>("#toolbar-edit-properties")
+          if (el && driverInstance) tutorialExpand(el, driverInstance)
         },
         onDeselected: () => {
-          const btn = document.querySelector<HTMLElement>("#migration-dialog-close")
-          if (btn) btn.classList.remove("tutorial-pulse")
-          if (btn && migrationCloseHandler) { btn.removeEventListener("click", migrationCloseHandler); migrationCloseHandler = null }
+          const el = document.querySelector<HTMLElement>("#toolbar-edit-properties")
+          if (el) tutorialCollapse(el)
         },
         popover: {
-          title: "Closing Migration",
-          description: "Click the X to close the dialog.",
-          side: "left" as const,
-          align: "start" as const,
-          showButtons: ["previous", "close"] as ["previous", "close"],
+          title: "Edit Properties",
+          description: "Manage instructors and courses for the year. Click Next to open it.",
+          side: "bottom" as const, align: "end" as const,
+          onNextClick: () => doForward(A_OPEN_PROPERTIES, () => driverInstance?.moveNext()),
         },
       },
-      // 23 (A_REOPEN_MIGRATION) - prev reopens migration
+      // 12 (A_PROPS_INSTR)
+      {
+        element: "#properties-dialog",
+        popover: {
+          title: "Edit Properties: Instructors",
+          description: "The Instructors tab lets you add or edit instructors, set their workload limit, rank, and notes. Click on an instructor to expand their details.",
+          side: "left" as const, align: "start" as const,
+          onPrevClick: () => doBackward(A_PROPS_INSTR, () => driverInstance?.movePrevious()),
+        },
+      },
+      // 13 (A_SWITCH_COURSES)
+      {
+        element: "#properties-tab-courses button:last-child",
+        popover: {
+          title: "Switching Tabs",
+          description: "There are two tabs: Instructors and Courses. Click Next to switch to the Courses tab.",
+          side: "bottom" as const, align: "start" as const,
+          onNextClick: () => doForward(A_SWITCH_COURSES, () => driverInstance?.moveNext()),
+        },
+      },
+      // 14 (A_PROPS_COURSES)
+      {
+        element: "#properties-dialog",
+        popover: {
+          title: "Edit Properties: Courses",
+          description: "The Courses tab lets you add or edit courses, set sections, and drop them from the schedule. The 'Paid By' field controls whether a course is external. External courses show a dashed blue border on their chips.",
+          side: "left" as const, align: "start" as const,
+          onPrevClick: () => doBackward(A_PROPS_COURSES, () => driverInstance?.movePrevious()),
+        },
+      },
+      // 15 (A_CLOSE_PROPERTIES)
+      {
+        element: "#properties-dialog-header",
+        popover: {
+          title: "Closing Edit Properties",
+          description: "Use the X button in the top-right to close the dialog when you are done. Click Next to close it now.",
+          side: "bottom" as const, align: "end" as const,
+          onNextClick: () => doForward(A_CLOSE_PROPERTIES, () => driverInstance?.moveNext()),
+        },
+      },
+      // 16 (A_OPEN_SNAPSHOTS)
+      {
+        element: "#toolbar-saved-schedules",
+        onHighlighted: () => {
+          const el = document.querySelector<HTMLElement>("#toolbar-saved-schedules")
+          if (el && driverInstance) tutorialExpand(el, driverInstance)
+        },
+        onDeselected: () => {
+          const el = document.querySelector<HTMLElement>("#toolbar-saved-schedules")
+          if (el) tutorialCollapse(el)
+        },
+        popover: {
+          title: "Saved Schedules",
+          description: "Save multiple versions of a schedule for the same year. Click Next to open it.",
+          side: "bottom" as const, align: "end" as const,
+          onNextClick: () => doForward(A_OPEN_SNAPSHOTS, () => driverInstance?.moveNext()),
+          onPrevClick: () => doBackward(A_OPEN_SNAPSHOTS, () => driverInstance?.movePrevious()),
+        },
+      },
+      // 17 (A_SNAPSHOTS)
+      {
+        element: "#saved-schedules-dialog",
+        popover: {
+          title: "Saved Schedules",
+          description: "Each card shows a saved schedule. You can load, copy, rename, or delete schedules from here.",
+          side: "left" as const, align: "start" as const,
+          onPrevClick: () => doBackward(A_SNAPSHOTS, () => driverInstance?.movePrevious()),
+        },
+      },
+      // 18 (A_SNAPSHOTS_ADD)
+      {
+        element: "#saved-schedules-add",
+        popover: {
+          title: "Adding a New Schedule",
+          description: "Click \"Add+\" to create a blank schedule. You can build it independently from your other saved versions.",
+          side: "bottom" as const, align: "start" as const,
+        },
+      },
+      // 19 (A_CLOSE_SNAPSHOTS)
+      {
+        element: "#saved-schedules-dialog-header",
+        popover: {
+          title: "Closing Saved Schedules",
+          description: "Use the X button in the top-right to close. Click Next to close it now.",
+          side: "bottom" as const, align: "end" as const,
+          onNextClick: () => doForward(A_CLOSE_SNAPSHOTS, () => driverInstance?.moveNext()),
+        },
+      },
+      // 20 (A_EXPORT)
       {
         element: "#toolbar-export",
         onHighlighted: () => {
-          const btn = document.querySelector<HTMLElement>("#toolbar-export")
-          if (btn) tutorialExpand(btn, driverObj)
+          const el = document.querySelector<HTMLElement>("#toolbar-export")
+          if (el && driverInstance) tutorialExpand(el, driverInstance)
         },
         onDeselected: () => {
-          const btn = document.querySelector<HTMLElement>("#toolbar-export")
-          if (btn) tutorialCollapse(btn)
+          const el = document.querySelector<HTMLElement>("#toolbar-export")
+          if (el) tutorialCollapse(el)
         },
         popover: {
-          title: "Export to CSV",
-          description:
-            "Download the current schedule as a CSV file, with instructors as rows and Fall and Winter assignments as columns.",
-          side: "bottom" as const,
-          align: "end" as const,
-          onPrevClick: () => {
-            onOpenMigration()
-            setTimeout(() => driverObj.movePrevious(), 150)
-          },
+          title: "Export to XLSX",
+          description: "Download the current schedule as a XLSX file, with instructors as rows and Fall and Winter assignments as columns.",
+          side: "bottom" as const, align: "end" as const,
+          onPrevClick: () => doBackward(A_EXPORT, () => driverInstance?.movePrevious()),
         },
       },
-      // 24 - validation mode
+      // 21 (A_VALIDATION)
       {
         element: "#toolbar-validation-mode",
+        onHighlighted: () => {
+          const el = document.querySelector<HTMLElement>("#toolbar-validation-mode")
+          if (el && driverInstance) tutorialExpand(el, driverInstance)
+        },
+        onDeselected: () => {
+          const el = document.querySelector<HTMLElement>("#toolbar-validation-mode")
+          if (el) tutorialCollapse(el)
+        },
         popover: {
           title: "Validation Mode",
-          description:
-            "Auto mode validates the schedule after every change and highlights violations instantly. Hover over the button, then click \"Switch to Manual\" to validate on demand using the lightning bolt, which is useful when making many changes at once. To switch back, hover again and click \"Switch to Auto\".",
-          side: "bottom" as const,
-          align: "end" as const,
+          description: "Auto mode validates the schedule after every change and highlights violations instantly. Hover over the button, then click \"Switch to Manual\" to validate on demand using the lightning bolt, useful when making many changes at once. To switch back, hover again and click \"Switch to Auto\".",
+          side: "bottom" as const, align: "end" as const,
         },
       },
-      // 25 - done
+      // 22 (A_OPEN_MORE) — Next opens users directly
+      {
+        element: "#toolbar-more",
+        onHighlighted: () => {
+          const el = document.querySelector<HTMLElement>("#toolbar-more")
+          if (el && driverInstance) tutorialExpand(el, driverInstance)
+        },
+        onDeselected: () => {
+          const el = document.querySelector<HTMLElement>("#toolbar-more")
+          if (el) tutorialCollapse(el)
+        },
+        popover: {
+          title: "More Menu",
+          description: "This menu contains Tutorial, How-to Guides, User Management, and Logout. Click Next to open User Management.",
+          side: "bottom" as const, align: "end" as const,
+          onNextClick: () => doForward(A_OPEN_MORE, () => driverInstance?.moveNext()),
+        },
+      },
+      // 23 (A_USERS)
+      {
+        element: "#users-dialog",
+        popover: {
+          title: "User Management",
+          description: "Create new accounts, update existing users, set roles (admin or support), and reset passwords. Admins have full edit access; support users have read-only access.",
+          side: "left" as const, align: "start" as const,
+          onPrevClick: () => doBackward(A_USERS, () => driverInstance?.movePrevious()),
+        },
+      },
+      // 24 (A_CLOSE_USERS)
+      {
+        element: "#users-dialog-header",
+        popover: {
+          title: "Closing User Management",
+          description: "Use the X button in the top-right to close. Click Next to close it now.",
+          side: "bottom" as const, align: "end" as const,
+          onNextClick: () => doForward(A_CLOSE_USERS, () => driverInstance?.moveNext()),
+        },
+      },
+      // 25 (A_DONE)
       {
         popover: {
           title: "You're all set!",
-          description:
-            "That's the full tour. You can restart the tutorial any time from the More menu in the toolbar.",
-          side: "over" as const,
-          align: "center" as const,
+          description: "That's the full tour. You can restart the tutorial at any time from the More menu in the toolbar.",
+          side: "over" as const, align: "center" as const,
+          onPrevClick: () => doBackward(A_DONE, () => driverInstance?.movePrevious()),
         },
       },
     ]
 
     const supportSteps = [
-      ...commonStepsStart,
-      // 7 - more menu (account is inside)
-      {
-        element: "#toolbar-more-wrapper",
-        onHighlighted: () => {
-          const moreBtn = document.querySelector<HTMLElement>("#toolbar-more")
-          if (moreBtn) tutorialExpand(moreBtn, driverObj)
-        },
-        onDeselected: () => {
-          const moreBtn = document.querySelector<HTMLElement>("#toolbar-more")
-          if (moreBtn) tutorialCollapse(moreBtn)
-        },
-        popover: {
-          title: "More Menu",
-          description: "Your account settings, tutorial, how-to guides, and logout are accessible from this menu. Feel free to open it and explore.",
-          side: "left" as const,
-          align: "start" as const,
-        },
-      },
-      // 8 (S_OPEN_SNAPSHOTS) - click to open
+      ...commonSteps,
+      // 7 (S_OPEN_SNAPSHOTS)
       {
         element: "#toolbar-saved-schedules",
         onHighlighted: () => {
-          const btn = document.querySelector<HTMLElement>("#toolbar-saved-schedules")
-          if (!btn) return
-          tutorialExpand(btn, driverObj, true)
-          snapshotsClickHandler = () => setTimeout(() => driverObj.moveNext(), 150)
-          btn.addEventListener("click", snapshotsClickHandler)
+          const el = document.querySelector<HTMLElement>("#toolbar-saved-schedules")
+          if (el && driverInstance) tutorialExpand(el, driverInstance)
         },
         onDeselected: () => {
-          const btn = document.querySelector<HTMLElement>("#toolbar-saved-schedules")
-          if (btn) tutorialCollapse(btn)
-          if (btn && snapshotsClickHandler) { btn.removeEventListener("click", snapshotsClickHandler); snapshotsClickHandler = null }
+          const el = document.querySelector<HTMLElement>("#toolbar-saved-schedules")
+          if (el) tutorialCollapse(el)
         },
         popover: {
           title: "Saved Schedules",
-          description:
-            "View multiple versions of a schedule for the same year. Click the button to open it.",
-          side: "bottom" as const,
-          align: "end" as const,
-          showButtons: ["previous", "close"] as ["previous", "close"],
+          description: "View multiple versions of a schedule for the same year. Click Next to open it.",
+          side: "bottom" as const, align: "end" as const,
+          onNextClick: () => doForward(S_OPEN_SNAPSHOTS, () => driverInstance?.moveNext()),
         },
       },
-      // 8 (S_CLOSE_SNAPS_BACK) - prev closes snapshots
+      // 8 (S_SNAPSHOTS)
       {
         element: "#saved-schedules-dialog",
         popover: {
           title: "Saved Schedules",
-          description:
-            "Each card shows a saved schedule with its completion progress. You can load a schedule to make it active.",
-          side: "left" as const,
-          align: "start" as const,
-          onPrevClick: () => {
-            onCloseSnapshots()
-            setTimeout(() => driverObj.movePrevious(), 50)
-          },
+          description: "Each card shows a saved schedule with its completion progress. You can load a schedule to make it active.",
+          side: "left" as const, align: "start" as const,
+          onPrevClick: () => doBackward(S_SNAPSHOTS, () => driverInstance?.movePrevious()),
         },
       },
-      // 9 (S_CLOSE_SNAPSHOTS) - click X to close
+      // 9 (S_CLOSE_SNAPSHOTS)
       {
-        element: "#saved-schedules-dialog-close",
-        onHighlighted: () => {
-          const btn = document.querySelector<HTMLElement>("#saved-schedules-dialog-close")
-          if (!btn) return
-          btn.classList.add("tutorial-pulse")
-          snapshotsCloseHandler = () => setTimeout(() => driverObj.moveNext(), 50)
-          btn.addEventListener("click", snapshotsCloseHandler)
-        },
-        onDeselected: () => {
-          const btn = document.querySelector<HTMLElement>("#saved-schedules-dialog-close")
-          if (btn) btn.classList.remove("tutorial-pulse")
-          if (btn && snapshotsCloseHandler) { btn.removeEventListener("click", snapshotsCloseHandler); snapshotsCloseHandler = null }
-        },
+        element: "#saved-schedules-dialog-header",
         popover: {
           title: "Closing Saved Schedules",
-          description: "Click the X to close the dialog.",
-          side: "left" as const,
-          align: "start" as const,
-          showButtons: ["previous", "close"] as ["previous", "close"],
+          description: "Use the X button in the top-right to close. Click Next to close it now.",
+          side: "bottom" as const, align: "end" as const,
+          onNextClick: () => doForward(S_CLOSE_SNAPSHOTS, () => driverInstance?.moveNext()),
         },
       },
-      // 10 (S_REOPEN_SNAPSHOTS) - prev reopens snapshots
+      // 10 (S_EXPORT)
       {
         element: "#toolbar-export",
         onHighlighted: () => {
-          const btn = document.querySelector<HTMLElement>("#toolbar-export")
-          if (btn) tutorialExpand(btn, driverObj)
+          const el = document.querySelector<HTMLElement>("#toolbar-export")
+          if (el && driverInstance) tutorialExpand(el, driverInstance)
         },
         onDeselected: () => {
-          const btn = document.querySelector<HTMLElement>("#toolbar-export")
-          if (btn) tutorialCollapse(btn)
+          const el = document.querySelector<HTMLElement>("#toolbar-export")
+          if (el) tutorialCollapse(el)
         },
         popover: {
-          title: "Export to CSV",
-          description:
-            "Download the current schedule as a CSV file, with instructors as rows and Fall and Winter assignments as columns.",
-          side: "bottom" as const,
-          align: "end" as const,
-          onPrevClick: () => {
-            onOpenSnapshots()
-            setTimeout(() => driverObj.movePrevious(), 150)
-          },
+          title: "Export to XLSX",
+          description: "Download the current schedule as a XLSX file, with instructors as rows and Fall and Winter assignments as columns.",
+          side: "bottom" as const, align: "end" as const,
+          onPrevClick: () => doBackward(S_EXPORT, () => driverInstance?.movePrevious()),
         },
       },
-      // 11 - done
+      // 11 (S_OPEN_MORE)
+      {
+        element: "#toolbar-more",
+        onHighlighted: () => {
+          const el = document.querySelector<HTMLElement>("#toolbar-more")
+          if (el && driverInstance) tutorialExpand(el, driverInstance)
+        },
+        onDeselected: () => {
+          const el = document.querySelector<HTMLElement>("#toolbar-more")
+          if (el) tutorialCollapse(el)
+        },
+        popover: {
+          title: "More Menu",
+          description: "Account settings, Tutorial, How-to Guides, and Logout are accessible from this menu.",
+          side: "bottom" as const, align: "end" as const,
+        },
+      },
+      // 12 — done
       {
         popover: {
           title: "You're all set!",
-          description:
-            "That's the full tour. You can restart the tutorial any time from the More menu in the toolbar.",
-          side: "over" as const,
-          align: "center" as const,
+          description: "That's the full tour. You can restart the tutorial at any time from the More menu in the toolbar.",
+          side: "over" as const, align: "center" as const,
         },
       },
     ]
@@ -864,6 +599,7 @@ export function useTutorial({
       showProgress: true,
       animate: true,
       overlayColor: "rgba(0,0,0,0.6)",
+      disableActiveInteraction: true,
       onDestroyStarted: () => {
         driverInstance = null
         driverObj.destroy()

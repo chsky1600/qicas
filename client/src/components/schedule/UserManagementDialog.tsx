@@ -433,7 +433,7 @@ export default function UserManagementDialog({
         <DialogDescription className="sr-only">
           Create users, update roles, and manage faculty access for the current department.
         </DialogDescription>
-        <div className="flex h-12 items-center justify-between bg-black px-5 text-white">
+        <div id="users-dialog-header" className="flex h-12 items-center justify-between bg-black px-5 text-white">
           <div className="flex items-center gap-2">
             <DialogTitle className="text-base font-semibold">User Management</DialogTitle>
             <HelpTooltip
