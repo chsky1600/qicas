@@ -438,8 +438,8 @@ export function useTutorial({
           if (el) tutorialCollapse(el)
         },
         popover: {
-          title: "Export to XSLT",
-          description: "Download the current schedule as a XSLT file, with instructors as rows and Fall and Winter assignments as columns.",
+          title: "Export to XLSX",
+          description: "Download the current schedule as a XLSX file, with instructors as rows and Fall and Winter assignments as columns.",
           side: "bottom" as const, align: "end" as const,
           onPrevClick: () => doBackward(A_EXPORT, () => driverInstance?.movePrevious()),
         },
@@ -562,8 +562,8 @@ export function useTutorial({
           if (el) tutorialCollapse(el)
         },
         popover: {
-          title: "Export to XSLT",
-          description: "Download the current schedule as a XSLT file, with instructors as rows and Fall and Winter assignments as columns.",
+          title: "Export to XLSX",
+          description: "Download the current schedule as a XLSX file, with instructors as rows and Fall and Winter assignments as columns.",
           side: "bottom" as const, align: "end" as const,
           onPrevClick: () => doBackward(S_EXPORT, () => driverInstance?.movePrevious()),
         },
