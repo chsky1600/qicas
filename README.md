@@ -243,10 +243,14 @@ This is the main user-facing page:
   - drag course “chips” to instructor cells (Fall/Winter)
   - drag chips back to unassign
 - renders:
-  - `CoursesPanel`
-  - `ScheduleTable`
+  - `CoursesPanel` (Courses sidepanel)
+  - `ScheduleTable` (Instructor assignment main interface)
   - `PropertiesDialog` (edit instructors/courses/rules)
   - `SavedSchedulesDialog` (snapshot management)
+  - `MigrationDialog` (Creating new Academic Years)
+  - `UserManagementDialog` (Admin: Manage user accounts)
+  - `AccountDialog` (Support: manage personal user account)
+  - `HowToDialog` (How-to guides)
 
 **How validation affects the system from the UI:**
 
@@ -271,17 +275,14 @@ This hook is the “orchestrator” for schedule state:
   - assign/unassign sections (adds/removes assignments via schedule endpoints)
   - create/update instructors and courses
   - drop instructors/courses by updating their rules’ `dropped` field
+  - create/update/delete user accounts, including setting a temp. passowrd
   - create/copy/delete/rename/switch schedule snapshots
-  - export the schedule to CSV
+  - change year, and migrate to new year
+  - export the schedule to CSV or XLSX (default)
 - computes `violations`:
   - calls `/schedule/:year/:schedule_id/validate` (schedule-wide validation)
   - stores the returned `violations[]` for rendering
 
-#### Legacy assignment page
-
-`client/src/pages/assignmentPage.tsx` currently contains an “Old page” stub. It imports `useAssignment` and `AssignmentInterface`, but the file is minimal and may represent earlier UI work.
-
-If you are documenting “current product behavior”, the supported/active flow is `SchedulePage` under `/schedule`.
 
 #### API layer in the client
 
@@ -299,18 +300,17 @@ Within the React app:
 - `client/src/pages/`
   - `loginPage.tsx` - calls `POST /auth` and navigates to `/schedule`
   - `schedulePage.tsx` - the main drag-and-drop scheduling experience (uses `useSchedule()`)
-  - `assignmentPage.tsx` - legacy/older stub UI (the app currently routes to the schedule flow)
 - `client/src/components/`
   - `authGuard.tsx` / `sessionWarning.tsx` - cookie-based auth gating + session expiry modal
   - `schedule/` - UI components used by `SchedulePage` (table, panels, dialogs, chips)
   - `ui/` - reusable primitives (buttons, table, dialogs, toaster)
-- `client/src/features/`
-  - `schedule/` - schedule hooks/state and API bindings (`useSchedule`, `api.ts`, types)
-  - `assignment/` - older experiment/state management (`useAssignment` and helpers)
+- `client/src/features/schedule/` 
+  - schedule hooks/state and API bindings (`useSchedule`, `api.ts`, types)
 - `client/src/lib/`
   - `fetchWithAuth.ts` - helper to clear cookie + redirect on 403
 - `client/src/assets/`
-  - static images (branding/logo)
+  - static images (icons/logo)
+  - index page for access
 
 ### How to Think About “System Meaning”
 
@@ -347,8 +347,3 @@ Backend and frontend are split, so you typically run:
    - `bun dev` (runs `src/index.ts` with hot reload)
 3. Frontend:
    - `cd client && bun dev` or `npm run dev` (Vite)
-
-### Updating a users username / password
-
-<!-- TODO -->
-<!-- likely just ssh into the vm, hit an endpoint with curl, call it a day.  -->
