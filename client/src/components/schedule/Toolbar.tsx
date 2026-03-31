@@ -44,7 +44,7 @@ export default function Toolbar({
   }, [])
 
   const btn = "flex items-center bg-[#1a1a1a] text-white border border-[#444] px-3 py-2 rounded text-sm cursor-pointer hover:bg-[#3c3c3c] transition-colors focus:outline-none"
-  const label = "toolbar-label inline-block overflow-hidden max-w-0 opacity-0 group-hover:max-w-40 group-hover:opacity-100 group-hover:ml-2 transition-all duration-200 ease-out whitespace-nowrap"
+  const label = "toolbar-label inline-block overflow-hidden max-w-0 opacity-0 group-hover:max-w-40 group-hover:opacity-100 group-hover:ml-2 transition-all duration-600 ease-out whitespace-nowrap"
   const menuItem = "w-full text-left px-4 py-2.5 text-sm hover:bg-[#3c3c3c] transition-colors flex items-center gap-2 whitespace-nowrap"
 
   return (
@@ -143,9 +143,11 @@ export default function Toolbar({
               <button id="toolbar-tutorial" onClick={() => { setMoreOpen(false); onStartTutorial() }} className={menuItem}>
                 <img src={icon.tutorial} alt="Tutorial" className="w-5 h-5"/>Tutorial
               </button>
-              <button id="toolbar-howto" onClick={() => { setMoreOpen(false); onOpenHowTo() }} className={menuItem}>
-                <img src={icon.howTo} alt="How-To's" className="w-5 h-5"/>How-To's
-              </button>
+              {isAdmin && 
+                <button id="toolbar-howto" onClick={() => { setMoreOpen(false); onOpenHowTo() }} className={menuItem}>
+                  <img src={icon.howTo} alt="How-To's" className="w-5 h-5"/>How-To's
+                </button>
+              }
               <div className="border-t border-[#444] my-1" />
               <button onClick={() => { setMoreOpen(false); onLogout() }} className={menuItem}>
                 <img src={icon.logout} alt="Logout" className="w-5 h-5"/>Logout
