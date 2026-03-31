@@ -11,6 +11,7 @@ import notes from './note.svg'
 import lightning from './lightning-duotone.svg'
 import user from './user-duotone.svg'
 import users from './users-duotone.svg'
+import howTo from './seal-question-duotone.svg'
 
 // Icons imported from:
 // https://phosphoricons.com/
@@ -32,4 +33,5 @@ export {
   lightning,
   user,
   users,
+  howTo
 }
