@@ -17,6 +17,14 @@ import { applyCandidate } from "./scheduleService";
 
 const CO_TEACHING_LIMIT = 2;
 
+// workload credit for a single assignment
+// full-year courses split their workload_fulfillment across both term assignments
+function assignmentCredit(ctx: AcademicYear, courseCode: string): number {
+  const cr = ctx.course_rules.find(r => r.course_code === courseCode)
+  if (!cr) return 1
+  return cr.is_full_year ? cr.workload_fulfillment / cr.terms_offered.length : cr.workload_fulfillment
+}
+
 // resolve raw IDs to human-readable labels for violation messages
 function instructorName(ctx: AcademicYear, id: string): string {
   return ctx.instructors.find(i => i.id === id)?.name ?? id
@@ -408,10 +416,7 @@ export function checkInstructorRules(
   const target = instructor.workload + delta;
   const assignedWorkload = projected.assignments
     .filter(a => a.instructor_id === candidate.instructor_id)
-    .reduce((sum, a) => {
-      const cr = ctx.course_rules.find(r => r.course_code === a.course_code);
-      return sum + (cr?.workload_fulfillment ?? 1);
-    }, 0);
+    .reduce((sum, a) => sum + assignmentCredit(ctx, a.course_code), 0);
   if (assignedWorkload > target) {
     violations.push({
       id: `v-workload-exceeded-${candidate.instructor_id}`,
@@ -492,15 +497,13 @@ export function checkScheduleRules(
   // (in-faculty) section remains unassigned.
   const allAtCapacity = ctx.instructors.every(instructor => {
     const rule = ctx.instructor_rules.find(r => r.instructor_id === instructor.id);
+    if (rule?.dropped) return true; // dropped instructors don't count
     const delta = rule?.workload_delta ?? 0;
     const target = instructor.workload + delta;
 
     const assignedWorkload = schedule.assignments
       .filter(a => a.instructor_id === instructor.id)
-      .reduce((sum, a) => {
-        const cr = ctx.course_rules.find(r => r.course_code === a.course_code);
-        return sum + (cr?.workload_fulfillment ?? 1);
-      }, 0);
+      .reduce((sum, a) => sum + assignmentCredit(ctx, a.course_code), 0);
 
     return assignedWorkload >= target;
   });
@@ -534,15 +537,16 @@ export function checkScheduleRules(
   // --- SW_IMBALANCE (Warning) ---
   // Total available internal section credits != total instructor workload across the schedule.
   const totalSections = ctx.course_rules
-    .filter(cr => !cr.is_external && !cr.dropped)
+    .filter(cr => !cr.dropped)
     .reduce((sum, cr) => {
       const course = ctx.courses.find(c => c.code === cr.course_code)
       const sectionCount = course?.sections.length ?? 0
-      return sum + cr.workload_fulfillment * sectionCount * cr.terms_offered.length
+      return sum + cr.workload_fulfillment * sectionCount 
     }, 0);
 
   const totalWorkload = ctx.instructors.reduce((sum, instructor) => {
     const rule = ctx.instructor_rules.find(r => r.instructor_id === instructor.id);
+    if (rule?.dropped) return sum;
     const delta = rule?.workload_delta ?? 0;
     return sum + instructor.workload + delta;
   }, 0);

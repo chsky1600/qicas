@@ -929,17 +929,16 @@ describe("checkScheduleRules", () => {
       expect(violations.filter(v => v.code === "SW_IMBALANCE")).toHaveLength(0);
     });
 
-    test("excludes external sections from the count", () => {
-      // 1 internal section + 1 external section, 1 instructor (workload 1) -> 1 == 1, balanced
+    test("includes external sections in the count", () => {
+      // smallCtx has 2 internal sections and 1 external, 1 instructor (workload 1)
+      // all 3 sections count toward the total
       const schedule = makeSchedule([]);
 
       const violations = checkScheduleRules(smallCtx, schedule);
 
-      // smallCtx has 2 internal sections and 1 external. External is excluded,
-      // but 2 internal != 1 workload, so still fires. Verify external isn't counted
       const v = violations.find(v => v.code === "SW_IMBALANCE");
       expect(v).toBeTruthy();
-      expect(v!.message).toContain("2"); // 2 internal sections, not 3
+      expect(v!.message).toContain("3"); // all 3 sections counted
     });
 
     test("accounts for workload_delta in total workload", () => {
