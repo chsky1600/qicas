@@ -88,7 +88,8 @@ export default function SavedSchedulesDialog({
           {sorted.map(s => {
             const isActive = s.id === activeSchedule?.id
             const count = isActive ? assignedCount(activeSchedule) : assignedCount(s) // Keeps Active schedule up to date with any assignments
-            const pct = total > 0 ? Math.round((count / total) * 100) : 0
+            const pct = total > 0 ? Math.min(100, Math.round((count / total) * 100)) : 0
+            const isOverAssigned = total > 0 && count > total
             return (
               <div key={s.id} className={`border rounded-lg p-3 ${isActive ? "border-blue-500 bg-blue-50" : "border-gray-200"}`}>
                 <div className="flex items-center justify-between mb-2">
@@ -131,7 +132,7 @@ export default function SavedSchedulesDialog({
 
                 {/* Action Buttons */}
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">{count}/{total} sections assigned ({pct}%)</span>
+                  <span className={`text-xs ${isOverAssigned ? "text-red-500" : "text-gray-500"}`}>{count}/{total} sections assigned ({Math.round((count / total) * 100)}%)</span>
                   <div className="flex gap-2">
                   {isAdmin && (
                     <button
