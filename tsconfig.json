@@ -7,9 +7,9 @@
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
-    "module": "commonjs",
+    "module": "esnext",
     "target": "es2020",
-    "types": [],
+    "types": ["bun-types"],
     "lib": ["es2020", "dom"],
     // For nodejs:
     // "lib": ["esnext"],
@@ -33,6 +33,8 @@
     // "noFallthroughCasesInSwitch": true,
     // "noPropertyAccessFromIndexSignature": true,
 
+    "moduleResolution": "bundler",
+
     // Recommended Options
     "strict": true,
     "jsx": "react-jsx",
@@ -44,5 +46,7 @@
 
     "esModuleInterop": true,
     "resolveJsonModule": true,
-  }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "tests"]
 }
