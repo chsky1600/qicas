@@ -80,7 +80,6 @@ export default function AccountDialog({
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [passwordOpen, setPasswordOpen] = useState(false)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -103,7 +102,6 @@ export default function AccountDialog({
     setCurrentPassword("")
     setNewPassword("")
     setConfirmPassword("")
-    setPasswordOpen(false)
     setPasswordError(null)
     setPasswordSuccess(null)
   }, [open, name, email])
@@ -123,19 +121,16 @@ export default function AccountDialog({
 
     if (wantsPasswordChange) {
       if (!currentPassword) {
-        setPasswordOpen(true)
         setPasswordError("Current password is required")
         focusInputAtEnd(currentPasswordRef.current)
         return
       }
       if (!newPassword || newPassword.length < 8) {
-        setPasswordOpen(true)
         setPasswordError("New password must be at least 8 characters")
         focusInputAtEnd(newPasswordRef.current)
         return
       }
       if (newPassword !== confirmPassword) {
-        setPasswordOpen(true)
         setPasswordError("Password confirmation does not match")
         return
       }
@@ -154,7 +149,6 @@ export default function AccountDialog({
         setCurrentPassword("")
         setNewPassword("")
         setConfirmPassword("")
-        setPasswordOpen(false)
       } else {
         toast.success("Account updated")
         onClose()
@@ -175,7 +169,7 @@ export default function AccountDialog({
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose() }}>
       <DialogContent
         showCloseButton={false}
-        className="flex w-[calc(100vw-2rem)] max-w-[560px] flex-col p-0 gap-0 overflow-hidden rounded-lg"
+        className="flex h-auto w-[calc(100vw-2rem)] max-w-[560px] flex-col p-0 gap-0 overflow-hidden rounded-lg"
       >
         <DialogDescription className="sr-only">
           Update your account details and change your password.
@@ -193,7 +187,7 @@ export default function AccountDialog({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 bg-white p-5">
+        <div className="flex-1 bg-white p-5">
           <div className="grid gap-4">
             <label className="grid gap-1 text-sm">
               <span className="font-medium text-gray-800">Name</span>
@@ -217,54 +211,45 @@ export default function AccountDialog({
             </label>
 
             <div className="mt-2 rounded border border-gray-200 p-4">
-              <button
-                type="button"
-                onClick={() => setPasswordOpen((prev) => !prev)}
-                className="flex w-full items-center justify-between text-left"
-              >
-                <h4 className="text-sm font-semibold text-gray-900">Change Password</h4>
-                {passwordOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
-              {passwordOpen && (
-                <div className="mt-3 grid gap-4">
-                  <PasswordField
-                    label="Current Password"
-                    value={currentPassword}
-                    placeholder="Required to change password"
-                    inputRef={currentPasswordRef}
-                    onChange={(value) => {
-                      setCurrentPassword(value)
-                      setPasswordError(null)
-                    }}
-                  />
-                  <PasswordField
-                    label="New Password"
-                    value={newPassword}
-                    placeholder="At least 8 characters"
-                    inputRef={newPasswordRef}
-                    onChange={(value) => {
-                      setNewPassword(value)
-                      setPasswordError(null)
-                    }}
-                  />
-                  <PasswordField
-                    label="Confirm New Password"
-                    value={confirmPassword}
-                    placeholder="Re-enter new password"
-                    onChange={(value) => {
-                      setConfirmPassword(value)
-                      setPasswordError(null)
-                    }}
-                  />
-                  {passwordError && (
-                    <p className="text-sm text-red-600">{passwordError}</p>
-                  )}
-                </div>
-              )}
-              {!passwordOpen && passwordError && (
+              <h3 className="text-sm font-bold text-gray-900">Change Password</h3>
+              <div className="mt-3 grid gap-4">
+                <PasswordField
+                  label="Current Password"
+                  value={currentPassword}
+                  placeholder="Required to change password"
+                  inputRef={currentPasswordRef}
+                  onChange={(value) => {
+                    setCurrentPassword(value)
+                    setPasswordError(null)
+                  }}
+                />
+                <PasswordField
+                  label="New Password"
+                  value={newPassword}
+                  placeholder="At least 8 characters"
+                  inputRef={newPasswordRef}
+                  onChange={(value) => {
+                    setNewPassword(value)
+                    setPasswordError(null)
+                  }}
+                />
+                <PasswordField
+                  label="Confirm New Password"
+                  value={confirmPassword}
+                  placeholder="Re-enter new password"
+                  onChange={(value) => {
+                    setConfirmPassword(value)
+                    setPasswordError(null)
+                  }}
+                />
+                {passwordError && (
+                  <p className="text-sm text-red-600">{passwordError}</p>
+                )}
+              </div>
+              {passwordError && (
                 <p className="mt-3 text-sm text-red-600">{passwordError}</p>
               )}
-              {!passwordOpen && passwordSuccess && (
+              {passwordSuccess && (
                 <p className="mt-3 text-sm text-green-600">{passwordSuccess}</p>
               )}
             </div>
@@ -286,7 +271,6 @@ export default function AccountDialog({
                 setNewPassword("")
                 setConfirmPassword("")
                 setPasswordError(null)
-                setPasswordOpen(false)
               }}
               className="rounded border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
