@@ -253,6 +253,10 @@ export function setIsRCSchedule(year: string, scheduleId: string, is_rc: boolean
   })
 }
 
+export function getSchedule(year: string, scheduleId: string) {
+  return request<Schedule | null>(`/schedule/${year}/${scheduleId}`)
+}
+
 export function getScheduleVersion(year: string, scheduleId: string) {
   return request<{ version: number }>(`/schedule/${year}/${scheduleId}/version`)
 }
