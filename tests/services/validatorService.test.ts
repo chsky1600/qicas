@@ -845,7 +845,7 @@ describe("checkScheduleRules", () => {
     ],
   };
   describe("SECTION_UNASSIGNED (ERROR)", () => {
-    test("fires when all instructors at capacity and internal section unassigned", () => {
+    test("fires when all instructors at capacity and internal or external section unassigned", () => {
       // inst-1 has workload 1, assigned 1 section so at capacity. s-2 in Fall is uncovered.
       const schedule = makeSchedule([
         makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" }),
@@ -853,7 +853,8 @@ describe("checkScheduleRules", () => {
 
       const violations = checkScheduleRules(smallCtx, schedule);
 
-      expect(violations.filter(v => v.code === "SECTION_UNASSIGNED")).toHaveLength(1);
+      // smallCtx has 1 internal section and 1 external, both unassigned
+      expect(violations.filter(v => v.code === "SECTION_UNASSIGNED")).toHaveLength(2);
       expect(violations.find(v => v.code === "SECTION_UNASSIGNED")!.degree).toBe("Error");
       if (VERBOSE) console.log(JSON.stringify(violations, null, 2));
     });
@@ -868,20 +869,20 @@ describe("checkScheduleRules", () => {
       expect(violations.filter(v => v.code === "SECTION_UNASSIGNED")).toHaveLength(0);
     });
 
-    test("does NOT fire when all internal sections are assigned", () => {
-      // Both sections covered, inst-1 over capacity but everything is assigned
+    test("does fire when internal sections unassigned", () => {
+      // inst-1 at capacity, One internal section unassigned
       const schedule = makeSchedule([
         makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" }),
-        makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-2", term: "Fall" }),
+        makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "MATH110", section_id: "s-ext", term: "Fall" }),
       ]);
 
       const violations = checkScheduleRules(smallCtx, schedule);
 
-      expect(violations.filter(v => v.code === "SECTION_UNASSIGNED")).toHaveLength(0);
+      expect(violations.filter(v => v.code === "SECTION_UNASSIGNED")).toHaveLength(1);
     });
 
-    test("does NOT fire for external (is_external) sections", () => {
-      // inst-1 at capacity, MATH110 section unassigned but it's external
+    test("does fire when external (is_external) sections unassigned", () => {
+      // inst-1 at capacity, MATH110 external section unassigned
       const schedule = makeSchedule([
         makeAssignment({ id: "a-1", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-1", term: "Fall" }),
         makeAssignment({ id: "a-2", instructor_id: "inst-1", course_code: "CISC101", section_id: "s-2", term: "Fall" }),
@@ -890,7 +891,7 @@ describe("checkScheduleRules", () => {
       const violations = checkScheduleRules(smallCtx, schedule);
 
       // MATH110 s-ext is unassigned but external, so should not fire
-      expect(violations.filter(v => v.offending_id === "MATH110")).toHaveLength(0);
+      expect(violations.filter(v => v.offending_id === "MATH110")).toHaveLength(1);
     });
   });
 
@@ -929,17 +930,16 @@ describe("checkScheduleRules", () => {
       expect(violations.filter(v => v.code === "SW_IMBALANCE")).toHaveLength(0);
     });
 
-    test("excludes external sections from the count", () => {
-      // 1 internal section + 1 external section, 1 instructor (workload 1) -> 1 == 1, balanced
+    test("includes external sections in the count", () => {
+      // smallCtx has 2 internal sections and 1 external, 1 instructor (workload 1)
+      // all 3 sections count toward the total
       const schedule = makeSchedule([]);
 
       const violations = checkScheduleRules(smallCtx, schedule);
 
-      // smallCtx has 2 internal sections and 1 external. External is excluded,
-      // but 2 internal != 1 workload, so still fires. Verify external isn't counted
       const v = violations.find(v => v.code === "SW_IMBALANCE");
       expect(v).toBeTruthy();
-      expect(v!.message).toContain("2"); // 2 internal sections, not 3
+      expect(v!.message).toContain("3"); // all 3 sections counted
     });
 
     test("accounts for workload_delta in total workload", () => {
