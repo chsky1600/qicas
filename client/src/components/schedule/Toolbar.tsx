@@ -144,7 +144,7 @@ export default function Toolbar({
                 <img src={icon.tutorial} alt="Tutorial" className="w-5 h-5"/>Tutorial
               </button>
               <button id="toolbar-howto" onClick={() => { setMoreOpen(false); onOpenHowTo() }} className={menuItem}>
-                <img src={icon.tutorial} alt="How-To's" className="w-5 h-5"/>How-To's
+                <img src={icon.howTo} alt="How-To's" className="w-5 h-5"/>How-To's
               </button>
               <div className="border-t border-[#444] my-1" />
               <button onClick={() => { setMoreOpen(false); onLogout() }} className={menuItem}>
