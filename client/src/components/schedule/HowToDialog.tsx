@@ -25,23 +25,23 @@ const ADMIN_GROUPS: ScribeGroup[] = [
   {
     title: "Use the validation toggle",
     items: ["Use the validation toggle"],
-    embedUrl: "https://scribehow.com/embed-preview/Use_the_Validation_Toggle__hHoHliCNQE6uuMVPawyE9g",
+    embedUrl: "https://scribehow.com/embed/Use_the_Validation_Toggle__hHoHliCNQE6uuMVPawyE9g",
   },
 
   {
     title: "Manage instructors",
     items: ["Manage instructors", "Adjust workload modifier"],
-    embedUrl: "https://scribehow.com/embed-preview/Update_and_Save_Instructor_Properties__7dvn9lWXTLWWidh_r2LD0A",
+    embedUrl: "https://scribehow.com/embed/Update_and_Save_Instructor_Properties__7dvn9lWXTLWWidh_r2LD0A",
   },
   {
     title: "Set designated courses for adjuncts",
     items: ["Set designated courses for adjuncts"],
-    embedUrl: "https://scribehow.com/embed-preview/Set_Designated_Courses_for_Adjuncts__tCZdgVJ6Rt-VJ9mlr0O2Uw",
+    embedUrl: "https://scribehow.com/embed/Set_Designated_Courses_for_Adjuncts__tCZdgVJ6Rt-VJ9mlr0O2Uw",
   },
   {
     title: "Manage courses",
     items: ["Manage courses"],
-    embedUrl: "https://scribehow.com/embed-preview/Managing_Course_Properties__aKqq0SMuTl-eDh71czHEfQ",
+    embedUrl: "https://scribehow.com/embed/Managing_Course_Properties__aKqq0SMuTl-eDh71czHEfQ",
   },
 ]
 
