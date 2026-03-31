@@ -161,7 +161,7 @@ async function main() {
         schedules: [
           {
             id: "SCH001",
-            name: "Conflict Showcase",
+            name: "Demo Schedule",
             year_id: "Y2026",
             date_created: new Date("2026-03-29T10:00:00.000Z"),
             is_rc: false,
