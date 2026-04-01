@@ -7,9 +7,11 @@ import {
     createCourse,
     updateCourse
 } from "../controllers/courseController";
-import { requireRole } from "../controllers/authController";
+import { verifyToken, requireRole } from "../controllers/authController";
 
 const router = express.Router();
+
+router.use(verifyToken)
 
 router.get("/courses/:year", getAllCourses);
 router.get("/courses/:year/:course_id", getCourseByID);

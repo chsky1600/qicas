@@ -6,6 +6,7 @@ import type {
   Year, Course, Instructor, Schedule, Assignment,
   InstructorRule, CourseRule, Violation, Term, ValidationMode, User, UserRole
 } from "./types"
+import { uuid } from "@/lib/utils"
 import  {
   RANK_DISPLAY
 } from "./types"
@@ -268,7 +269,7 @@ export function useSchedule(): UseScheduleResult {
     setSaving(true)
 
     const newAssignment: Assignment = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       instructor_id: instructorId,
       section_id: sectionId,
       course_code: courseCode,
@@ -517,7 +518,7 @@ export function useSchedule(): UseScheduleResult {
   }) => {
     const created = await api.createUser({
       ...user,
-      id: crypto.randomUUID(),
+      id: uuid(),
       must_change_password: false,
     })
     setUsers(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))

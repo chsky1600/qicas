@@ -127,12 +127,12 @@ export const getToken = async (req : Request, res : Response) => {
         if(user){
             const match = await Bun.password.verify(password, user.password);
             if(match) {
-                await issueSessionCookie(res, {
+                const session = await issueSessionCookie(res, {
                     faculty_id: user.faculty_id,
                     user_id: user.id,
                     role: user.role,
                 }, user)
-                res.sendStatus(200)
+                res.status(200).json(session)
             } else {
                 res.status(401).json({ error: "Invalid password" })
             }
@@ -355,6 +355,7 @@ export const getSession = async (req: Request, res: Response) => {
     }
 
     const user = await fetchUserByFacultyAndId(faculty_id, user_id)
+    console.log("[getSession] DB returned must_change_password:", user?.must_change_password)
     if (!user) {
         res.sendStatus(401)
         return
