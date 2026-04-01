@@ -547,7 +547,7 @@ export function checkScheduleRules(
     .reduce((sum, cr) => {
       const course = ctx.courses.find(c => c.code === cr.course_code)
       const sectionCount = course?.sections.length ?? 0
-      return sum + cr.workload_fulfillment * sectionCount 
+      return sum + cr.workload_fulfillment * sectionCount * (cr.is_full_year ? cr.terms_offered.length : 1)
     }, 0);
 
   const totalWorkload = ctx.instructors.reduce((sum, instructor) => {

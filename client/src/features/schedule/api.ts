@@ -3,7 +3,7 @@ import type {
   InstructorRule, CourseRule, Year, Violation, Faculty, User, UserRole
 } from "./types"
 
-const BASE = ""
+const BASE = "/french/icas"
 
 // auth hooks registered by AuthContext at mount
 let _onActivity: (() => void) | null = null
@@ -62,7 +62,7 @@ export function login(email: string, password: string) {
 }
 
 export function changePassword(current_password: string | undefined, new_password: string) {
-  return request<void>("/auth/password", {
+  return request<{ message: string; session: { faculty_id: string; user_id: string; name: string; email: string; role: "admin" | "support"; must_change_password: boolean; exp: number } }>("/auth/password", {
     method: "PUT",
     body: JSON.stringify({ current_password, new_password }),
   })

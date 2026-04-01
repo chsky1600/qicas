@@ -14,7 +14,7 @@ interface Props {
   courses: Course[]
   courseRules: CourseRule[]
   onAddSchedule: () => Promise<Schedule | undefined>
-  onCopySchedule: (schedule: Schedule) => Promise<Schedule | undefined>
+  onCopySchedule: (id: string) => Promise<Schedule | undefined>
   onDeleteSavedSchedule: (id: string) => Promise<void>
   onSwitchSchedule: (id: string) => Promise<void>
   onRenameSchedule: (scheduleId: string, newName: string)  => Promise<void>
@@ -46,11 +46,6 @@ export default function SavedSchedulesDialog({
     return [...schedules].sort((a, b) => b.date_created.localeCompare(a.date_created))
   }, [schedules])
 
-  async function handleLoad(id: string) {
-    await onSwitchSchedule(id)
-    onClose()
-  }
-
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
       <DialogContent
@@ -61,7 +56,7 @@ export default function SavedSchedulesDialog({
         }}
         className="p-0 gap-0 w-[700px] max-h-[70vh] h-auto flex flex-col rounded-lg overflow-hidden"
       >
-        <DialogTitle className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
+        <DialogTitle id="saved-schedules-dialog-header" className="flex items-center justify-between px-5 py-4 bg-black rounded-t-lg">
           <div className="flex items-center gap-2">
             <h2 className="text-white font-semibold text-base">Saved Schedules</h2>                       
             {isAdmin && (
@@ -144,7 +139,7 @@ export default function SavedSchedulesDialog({
                   )}
                   {isAdmin && (
                     <button
-                      onClick={() => {onCopySchedule(s)}}
+                      onClick={() => onCopySchedule(s.id)}
                       className="text-xs bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
                     >
                       Copy
@@ -153,7 +148,7 @@ export default function SavedSchedulesDialog({
                   {!isActive && (
                     <>
                       <button
-                        onClick={() => handleLoad(s.id)}
+                        onClick={() => onSwitchSchedule(s.id)}
                         className="text-xs bg-black text-white px-3 py-1 rounded hover:bg-gray-800"
                       >
                         Load

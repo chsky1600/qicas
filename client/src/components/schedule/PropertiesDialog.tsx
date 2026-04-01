@@ -8,6 +8,7 @@ import { toast } from "sonner"
 import { HelpTooltip } from "../ui/help-tooltip.tsx"
 import { X } from "lucide-react"
 
+import { uuid } from "@/lib/utils"
 import type {
   Instructor, InstructorRule, Course, CourseRule,
   InstructorRank, Term, CourseLevel,
@@ -51,16 +52,16 @@ const TERMS: Term[] = ["Fall", "Winter"]
 const LEVELS: CourseLevel[] = ["undergrad1", "undergrad2", "undergrad3", "undergrad4", "literature", "graduate"]
 
 function blankInstructor(cpc: number): Instructor {
-  return { id: crypto.randomUUID(), name: "", email: "", workload: 2 * cpc, rank: "AssistantProfessor", prev_taught: [], notes: [] }
+  return { id: uuid(), name: "", email: "", workload: 2 * cpc, rank: "AssistantProfessor", prev_taught: [], notes: [] }
 }
 function blankInstructorRule(instructorId: string): InstructorRule {
-  return { id: crypto.randomUUID(), instructor_id: instructorId, designations: [], workload_delta: 0, courses: [], declined_courses: [], dropped: false }
+  return { id: uuid(), instructor_id: instructorId, designations: [], workload_delta: 0, courses: [], declined_courses: [], dropped: false }
 }
 function blankCourse(): Course {
-  return { id: crypto.randomUUID(), name: "", code: "", level: "undergrad1", year_introduced: String(new Date().getFullYear()), notes: [], sections: [{ id: crypto.randomUUID(), number: 1, capacity: 30 }], capacity: 30 }
+  return { id: uuid(), name: "", code: "", level: "undergrad1", year_introduced: String(new Date().getFullYear()), notes: [], sections: [{ id: uuid(), number: 1, capacity: 30 }], capacity: 30 }
 }
 function blankCourseRule(courseCode: string, cpc: number): CourseRule {
-  return { id: crypto.randomUUID(), course_code: courseCode, terms_offered: ["Fall"], workload_fulfillment: cpc, is_full_year: false, sections_available: [], is_external: false, dropped: false }
+  return { id: uuid(), course_code: courseCode, terms_offered: ["Fall"], workload_fulfillment: cpc, is_full_year: false, sections_available: [], is_external: false, dropped: false }
 }
 
 export default function PropertiesDialog({
@@ -240,7 +241,7 @@ export default function PropertiesDialog({
     if (!courseEdit) return
     const maxNum = Math.max(0, ...courseEdit.sections.map(s => s.number))
     setChangeMade(true)
-    setCourseEdit(p => p ? { ...p, sections: [...p.sections, { id: crypto.randomUUID(), number: maxNum + 1, capacity: 30 }] } : p)
+    setCourseEdit(p => p ? { ...p, sections: [...p.sections, { id: uuid(), number: maxNum + 1, capacity: 30 }] } : p)
   }
 
   function removeSection(secId: string) {
@@ -301,7 +302,7 @@ export default function PropertiesDialog({
         className={`w-[1100px] p-0 gap-0 border border-black rounded-md ${showDesignated ? "h-145" : "h-130"}`}
       >
         {/* Header */}
-        <DialogTitle className="relative flex items-center justify-center bg-black text-white p-2 h-fit rounded-t-md">
+        <DialogTitle  id="properties-dialog-header" className="relative flex items-center justify-center bg-black text-white p-2 h-fit rounded-t-md">
           <div className="absolute left-2 flex items-center gap-1.5">
             <span className="text-xs opacity-80">Edit Properties</span>
             <HelpTooltip

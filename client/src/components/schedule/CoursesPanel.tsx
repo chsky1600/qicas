@@ -40,7 +40,10 @@ export default function CoursesPanel({ courses, courseRules, assignments, onAddC
         .sort((a, b) => a.number - b.number)
         .map(section => ({
           course, section, rule,
-          assigned: assignments.some(a => a.section_id === section.id),
+          assigned: (rule?.is_full_year ?
+            // if full year, assigned means some assignment for each term
+            ["Fall", "Winter"].every(t => assignments.some(a => a.section_id === section.id && a.term === t)) :
+            assignments.some(a => a.section_id === section.id))
         }))
     })
     .filter(r => r.course.code.toLowerCase().includes(search.toLowerCase()))

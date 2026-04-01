@@ -6,6 +6,7 @@ import type {
   Year, Course, Instructor, Schedule, Assignment,
   InstructorRule, CourseRule, Violation, Term, ValidationMode, User, UserRole
 } from "./types"
+import { uuid } from "@/lib/utils"
 import  {
   RANK_DISPLAY
 } from "./types"
@@ -49,7 +50,7 @@ export interface UseScheduleResult {
   setTemporaryPassword: (userId: string, password: string) => Promise<void>
   deleteUserAccount: (userId: string) => Promise<void>
   addSchedule: () => Promise<Schedule | undefined>
-  copySchedule: (schedule: Schedule) => Promise<Schedule | undefined>
+  copySchedule: (scheduleId: string) => Promise<Schedule | undefined>
   deleteSavedSchedule: (scheduleId: string) => Promise<void>
   renameSchedule: (scheduleId: string, newName: string)  => Promise<void>
   switchSchedule: (scheduleId: string) => Promise<void>
@@ -268,7 +269,7 @@ export function useSchedule(): UseScheduleResult {
     setSaving(true)
 
     const newAssignment: Assignment = {
-      id: crypto.randomUUID(),
+      id: uuid(),
       instructor_id: instructorId,
       section_id: sectionId,
       course_code: courseCode,
@@ -502,9 +503,9 @@ export function useSchedule(): UseScheduleResult {
       assignments: [],
       version: 1,
     }
-    const copySchedule = await api.createSavedSchedule(yr, newSchedule)
-    setSchedules(prev => [...prev, copySchedule])
-    return copySchedule
+    const addedSchedule = await api.createSavedSchedule(yr, newSchedule)
+    setSchedules(prev => [...prev, addedSchedule])
+    return addedSchedule
   }, [])
 
   // ── User actions ────────────────────────────────────────────────────────────
@@ -517,7 +518,7 @@ export function useSchedule(): UseScheduleResult {
   }) => {
     const created = await api.createUser({
       ...user,
-      id: crypto.randomUUID(),
+      id: uuid(),
       must_change_password: false,
     })
     setUsers(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)))
@@ -549,13 +550,21 @@ export function useSchedule(): UseScheduleResult {
     setUsers(prev => prev.filter(user => user.id !== userId))
   }, [])
 
-  const copySchedule = useCallback(async (schedule: Schedule) => {
+  const copySchedule = useCallback(async (scheduleId: string) => {
     const yr = yearIdRef.current
     if (!yr) return
-    const copiedSchedule = {...schedule, name: (schedule.name + " (copy)"), is_rc: false}
-    const copySchedule = await api.createSavedSchedule(yr, copiedSchedule)
-    setSchedules(prev => [...prev, copySchedule])
-    return copySchedule
+    try {
+      const copiedSchedule = await api.getSchedule(yr, scheduleId)
+      if (!copiedSchedule) throw error
+      const copyTemplate = { // adjust params. from copiedSchedule to create the template for the new schedule
+      ...copiedSchedule, name: (copiedSchedule.name + " (copy)"), is_rc: false}
+      const scheduleCopy = await api.createSavedSchedule(yr, copyTemplate)
+      setSchedules(prev => [...prev, scheduleCopy])
+      return scheduleCopy
+    } catch {
+      toast.warning("Copy failed.")
+      return
+    }
   }, [])
 
   const deleteSavedSchedule = useCallback(async (scheduleId: string) => {
@@ -568,16 +577,23 @@ export function useSchedule(): UseScheduleResult {
   const switchSchedule = useCallback(async (scheduleId: string) => {
     const yr = yearIdRef.current
     if (!yr) return
-    const newSchedule = await api.setWorkingSchedule(scheduleId)
-    setSchedule(newSchedule)
-    scheduleRef.current = newSchedule
-    localVersionRef.current = newSchedule?.version ?? 0
-    lastSchedulePerYear.current[yr] = scheduleId
     try {
-      const result = await api.validateSchedule(yr, newSchedule.id)
-      setViolations(result.validationResult.violations)
+      // pull updated schedule data from db
+      const newSchedule = await api.setWorkingSchedule(scheduleId)
+      // ensures all saved schedules up to date
+      setSchedules(await api.getSchedules(yr))
+      setSchedule(newSchedule)
+      scheduleRef.current = newSchedule
+      localVersionRef.current = newSchedule?.version ?? 0
+      lastSchedulePerYear.current[yr] = scheduleId
+      try {
+        const result = await api.validateSchedule(yr, newSchedule.id)
+        setViolations(result.validationResult.violations)
+      } catch {
+        setViolations([])
+      }
     } catch {
-      setViolations([])
+      toast.warning("Load failed.")
     }
   }, [])
 
@@ -620,6 +636,7 @@ export function useSchedule(): UseScheduleResult {
     }
   }, [loadYear])
 
+  // used when creating a new year
   const migrateYear = useCallback(async (source_year_id: string, new_year_id: string, name: string, schedule_ids: string[], release_Candidate_Id?: string) => {
     setLoading(true)
     try {
@@ -627,6 +644,7 @@ export function useSchedule(): UseScheduleResult {
       const updatedYears = await api.getYears()
       setYears(updatedYears)
 
+      // attempt to find release candidate
       let releaseCandidate: Schedule|null = null;
       if (release_Candidate_Id){
         releaseCandidate = await api.getSchedule(source_year_id, release_Candidate_Id)      
@@ -634,10 +652,15 @@ export function useSchedule(): UseScheduleResult {
 
       // add release candidate badge on prevYear schedule
       if (releaseCandidate?.id) await tagReleaseCandidate(releaseCandidate.id)
+
+      // change year to newly created year
       await changeYear(new_year_id, false)
       
       // use assignments from release candidate to populate prev-taught of each instructor
-      if(releaseCandidate?.assignments) await populatePrevTaught(releaseCandidate?.assignments)
+      if(releaseCandidate?.assignments) {
+        await populatePrevTaught(releaseCandidate?.assignments)
+        triggerRevalidate() // revalidate assignments after Prev_udated
+      }
     } catch (e) {
       console.log("migrate failed", e)
       setError((e as Error).message)
@@ -645,6 +668,9 @@ export function useSchedule(): UseScheduleResult {
     setLoading(false)
   }, [changeYear])
 
+  // utility class used only by migrateYear
+  // Sets is_rc = true to the schedule with id release_Candidate_Id in the current year
+  // must be called BEFORE changing to new year
   const tagReleaseCandidate = async (release_Candidate_Id: string) => {
     const yr = yearIdRef.current
     if (!yr) return
@@ -660,6 +686,9 @@ export function useSchedule(): UseScheduleResult {
     }
   }
 
+  // utility class used only by migrateYear
+  // updates each instructor in the current year to have their prev-taught property hold their resepective course in prev_Taught_Assignments
+  // must be called AFTER changing to new year
   const populatePrevTaught = async (prev_Taught_Assignments: Assignment[]) => {
     const yr = yearIdRef.current
     if (!yr || prev_Taught_Assignments.length === 0) return
@@ -681,19 +710,22 @@ export function useSchedule(): UseScheduleResult {
       )    
     }
 
-    await Promise.all([...updatedInstructors.values()].map(i => updateInstructor(i))) 
+    await Promise.all([...updatedInstructors.values()].map(i => updateInstructor(i)))
   }
 
   // ── export scheudle ─────────────────────────────────────────────────────────────
-    function exportData(fileType: "csv"|"xlsx"="xlsx") {
-    const scheduleName = schedule?.name ?? "Schedule"
   
+  function exportData(fileType: "csv"|"xlsx"="xlsx") {
+    const scheduleName = schedule?.name ?? "Schedule"
+
+    // Utility interface to help structure each row of the export
     interface row {
       data: string[];
       fallAssign: string[];
       wintAssign: string[];
     }
   
+    // calculate timestamp to be applied to filename
     const now = new Date();
     const timestamp = [
       now.getFullYear(),
@@ -703,7 +735,8 @@ export function useSchedule(): UseScheduleResult {
       String(now.getMinutes()).padStart(2, "0")+"m",
     ].join("-");
   
-    // there must be at least 1
+    // variable tracks the maximum number of assignments made in the fall term for any instructor
+    // used to padd the space for any instructor who has less fall assignments
     let maxFallAssigned = 1;
 
     // built for faster reference of which instructors are dropped
@@ -712,6 +745,7 @@ export function useSchedule(): UseScheduleResult {
       if (ir.dropped) instructorDropedSet.add(ir.instructor_id)
     }
     
+    // create a row for every non-dropped instructor
     const exportMap = new Map<string, row>();
     for (const i of instructors) {
       const dropped = instructorDropedSet.has(i.id)
@@ -723,9 +757,10 @@ export function useSchedule(): UseScheduleResult {
       )
     }
 
+    // add every assignment to the export map
     for (const a of assignments) {
-      const csvRow = exportMap.get(a.instructor_id);
-      if (!csvRow) continue
+      const dataRow = exportMap.get(a.instructor_id);
+      if (!dataRow) continue
   
       const c = courses.find(c => c.code === a.course_code)
       if (!c) continue;      
@@ -743,23 +778,22 @@ export function useSchedule(): UseScheduleResult {
       }
   
       if (a.term === "Fall") {
-        csvRow.fallAssign.push(courseString);
-        if (csvRow.fallAssign.length > maxFallAssigned) {
-          maxFallAssigned = csvRow.fallAssign.length;
-        }
-      }
-  
+        dataRow.fallAssign.push(courseString);
+        // update max fall assigned if its larger
+        if (dataRow.fallAssign.length > maxFallAssigned) maxFallAssigned = dataRow.fallAssign.length
+      }  
       else if (a.term === "Winter") {
-        csvRow.wintAssign.push(courseString);
+        dataRow.wintAssign.push(courseString);
       }
     }
   
+    // Build the export header    
     let csv: string = `${scheduleName},,`;
-  
     let fallPadding = ",";
     while (fallPadding.length < maxFallAssigned) fallPadding += ",";
     csv = csv + "Fall" + fallPadding + "Winter,\n";
-  
+    
+    // build each row of the export
     exportMap.forEach((row) => {
       const sortedFall = row.fallAssign.sort((a, b) => a.localeCompare(b));
       const sortedWint = row.wintAssign.sort((a, b) => a.localeCompare(b));
@@ -773,6 +807,7 @@ export function useSchedule(): UseScheduleResult {
       csv += combinedRow.join(",") + "\n";
     });
     
+    // construct the export file
     let blob: Blob;
     let fileName = `${scheduleName}-${timestamp}`
     if (fileType === "csv") {
