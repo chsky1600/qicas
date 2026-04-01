@@ -15,13 +15,13 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     proxy: {
-      "/auth": { target: "http://localhost:3000", changeOrigin: true },
-      "/courses": { target: "http://localhost:3000", changeOrigin: true },
-      "/instructors": { target: "http://localhost:3000", changeOrigin: true },
-      "/schedule/": { target: "http://localhost:3000", changeOrigin: true },
-      "/year": { target: "http://localhost:3000", changeOrigin: true },
-      "/faculty": { target: "http://localhost:3000", changeOrigin: true },
-      "/users": { target: "http://localhost:3000", changeOrigin: true },
+      "/french/icas/auth": { target: "http://localhost:3000", changeOrigin: true, rewrite: (p) => p.replace(/^\/french\/icas/, "") },
+      "/french/icas/courses": { target: "http://localhost:3000", changeOrigin: true, rewrite: (p) => p.replace(/^\/french\/icas/, "") },
+      "/french/icas/instructors": { target: "http://localhost:3000", changeOrigin: true, rewrite: (p) => p.replace(/^\/french\/icas/, "") },
+      "/french/icas/schedule/": { target: "http://localhost:3000", changeOrigin: true, rewrite: (p) => p.replace(/^\/french\/icas/, "") },
+      "/french/icas/year": { target: "http://localhost:3000", changeOrigin: true, rewrite: (p) => p.replace(/^\/french\/icas/, "") },
+      "/french/icas/faculty": { target: "http://localhost:3000", changeOrigin: true, rewrite: (p) => p.replace(/^\/french\/icas/, "") },
+      "/french/icas/users": { target: "http://localhost:3000", changeOrigin: true, rewrite: (p) => p.replace(/^\/french\/icas/, "") },
     },
   },  
 })

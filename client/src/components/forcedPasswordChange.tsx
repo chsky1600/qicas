@@ -83,7 +83,6 @@ export default function ForcedPasswordChange() {
       }
       setNewPassword("")
       setConfirmPassword("")
-      window.location.reload()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to change password")
     } finally {
