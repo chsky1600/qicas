@@ -3,7 +3,7 @@ import type {
   InstructorRule, CourseRule, Year, Violation, Faculty, User, UserRole
 } from "./types"
 
-const BASE = ""
+const BASE = "/french/icas"
 
 // auth hooks registered by AuthContext at mount
 let _onActivity: (() => void) | null = null

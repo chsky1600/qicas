@@ -7,7 +7,7 @@ import "driver.js/dist/driver.css"
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/french/icas">
       <App />
     </BrowserRouter>
   </StrictMode>,
