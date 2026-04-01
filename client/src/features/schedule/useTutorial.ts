@@ -315,7 +315,7 @@ export function useTutorial({
       {
         popover: {
           title: "Keyboard Shortcuts",
-          description: "Use Cmd+Z (Mac) or Ctrl+Z (Windows) to undo a recent assignment or unassignment. Use Cmd+Shift+Z / Ctrl+Shift+Z to redo. Up to 20 actions are stored. Note: only assigning and unassigning courses can be undone, changes to instructor or course properties, renames, and migrations cannot.",
+          description: "Use Cmd+Z (Mac) or Ctrl+Z (Windows) to undo a recent assignment or unassignment. Use Cmd+Shift+Z (Mac) or Ctrl+Y (Windows) to redo. Up to 20 actions are stored. Note: only assigning and unassigning courses can be undone, changes to instructor or course properties, renames, and migrations cannot.",
           side: "over" as const, align: "center" as const,
           onPrevClick: () => doBackward(A_KEYBOARD, () => driverInstance?.movePrevious()),
         },

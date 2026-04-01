@@ -82,6 +82,10 @@ export default function SchedulePage() {
         if (e.shiftKey) redo()
         else undo()
       }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
+        e.preventDefault()
+        redo()
+      }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
