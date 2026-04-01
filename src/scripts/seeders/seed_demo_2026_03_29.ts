@@ -152,7 +152,7 @@ async function main() {
       },
     ],
     current_working_schedule_id: "SCH001",
-    credits_per_course: 3,
+    credits_per_course: 1,
     academic_years: [
       {
         id: "Y2026",
@@ -174,7 +174,7 @@ async function main() {
           {
             id: "inst-1",
             name: "Dr. Margaret Smith",
-            workload: 9,
+            workload: 3,
             email: "margaret.smith@queensu.ca",
             rank: "FullProfessor",
             prev_taught: [courseRef("CISC101"), courseRef("CISC204"), courseRef("CISC490")],
@@ -183,7 +183,7 @@ async function main() {
           {
             id: "inst-2",
             name: "Dr. Ravi Patel",
-            workload: 6,
+            workload: 2,
             email: "ravi.patel@queensu.ca",
             rank: "AssociateProfessor",
             prev_taught: [courseRef("CISC203"), courseRef("CISC235")],
@@ -192,7 +192,7 @@ async function main() {
           {
             id: "inst-3",
             name: "Dr. Elena Green",
-            workload: 6,
+            workload: 2,
             email: "elena.green@queensu.ca",
             rank: "AssistantProfessor",
             prev_taught: [courseRef("CISC121"), courseRef("CISC124")],
@@ -201,7 +201,7 @@ async function main() {
           {
             id: "inst-4",
             name: "Avery Taylor",
-            workload: 6,
+            workload: 2,
             email: "avery.taylor@queensu.ca",
             rank: "TeachingFellow",
             prev_taught: [],
@@ -210,7 +210,7 @@ async function main() {
           {
             id: "inst-5",
             name: "Blake Adams",
-            workload: 6,
+            workload: 2,
             email: "blake.adams@queensu.ca",
             rank: "TermAdjunctSRoR",
             prev_taught: [courseRef("CISC101")],
@@ -219,7 +219,7 @@ async function main() {
           {
             id: "inst-6",
             name: "Casey Brown",
-            workload: 6,
+            workload: 2,
             email: "casey.brown@queensu.ca",
             rank: "TermAdjunctBasic",
             prev_taught: [courseRef("CISC121")],
@@ -227,7 +227,7 @@ async function main() {
           },
         ],
         instructor_rules: [
-          { id: "ir-1", instructor_id: "inst-1", designations: ["undergrad-coordinator"], workload_delta: -3, courses: [], declined_courses: [], dropped: false },
+          { id: "ir-1", instructor_id: "inst-1", designations: ["undergrad-coordinator"], workload_delta: -1, courses: [], declined_courses: [], dropped: false },
           { id: "ir-2", instructor_id: "inst-2", designations: ["curriculum-committee"], workload_delta: 0, courses: [], declined_courses: [], dropped: false },
           { id: "ir-3", instructor_id: "inst-3", designations: ["new-faculty-mentor"], workload_delta: 0, courses: [], declined_courses: [], dropped: false },
           { id: "ir-4", instructor_id: "inst-4", designations: [], workload_delta: 0, courses: [], declined_courses: [], dropped: false },
@@ -235,16 +235,16 @@ async function main() {
           { id: "ir-6", instructor_id: "inst-6", designations: [], workload_delta: 0, courses: [], declined_courses: [], dropped: false },
         ],
         course_rules: [
-          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall", "Winter"], workload_fulfillment: 3, is_full_year: false, sections_available: ["s-1", "s-2", "s-3"], is_external: false, dropped: false },
-          { id: "cr-2", course_code: "CISC121", terms_offered: ["Fall", "Winter"], workload_fulfillment: 3, is_full_year: false, sections_available: ["s-4"], is_external: false, dropped: false },
-          { id: "cr-3", course_code: "CISC124", terms_offered: ["Fall", "Winter"], workload_fulfillment: 3, is_full_year: false, sections_available: ["s-5"], is_external: false, dropped: false },
-          { id: "cr-4", course_code: "CISC203", terms_offered: ["Fall", "Winter"], workload_fulfillment: 3, is_full_year: false, sections_available: ["s-6"], is_external: false, dropped: false },
-          { id: "cr-5", course_code: "CISC204", terms_offered: ["Fall"], workload_fulfillment: 3, is_full_year: false, sections_available: ["s-7"], is_external: false, dropped: false },
-          { id: "cr-6", course_code: "CISC235", terms_offered: ["Fall"], workload_fulfillment: 3, is_full_year: false, sections_available: ["s-10"], is_external: false, dropped: false },
-          { id: "cr-7", course_code: "CISC320", terms_offered: ["Winter"], workload_fulfillment: 3, is_full_year: false, sections_available: ["s-11"], is_external: false, dropped: false },
-          { id: "cr-8", course_code: "CISC490", terms_offered: ["Fall", "Winter"], workload_fulfillment: 6, is_full_year: true, sections_available: ["s-8"], is_external: false, dropped: false },
-          { id: "cr-9", course_code: "CISC890", terms_offered: ["Winter"], workload_fulfillment: 3, is_full_year: false, sections_available: ["s-9"], is_external: false, dropped: false },
-          { id: "cr-10", course_code: "MATH110", terms_offered: ["Fall", "Winter"], workload_fulfillment: 3, is_full_year: false, sections_available: ["s-12"], is_external: true, dropped: false },
+          { id: "cr-1", course_code: "CISC101", terms_offered: ["Fall", "Winter"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-1", "s-2", "s-3"], is_external: false, dropped: false },
+          { id: "cr-2", course_code: "CISC121", terms_offered: ["Fall", "Winter"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-4"], is_external: false, dropped: false },
+          { id: "cr-3", course_code: "CISC124", terms_offered: ["Fall", "Winter"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-5"], is_external: false, dropped: false },
+          { id: "cr-4", course_code: "CISC203", terms_offered: ["Fall", "Winter"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-6"], is_external: false, dropped: false },
+          { id: "cr-5", course_code: "CISC204", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-7"], is_external: false, dropped: false },
+          { id: "cr-6", course_code: "CISC235", terms_offered: ["Fall"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-10"], is_external: false, dropped: false },
+          { id: "cr-7", course_code: "CISC320", terms_offered: ["Winter"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-11"], is_external: false, dropped: false },
+          { id: "cr-8", course_code: "CISC490", terms_offered: ["Fall", "Winter"], workload_fulfillment: 2, is_full_year: true, sections_available: ["s-8"], is_external: false, dropped: false },
+          { id: "cr-9", course_code: "CISC890", terms_offered: ["Winter"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-9"], is_external: false, dropped: false },
+          { id: "cr-10", course_code: "MATH110", terms_offered: ["Fall", "Winter"], workload_fulfillment: 1, is_full_year: false, sections_available: ["s-12"], is_external: true, dropped: false },
         ],
       },
     ],
