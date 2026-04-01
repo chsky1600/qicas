@@ -76,7 +76,7 @@ export default function ForcedPasswordChange() {
     setSaving(true)
     try {
       await api.changePassword(undefined, newPassword)
-      window.location.href = "/french/icas/schedule"
+      window.location.href = "/french/icas/"
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to change password")
       setSaving(false)
