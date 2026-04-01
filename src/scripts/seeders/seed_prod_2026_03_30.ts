@@ -109,7 +109,7 @@ async function main() {
         name: "2026-2027",
         start_year: 2026,
         schedules: [
-          { id: "DSCH001", name: "Conflict Showcase", year_id: "DY2026", date_created: new Date("2026-03-29T10:00:00.000Z"), is_rc: false, version: 1, assignments: [] },
+          { id: "DSCH001", name: "Computing Showcase", year_id: "DY2026", date_created: new Date("2026-03-29T10:00:00.000Z"), is_rc: false, version: 1, assignments: [] },
         ],
         courses: demoCourses,
         instructors: [
