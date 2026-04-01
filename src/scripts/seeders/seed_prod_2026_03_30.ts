@@ -11,9 +11,9 @@ async function main() {
   await FacultyModel.deleteMany({});
 
   // Change these to some arbitrary defaults that can be changer later
-  const michaelHash = await Bun.password.hash("password123");
-  const maryHash = await Bun.password.hash("password456");
-  const supportHash = await Bun.password.hash("admin");
+  const michaelHash = await Bun.password.hash("tqqTLt7CRp93rkoibAv9");
+  const maryHash = await Bun.password.hash("Zio2kFn848FwGATxQ775");
+  const supportHash = await Bun.password.hash("nT1tYjfNzZafN8rsAq6a");
 
   const faculty = {
     id: "F001",
@@ -26,6 +26,7 @@ async function main() {
         email: "michael.reyes@queensu.ca",
         password: michaelHash,
         role: "admin",
+        must_change_password: true,
       },
       {
         id: "U002",
@@ -33,7 +34,8 @@ async function main() {
         name: "Mary Smida",
         email: "mary.smida@queensu.ca",
         password: maryHash,
-        role: "admin", 
+        role: "admin",
+        must_change_password: true,
       },
       {
         id: "U003",
@@ -107,7 +109,7 @@ async function main() {
         name: "2026-2027",
         start_year: 2026,
         schedules: [
-          { id: "DSCH001", name: "Conflict Showcase", year_id: "DY2026", date_created: new Date("2026-03-29T10:00:00.000Z"), is_rc: false, version: 1, assignments: [] },
+          { id: "DSCH001", name: "Computing Showcase", year_id: "DY2026", date_created: new Date("2026-03-29T10:00:00.000Z"), is_rc: false, version: 1, assignments: [] },
         ],
         courses: demoCourses,
         instructors: [

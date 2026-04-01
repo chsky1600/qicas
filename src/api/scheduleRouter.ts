@@ -14,9 +14,11 @@ import {
     getWorkingSchedule,
     getScheduleVersion
 } from "../controllers/scheduleController";
-import { requireRole } from "../controllers/authController";
+import { verifyToken, requireRole } from "../controllers/authController";
 
 const router = express.Router();
+
+router.use(verifyToken)
 
 router.get("/schedule/:year/:schedule_id/version", getScheduleVersion)
 router.get("/schedule/:year/:schedule_id",getScheduleByID)

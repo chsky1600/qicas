@@ -10,9 +10,11 @@ import {
     getFaculties,
     getCreditsPerCourse
 } from "../controllers/facultyController";
-import { requireRole } from "../controllers/authController";
+import { verifyToken, requireRole } from "../controllers/authController";
 
 const router = express.Router();
+
+router.use(verifyToken)
 
 router.get("/faculty/credits", getCreditsPerCourse)
 router.get("/faculty", getFaculties)

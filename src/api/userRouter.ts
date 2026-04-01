@@ -7,9 +7,11 @@ import {
     deleteUserByID,
     getAllUsers
 } from "../controllers/userController";
-import { requireRole } from "../controllers/authController";
+import { verifyToken, requireRole } from "../controllers/authController";
 
 const router = express.Router();
+
+router.use(verifyToken)
 
 router.get("/users/:user_id", requireRole("admin"), getUserByID)
 router.put("/users/:user_id", requireRole("admin"), updateUserByID)

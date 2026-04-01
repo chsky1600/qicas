@@ -10,7 +10,7 @@ const inputClass =
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { fetchSession } = useAuth()
+  const { setSessionDirect } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -23,24 +23,19 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const res = await fetch("/auth", {
+      const res = await fetch("/french/icas/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       })
-
       if (!res.ok) {
         const data = await res.json().catch(() => null)
         setError(data?.error ?? "Invalid credentials")
         return
       }
 
-      // hydrate auth context with the new session before navigating
-      const ok = await fetchSession()
-      if (!ok) {
-        setError("Unable to establish session")
-        return
-      }
+      const session = await res.json()
+      setSessionDirect(session)
       navigate("/schedule", { replace: true })
     } catch {
       setError("Unable to reach server")
