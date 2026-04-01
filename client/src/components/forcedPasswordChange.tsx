@@ -52,7 +52,7 @@ function PasswordField({
 }
 
 export default function ForcedPasswordChange() {
-  const { authenticated, mustChangePassword, logout, fetchSession, name } = useAuth()
+  const { authenticated, mustChangePassword, logout, name, setSessionDirect } = useAuth()
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [saving, setSaving] = useState(false)
@@ -75,8 +75,8 @@ export default function ForcedPasswordChange() {
 
     setSaving(true)
     try {
-      await api.changePassword(undefined, newPassword)
-      window.location.href = "/french/icas/"
+      const { session } = await api.changePassword(undefined, newPassword)
+      setSessionDirect(session)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to change password")
       setSaving(false)

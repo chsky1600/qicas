@@ -26,6 +26,7 @@ interface AuthContextValue {
   logout: () => Promise<void>
   refreshSession: () => Promise<boolean>
   fetchSession: () => Promise<boolean>
+  setSessionDirect: (data: { faculty_id: string; user_id: string; name: string; email: string; role: "admin" | "support"; must_change_password: boolean; exp: number }) => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -140,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     refreshSession,
     fetchSession,
+    setSessionDirect: updateSession,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
