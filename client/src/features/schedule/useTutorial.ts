@@ -363,7 +363,7 @@ export function useTutorial({
         popover: {
           title: "Keyboard Shortcuts",
           description:
-            "Use Cmd+Z (Mac) or Ctrl+Z (Windows) to undo a recent assignment or unassignment. Use Cmd+Shift+Z / Ctrl+Shift+Z to redo. Up to 20 actions are stored in the undo history.",
+            "Use Cmd+Z (Mac) or Ctrl+Z (Windows) to undo a recent assignment or unassignment. Use Cmd+Shift+Z (Mac) or Ctrl+Y (Windows) to redo. Up to 20 actions are stored in the undo history.",
           side: "over" as const,
           align: "center" as const,
         },
