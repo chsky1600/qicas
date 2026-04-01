@@ -13,9 +13,11 @@ import {
     updateCourseRuleByID,
     updateInstructorRuleByID
 } from "../controllers/yearController";
-import { requireRole } from "../controllers/authController";
+import { verifyToken, requireRole } from "../controllers/authController";
 
 const router = express.Router();
+
+router.use(verifyToken)
 
 router.get("/year", getYears)
 
