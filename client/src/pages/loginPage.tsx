@@ -10,7 +10,7 @@ const inputClass =
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { fetchSession } = useAuth()
+  const { setSessionDirect } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -35,12 +35,8 @@ export default function LoginPage() {
         return
       }
 
-      // hydrate auth context with the new session before navigating
-      const ok = await fetchSession()
-      if (!ok) {
-        setError("Unable to establish session")
-        return
-      }
+      const session = await res.json()
+      setSessionDirect(session)
       navigate("/schedule", { replace: true })
     } catch {
       setError("Unable to reach server")
