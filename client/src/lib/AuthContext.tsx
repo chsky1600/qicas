@@ -65,8 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .catch(() => {})
           .finally(() => { refreshingRef.current = false })
       },
-      // on401: session expired, redirect to login
+      // on401: session expired, redirect to login (only if we had a session)
       () => {
+        if (!sessionRef.current) return
         setSession(null)
         sessionRef.current = null
         window.location.href = "/french/icas/login"
