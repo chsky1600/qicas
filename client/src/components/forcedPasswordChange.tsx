@@ -79,6 +79,7 @@ export default function ForcedPasswordChange() {
       setSessionDirect(session)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to change password")
+    } finally {
       setSaving(false)
     }
   }

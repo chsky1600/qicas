@@ -10,7 +10,7 @@ const inputClass =
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { fetchSession } = useAuth()
+  const { setSessionDirect } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -23,32 +23,21 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      console.log("[login] sending POST /french/icas/auth")
       const res = await fetch("/french/icas/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       })
-      console.log("[login] response status:", res.status)
-
       if (!res.ok) {
         const data = await res.json().catch(() => null)
-        console.log("[login] error response body:", data)
         setError(data?.error ?? "Invalid credentials")
         return
       }
 
-      const text = await res.text()
-      console.log("[login] response body:", text)
-
-      const session = JSON.parse(text)
-      console.log("[login] parsed session:", session)
-
-      await fetchSession()
-      console.log("[login] fetchSession done, navigating")
+      const session = await res.json()
+      setSessionDirect(session)
       navigate("/schedule", { replace: true })
-    } catch (e) {
-      console.error("[login] CAUGHT ERROR:", e)
+    } catch {
       setError("Unable to reach server")
     } finally {
       setLoading(false)
