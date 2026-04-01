@@ -10,7 +10,7 @@ const inputClass =
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const { setSessionDirect } = useAuth()
+  const { fetchSession } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -35,10 +35,11 @@ export default function LoginPage() {
         return
       }
 
-      const session = await res.json()
-      setSessionDirect(session)
+      // cookie is set by the server, hydrate session from /auth/me
+      await fetchSession()
       navigate("/schedule", { replace: true })
-    } catch {
+    } catch (e) {
+      console.log("Error:", e)
       setError("Unable to reach server")
     } finally {
       setLoading(false)
