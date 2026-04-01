@@ -49,7 +49,7 @@ export interface UseScheduleResult {
   setTemporaryPassword: (userId: string, password: string) => Promise<void>
   deleteUserAccount: (userId: string) => Promise<void>
   addSchedule: () => Promise<Schedule | undefined>
-  copySchedule: (schedule: Schedule) => Promise<Schedule | undefined>
+  copySchedule: (scheduleId: string) => Promise<Schedule | undefined>
   deleteSavedSchedule: (scheduleId: string) => Promise<void>
   renameSchedule: (scheduleId: string, newName: string)  => Promise<void>
   switchSchedule: (scheduleId: string) => Promise<void>
@@ -502,9 +502,9 @@ export function useSchedule(): UseScheduleResult {
       assignments: [],
       version: 1,
     }
-    const copySchedule = await api.createSavedSchedule(yr, newSchedule)
-    setSchedules(prev => [...prev, copySchedule])
-    return copySchedule
+    const addedSchedule = await api.createSavedSchedule(yr, newSchedule)
+    setSchedules(prev => [...prev, addedSchedule])
+    return addedSchedule
   }, [])
 
   // ── User actions ────────────────────────────────────────────────────────────
@@ -549,13 +549,21 @@ export function useSchedule(): UseScheduleResult {
     setUsers(prev => prev.filter(user => user.id !== userId))
   }, [])
 
-  const copySchedule = useCallback(async (schedule: Schedule) => {
+  const copySchedule = useCallback(async (scheduleId: string) => {
     const yr = yearIdRef.current
     if (!yr) return
-    const copiedSchedule = {...schedule, name: (schedule.name + " (copy)"), is_rc: false}
-    const copySchedule = await api.createSavedSchedule(yr, copiedSchedule)
-    setSchedules(prev => [...prev, copySchedule])
-    return copySchedule
+    try {
+      const copiedSchedule = await api.getSchedule(yr, scheduleId)
+      if (!copiedSchedule) throw error
+      const copyTemplate = { // adjust params. from copiedSchedule to create the template for the new schedule
+      ...copiedSchedule, name: (copiedSchedule.name + " (copy)"), is_rc: false}
+      const scheduleCopy = await api.createSavedSchedule(yr, copyTemplate)
+      setSchedules(prev => [...prev, scheduleCopy])
+      return scheduleCopy
+    } catch {
+      toast.warning("Copy failed.")
+      return
+    }
   }, [])
 
   const deleteSavedSchedule = useCallback(async (scheduleId: string) => {
@@ -568,16 +576,23 @@ export function useSchedule(): UseScheduleResult {
   const switchSchedule = useCallback(async (scheduleId: string) => {
     const yr = yearIdRef.current
     if (!yr) return
-    const newSchedule = await api.setWorkingSchedule(scheduleId)
-    setSchedule(newSchedule)
-    scheduleRef.current = newSchedule
-    localVersionRef.current = newSchedule?.version ?? 0
-    lastSchedulePerYear.current[yr] = scheduleId
     try {
-      const result = await api.validateSchedule(yr, newSchedule.id)
-      setViolations(result.validationResult.violations)
+      // pull updated schedule data from db
+      const newSchedule = await api.setWorkingSchedule(scheduleId)
+      // ensures all saved schedules up to date
+      setSchedules(await api.getSchedules(yr))
+      setSchedule(newSchedule)
+      scheduleRef.current = newSchedule
+      localVersionRef.current = newSchedule?.version ?? 0
+      lastSchedulePerYear.current[yr] = scheduleId
+      try {
+        const result = await api.validateSchedule(yr, newSchedule.id)
+        setViolations(result.validationResult.violations)
+      } catch {
+        setViolations([])
+      }
     } catch {
-      setViolations([])
+      toast.warning("Load failed.")
     }
   }, [])
 
