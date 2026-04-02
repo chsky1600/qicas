@@ -13,6 +13,6 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 export function GuestGuard({ children }: { children: ReactNode }) {
   const { authenticated, loading } = useAuth()
   if (loading) return <div className="flex items-center justify-center h-screen text-gray-500">Loading…</div>
-  if (authenticated) return <Navigate to="/schedule" replace />
+  if (authenticated) return <Navigate to="/main" replace />
   return <>{children}</>
 }

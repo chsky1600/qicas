@@ -36,7 +36,7 @@ export default function LoginPage() {
 
       const session = await res.json()
       setSessionDirect(session)
-      navigate("/schedule", { replace: true })
+      navigate("/main", { replace: true })
     } catch {
       setError("Unable to reach server")
     } finally {

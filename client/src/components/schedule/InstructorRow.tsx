@@ -118,7 +118,7 @@ export default function InstructorRow({ instructor, rule, courses, courseRules, 
             Workload: {assignedWorkload}/{baseWorkload}
           </div>
           <div className="text-xs text-gray-500">Students: {totalCapacity}</div>
-          {myViolations.length > 0 && (
+          {(myViolations.length + fallCourseViolations.length + wintCourseViolations.length) > 0 && (
             <div className="cursor-pointer text-xs flex items-center gap-1 mt-0.5 " onClick={() => setShowViolations(v => !v)}>
               {infoCount > 0 && <span className="text-blue-500">Info: {infoCount},</span>}
               {warnCount > 0 && <span className="text-orange-500">Warnings: {warnCount},</span>}

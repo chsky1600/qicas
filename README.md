@@ -214,10 +214,9 @@ At the client level:
   - mounts the app under `react-router-dom`’s `BrowserRouter`
 - `client/src/App.tsx`:
   - defines routes:
-    - `/` redirect to `/schedule`
+    - `/` redirect to `/main`
     - `/login` (guest-only)
-    - `/schedule` (authenticated)
-    - `/assignments` (authenticated; currently points to a legacy “old page” stub)
+    - `/main` (authenticated)
 
 #### Authentication UX
 
@@ -298,7 +297,7 @@ This hook is the “orchestrator” for schedule state:
 Within the React app:
 
 - `client/src/pages/`
-  - `loginPage.tsx` - calls `POST /auth` and navigates to `/schedule`
+  - `loginPage.tsx` - calls `POST /auth` and navigates to `/main`
   - `schedulePage.tsx` - the main drag-and-drop scheduling experience (uses `useSchedule()`)
 - `client/src/components/`
   - `authGuard.tsx` / `sessionWarning.tsx` - cookie-based auth gating + session expiry modal
