@@ -93,6 +93,7 @@ async function main() {
 
   const demoHash = await Bun.password.hash("password123");
   const demoSupportHash = await Bun.password.hash("password456");
+  const demoJuergenHash = await Bun.password.hash("$4EX4#BCyJw7");
 
   const demoFaculty = {
     id: "F002",
@@ -100,6 +101,7 @@ async function main() {
     users: [
       { id: "DU001", faculty_id: "F002", name: "Alice Johnson", email: "alice.johnson@university.edu", password: demoHash, role: "admin" },
       { id: "DU002", faculty_id: "F002", name: "Bob Smith", email: "bob.smith@university.edu", password: demoSupportHash, role: "support" },
+      { id: "DU003", faculty_id: "F002", name: "Juergen Dingel", email: "dingel@queensu.ca", password: demoJuergenHash , role: "admin", must_change_password: true, },
     ],
     current_working_schedule_id: "DSCH001",
     credits_per_course: 1,

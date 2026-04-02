@@ -12,14 +12,14 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/schedule" replace />} />
+      <Route path="/" element={<Navigate to="/main" replace />} />
 
       <Route path="/login" element={
         <GuestGuard>
           <LoginPage />
         </GuestGuard>
       } />
-      <Route path="/schedule" element={
+      <Route path="/main" element={
         <AuthGuard>
           <SchedulePage />
         </AuthGuard>
